@@ -1,0 +1,20 @@
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: Origin, Content-Type, Accept, Authorization, X-Requested-With
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Origin: *
+Access-Control-Max-Age: 86400
+Content-Length: 1061579
+Content-Security-Policy: default-src 'self'
+Content-Type: application/javascript
+Etag: "1871ea38e0e14d341032cb"
+Last-Modified: Sun, 26 Oct 2025 02:40:59 GMT
+Referrer-Policy: strict-origin-when-cross-origin
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+X-Request-Id: req_WWWWWWWWWWWWWWWW
+X-Xss-Protection: 1; mode=block
+Date: Sun, 26 Oct 2025 02:55:36 GMT
+

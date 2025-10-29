@@ -1,0 +1,109 @@
+name: API Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: iphone_service
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+    
+    - name: Install dependencies
+      run: |
+        go mod download
+        go install github.com/swaggo/swag/cmd/swag@latest
+    
+    - name: Generate Swagger docs
+      run: swag init -g cmd/app/main.go -o docs
+    
+    - name: Run Go tests
+      env:
+        DATABASE_URL: postgres://user:password@localhost:5432/iphone_service?sslmode=disable
+        REDIS_URL: redis://localhost:6379/0
+        JWT_SECRET: test-secret-key-for-ci
+      run: |
+        go test -v -coverprofile=coverage.out ./...
+        go tool cover -html=coverage.out -o coverage.html
+    
+    - name: Start API server
+      env:
+        DATABASE_URL: postgres://user:password@localhost:5432/iphone_service?sslmode=disable
+        REDIS_URL: redis://localhost:6379/0
+        JWT_SECRET: test-secret-key-for-ci
+      run: |
+        go run cmd/app/main.go &
+        sleep 5
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+    
+    - name: Run API tests
+      run: python scripts/advanced_api_tester.py
+      continue-on-error: true
+    
+    - name: Run stress tests
+      run: python scripts/stress_test.py tracks[--help]
+      continue-on-error: true
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.out
+        flags: unittests
+        name: codecov-umbrella
+    
+    - name: Upload coverage HTML
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage-report
+        path: coverage.html
+    
+    - name: Upload test reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-reports
+        path: test-reports/
+

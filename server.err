@@ -1,0 +1,21 @@
+2025/10/27 02:59:05 No .env file found, using system environment variables
+2025/10/27 02:59:05 Configuration loaded successfully
+2025/10/27 02:59:05 Environment: development
+2025/10/27 02:59:05 Port: 8080
+2025/10/27 02:59:05 Failed to initialize file service: Get "http://localhost:9000/iphone-service/?location=": dial tcp [::1]:9000: connectex: No connection could be made because the target machine actively refused it.
+2025/10/27 02:59:05 🚀 iPhone Service API starting on port 8080
+2025/10/27 02:59:05 📊 Environment: development
+2025/10/27 02:59:05 🔗 Health check: http://localhost:8080/health
+2025/10/27 02:59:05 📚 API Documentation: http://localhost:8080/swagger/index.html
+2025/10/27 02:59:05 📖 API Docs: http://localhost:8080/docs
+time="2025-10-27T03:01:21+07:00" level=warning msg="Suspicious user agent detected" ip="::1" method=GET path=/health request_id=req_uuuuuuuuuuuuuuuu timestamp="2025-10-27T03:01:21+07:00" user_agent=curl/8.13.0
+time="2025-10-27T03:01:21+07:00" level=error msg="Server error" content_type="application/json; charset=utf-8" ip="::1" latency=5.9999ms method=GET path=/health query= request_id=req_uuuuuuuuuuuuuuuu status=503 timestamp="2025-10-27T03:01:21+07:00" user_agent=curl/8.13.0 user_id= user_role=
+time="2025-10-27T03:01:44+07:00" level=warning msg="Suspicious user agent detected" ip="::1" method=GET path=/swagger/index.html request_id=req_gggggggggggggggg timestamp="2025-10-27T03:01:44+07:00" user_agent=curl/8.13.0
+time="2025-10-27T03:01:44+07:00" level=info msg="Request completed" content_type="text/html; charset=utf-8" ip="::1" latency=7.8977ms method=GET path=/swagger/index.html query= request_id=req_gggggggggggggggg status=200 timestamp="2025-10-27T03:01:44+07:00" user_agent=curl/8.13.0 user_id= user_role=
+time="2025-10-27T03:02:01+07:00" level=info msg="Request completed" content_type="text/html; charset=utf-8" ip="::1" latency=0s method=GET path=/swagger/index.html query= request_id=req_eeeeeeeeeeeeeeee status=200 timestamp="2025-10-27T03:02:01+07:00" user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36" user_id= user_role=
+time="2025-10-27T03:02:01+07:00" level=info msg="Request completed" content_type="text/css; charset=utf-8" ip="::1" latency=9.6712ms method=GET path=/swagger/swagger-ui.css query= request_id=req_EEEEEEEEEEEEEEEE status=200 timestamp="2025-10-27T03:02:01+07:00" user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36" user_id= user_role=
+time="2025-10-27T03:02:01+07:00" level=info msg="Request completed" content_type=application/javascript ip="::1" latency=7.6585ms method=GET path=/swagger/swagger-ui-bundle.js query= request_id=req_qqqqqqqqqqqqqqqq status=200 timestamp="2025-10-27T03:02:01+07:00" user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36" user_id= user_role=
+time="2025-10-27T03:02:01+07:00" level=info msg="Request completed" content_type=application/javascript ip="::1" latency="999.4µs" method=GET path=/swagger/swagger-ui-standalone-preset.js query= request_id=req_UUUUUUUUUUUUUUUU status=200 timestamp="2025-10-27T03:02:01+07:00" user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36" user_id= user_role=
+time="2025-10-27T03:02:01+07:00" level=info msg="Request completed" content_type=image/png ip="::1" latency=0s method=GET path=/swagger/favicon-32x32.png query= request_id=req_8888888888888888 status=200 timestamp="2025-10-27T03:02:01+07:00" user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36" user_id= user_role=
+time="2025-10-27T03:02:01+07:00" level=info msg="Request completed" content_type="application/json; charset=utf-8" ip="::1" latency=5.9993ms method=GET path=/swagger/doc.json query= request_id=req_ssssssssssssssss status=200 timestamp="2025-10-27T03:02:01+07:00" user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36" user_id= user_role=
+exit status 0xffffffff

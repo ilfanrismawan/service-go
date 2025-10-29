@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: iphone-service-pos-service
+  labels:
+    app: iphone-service-pos
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: iphone-service-pos
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iphone-service-pos-headless
+  labels:
+    app: iphone-service-pos
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: iphone-service-pos
