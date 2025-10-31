@@ -1,9 +1,13 @@
 package notification
 
 import (
+    "bytes"
 	"context"
+    "encoding/json"
 	"fmt"
 	"log"
+    "net/http"
+    "service/internal/config"
 	"service/internal/core"
 	"service/internal/repository"
 	"time"
@@ -51,12 +55,40 @@ func (s *NotificationService) SendSMSNotification(ctx context.Context, phone, me
 
 // SendWhatsAppNotification sends WhatsApp notification (mock implementation)
 func (s *NotificationService) SendWhatsAppNotification(ctx context.Context, phone, message string) error {
-	// Mock WhatsApp sending - in production, integrate with WhatsApp Business API
+    // If no API key configured, fallback to mock to keep dev UX smooth
+    if config.Config == nil || config.Config.TwilioAuthToken == "" && config.Config.FirebaseServerKey == "" { /* noop to reference existing fields */ }
+    apiKey := config.Config.WhatsAppAPIKey
+    if apiKey == "" {
 	log.Printf("💬 Mock WhatsApp sent to %s: %s", phone, message)
+        time.Sleep(150 * time.Millisecond)
+        return nil
+    }
 
-	// Simulate WhatsApp sending delay
-	time.Sleep(150 * time.Millisecond)
+    // Fonnte simple integration
+    // Docs: POST https://api.fonnte.com/send with headers: Authorization: <TOKEN>
+    // Body (JSON): { "target": "08xxxx" or "+62...", "message": "..." }
+    payload := map[string]string{
+        "target":  phone,
+        "message": message,
+    }
+    body, _ := json.Marshal(payload)
+    req, err := http.NewRequestWithContext(ctx, "POST", "https://api.fonnte.com/send", bytes.NewBuffer(body))
+    if err != nil {
+        return err
+    }
+    req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("Authorization", apiKey)
 
+    client := &http.Client{Timeout: 10 * time.Second}
+    resp, err := client.Do(req)
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+    if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+        log.Printf("WhatsApp provider error: status=%d", resp.StatusCode)
+        return fmt.Errorf("whatsapp provider error: %d", resp.StatusCode)
+    }
 	return nil
 }
 

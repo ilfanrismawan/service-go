@@ -19,6 +19,7 @@ const (
 	PaymentMethodTransfer        PaymentMethod = "transfer"
 	PaymentMethodBankTransfer    PaymentMethod = "bank_transfer"
 	PaymentMethodMandiriEchannel PaymentMethod = "mandiri_echannel"
+    PaymentMethodShopeePay       PaymentMethod = "shopeepay"
 )
 
 // PaymentStatus represents the status of a payment
@@ -108,7 +109,7 @@ type MidtransPaymentRequest struct {
 	OrderID       string  `json:"order_id" validate:"required"`
 	Amount        float64 `json:"amount" validate:"required,gt=0"`
 	CustomerEmail string  `json:"customer_email" validate:"required,email"`
-	CustomerPhone string  `json:"customer_phone" validate:"required"`
+    CustomerPhone string  `json:"customer_phone" validate:"required,phone"`
 }
 
 // MidtransPaymentResponse represents the response from Midtrans API

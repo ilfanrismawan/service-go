@@ -87,6 +87,9 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		return
 	}
 
+    // Sanitize free-text fields
+    utils.SanitizeStructStrings(&req)
+
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
 		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
@@ -286,6 +289,9 @@ func (h *PaymentHandler) ProcessMidtransPayment(c *gin.Context) {
 		))
 		return
 	}
+
+    // Sanitize free-text fields
+    utils.SanitizeStructStrings(&req)
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {

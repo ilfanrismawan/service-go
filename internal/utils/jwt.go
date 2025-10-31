@@ -147,6 +147,20 @@ func ValidateRefreshToken(tokenString string) (*RefreshTokenClaims, error) {
 	return nil, errors.New("invalid token")
 }
 
+// ParseRefreshToken parses a refresh token without validating expiry for metadata extraction
+func ParseRefreshToken(tokenString string) (*RefreshTokenClaims, error) {
+    token, err := jwt.ParseWithClaims(tokenString, &RefreshTokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+        return []byte(config.Config.JWTSecret), nil
+    })
+    if err != nil {
+        return nil, err
+    }
+    if claims, ok := token.Claims.(*RefreshTokenClaims); ok {
+        return claims, nil
+    }
+    return nil, errors.New("invalid token")
+}
+
 // ValidatePasswordResetToken validates a password reset token and returns claims
 func ValidatePasswordResetToken(tokenString string) (*PasswordResetClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &PasswordResetClaims{}, func(token *jwt.Token) (interface{}, error) {

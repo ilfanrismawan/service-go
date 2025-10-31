@@ -80,6 +80,9 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
+	// Sanitize strings to prevent XSS in free-text fields
+	utils.SanitizeStructStrings(&req)
+
 	// Validate request
 	// Fill some reasonable defaults to keep tests lightweight (tests send minimal fields)
 	if req.IPhoneModel == "" {
@@ -239,6 +242,9 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 		))
 		return
 	}
+
+    // Sanitize free-text notes
+    utils.SanitizeStructStrings(&req)
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {

@@ -226,6 +226,20 @@ curl -X POST http://localhost:8080/api/v1/payments/process \
   }'
 ```
 
+### Midtrans Webhook Callback
+```bash
+curl -X POST http://localhost:8080/api/v1/payments/midtrans/callback \
+  -H "Content-Type: application/json" \
+  -d '{
+    "order_id": "INV-20240101-000123",
+    "transaction_id": "abc123",
+    "status_code": "200",
+    "gross_amount": "500000.00",
+    "transaction_status": "settlement",
+    "signature_key": "<sha512(order_id+status_code+gross_amount+server_key)>"
+  }'
+```
+
 ### Payment Methods Available
 - `cash` - Pembayaran tunai (langsung paid)
 - `bank_transfer` - Transfer bank (Virtual Account)

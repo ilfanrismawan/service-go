@@ -399,15 +399,18 @@ swag init -g cmd/app/main.go -o docs --parseDependency --parseInternal
 ### Endpoint Utama
 
 - **Authentication:** `/api/v1/auth/*`
+- Tambahan: `POST /api/v1/auth/logout` (revoke refresh token)
 - **Branches:** `/api/v1/branches/*`
 - **Orders:** `/api/v1/orders/*`
 - **Payments:** `/api/v1/payments/*`
+- Tambahan: `POST /api/v1/payments/midtrans/callback` (webhook Midtrans, signature verified)
 - **Notifications:** `/api/v1/notifications/*`
 - **Files:** `/api/v1/files/*`
 - **Chat:** `/api/v1/chat/*`
 - **Dashboard:** `/api/v1/dashboard/*`
 - **Membership:** `/api/v1/membership/*` (NEW)
 - **Reports:** `/api/v1/reports/*` (NEW)
+ - **Metrics:** `GET /metrics` (Prometheus)
 
 ### Fitur Baru
 
@@ -430,6 +433,13 @@ swag init -g cmd/app/main.go -o docs --parseDependency --parseInternal
 - **Cash Payment:** Support pembayaran tunai
 - **Mock Implementation:** Simulasi lengkap untuk development
 - **Payment Status Tracking:** Real-time status update
+ - **Webhook Security:** Verifikasi `signature_key = sha512(order_id+status_code+gross_amount+server_key)`
+
+#### 🔐 Keamanan Token
+- **Refresh Rotation & Revoke:** Refresh token di-rotasi saat refresh; token lama di-blacklist (Redis). Endpoint `POST /api/v1/auth/logout` untuk revoke manual.
+
+#### 🧪 CI Coverage Gate
+- **Coverage Minimal:** Build CI gagal bila coverage < 75% (workflow CI/CD dan API Testing)
 
 ## 🤝 Contributing
 

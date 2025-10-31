@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"math"
+	"regexp"
 	"reflect"
 	"strconv"
 	"strings"
@@ -152,6 +153,43 @@ func ValidateRequiredFields(data interface{}, requiredFields []string) error {
 // SanitizeString removes leading/trailing whitespace and converts to lowercase
 func SanitizeString(s string) string {
 	return strings.ToLower(strings.TrimSpace(s))
+}
+
+// stripXSS removes common XSS vectors like <script> tags and javascript: URIs
+var scriptTagRegex = regexp.MustCompile(`(?is)<\s*script[^>]*>.*?<\s*/\s*script\s*>`)
+var jsUriRegex = regexp.MustCompile(`(?is)javascript:\s*`)
+
+// SanitizeXSSString cleans potentially dangerous content
+func SanitizeXSSString(s string) string {
+	clean := scriptTagRegex.ReplaceAllString(s, "")
+	clean = jsUriRegex.ReplaceAllString(clean, "")
+	return clean
+}
+
+// SanitizeStructStrings walks through struct string fields and applies XSS sanitization
+func SanitizeStructStrings(v interface{}) {
+	val := reflect.ValueOf(v)
+	if val.Kind() != reflect.Ptr || val.IsNil() {
+		return
+	}
+	val = val.Elem()
+	if val.Kind() != reflect.Struct {
+		return
+	}
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		switch field.Kind() {
+		case reflect.String:
+			field.SetString(SanitizeXSSString(field.String()))
+		case reflect.Struct:
+			f := val.Field(i).Addr().Interface()
+			SanitizeStructStrings(f)
+		case reflect.Ptr:
+			if !field.IsNil() && field.Elem().Kind() == reflect.Struct {
+				SanitizeStructStrings(field.Interface())
+			}
+		}
+	}
 }
 
 // FormatPhone formats Indonesian phone number

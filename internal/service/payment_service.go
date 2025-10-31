@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"service/internal/core"
+    pay "service/internal/payment"
 	"service/internal/repository"
 	"service/internal/utils"
+    "time"
 
 	"github.com/google/uuid"
 )
@@ -228,6 +230,60 @@ func (s *PaymentService) ProcessMidtransPayment(ctx context.Context, req *core.M
 	}
 
 	return response, nil
+}
+
+// ReconcilePendingPayments checks pending Midtrans payments and updates their status
+func (s *PaymentService) ReconcilePendingPayments(ctx context.Context) error {
+    // Get pending payments
+    pendingList, err := s.paymentRepo.GetByStatus(ctx, core.PaymentStatusPending)
+    if err != nil {
+        return err
+    }
+    if len(pendingList) == 0 {
+        return nil
+    }
+    ms := pay.NewMidtransService()
+    for _, p := range pendingList {
+        // Only reconcile online payments
+        if p.PaymentMethod != core.PaymentMethodMidtrans && p.PaymentMethod != core.PaymentMethodGopay && p.PaymentMethod != core.PaymentMethodQris && p.PaymentMethod != core.PaymentMethodBankTransfer && p.PaymentMethod != core.PaymentMethodMandiriEchannel {
+            continue
+        }
+        if p.TransactionID == "" {
+            continue
+        }
+        resp, err := ms.GetPaymentStatus(ctx, p.TransactionID)
+        if err != nil {
+            continue
+        }
+        // Map Midtrans status
+        newStatus := core.PaymentStatusPending
+        switch resp.TransactionStatus {
+        case "capture", "settlement":
+            newStatus = core.PaymentStatusPaid
+        case "pending":
+            newStatus = core.PaymentStatusPending
+        case "deny", "expire", "cancel":
+            newStatus = core.PaymentStatusFailed
+        case "refund", "partial_refund":
+            newStatus = core.PaymentStatusRefunded
+        }
+        if p.Status == newStatus {
+            continue
+        }
+        p.Status = newStatus
+        if newStatus == core.PaymentStatusPaid {
+            now := core.GetCurrentTimestamp()
+            p.PaidAt = &now
+        }
+        _ = s.paymentRepo.Update(ctx, p)
+        if newStatus == core.PaymentStatusPaid {
+            if order, err := s.orderRepo.GetByID(ctx, p.OrderID); err == nil {
+                order.Status = core.StatusReady
+                _ = s.orderRepo.Update(ctx, order)
+            }
+        }
+    }
+    return nil
 }
 
 // ListPayments retrieves payments with pagination and filters

@@ -63,6 +63,14 @@ jobs:
       run: |
         go test -v -coverprofile=coverage.out ./...
         go tool cover -html=coverage.out -o coverage.html
+
+    - name: Enforce coverage threshold
+      run: |
+        go tool cover -func=coverage.out | tee coverage_func.txt
+        total=$(grep -E "^total:" coverage_func.txt | awk '{print $3}' | sed 's/%//')
+        threshold=75
+        echo "Total coverage: ${total}% (threshold ${threshold}%)"
+        awk -v t=$threshold -v c=$total 'BEGIN { if (c+0 < t+0) { exit 1 } }'
     
     - name: Start API server
       env:

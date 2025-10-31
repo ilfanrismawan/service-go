@@ -39,12 +39,17 @@ func SetupRoutes(r *gin.Engine) {
 		// Public routes (no authentication required)
 		public := v1.Group("/")
 		{
-			// Authentication routes
-			public.POST("/auth/register", authHandler.Register)
-			public.POST("/auth/login", authHandler.Login)
-			public.POST("/auth/refresh", authHandler.RefreshToken)
-			public.POST("/auth/forgot-password", authHandler.ForgotPassword)
-			public.POST("/auth/reset-password", authHandler.ResetPassword)
+			// Authentication routes (rate limited)
+			authPublic := public.Group("/auth")
+			authPublic.Use(middleware.RateLimitMiddleware())
+			{
+				authPublic.POST("/register", authHandler.Register)
+				authPublic.POST("/login", authHandler.Login)
+				authPublic.POST("/refresh", authHandler.RefreshToken)
+				authPublic.POST("/logout", authHandler.Logout)
+				authPublic.POST("/forgot-password", authHandler.ForgotPassword)
+				authPublic.POST("/reset-password", authHandler.ResetPassword)
+			}
 
 			// Payment callbacks (public, signature verified in handler)
 			public.POST("/payments/midtrans/callback", paymentHandler.MidtransCallback)

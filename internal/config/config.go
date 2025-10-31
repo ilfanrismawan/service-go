@@ -44,6 +44,9 @@ type AppConfig struct {
 	TwilioAuthToken   string
 	TwilioPhoneNumber string
 	FirebaseServerKey string
+    WhatsAppAPIKey    string
+    WhatsAppAPIKey    string
+    WhatsAppAPIURL    string
 
 	// Email configuration
 	SMTPHost     string
@@ -55,6 +58,18 @@ type AppConfig struct {
 	// Rate limiting
 	RateLimitRequests int
 	RateLimitWindow   time.Duration
+
+	// Localization
+	DefaultLanguage string
+	Timezone       string
+	Currency       string
+	DateFormat     string
+
+    // Reconciliation
+    ReconcileInterval time.Duration
+
+    // Observability
+    SentryDSN string
 }
 
 var Config *AppConfig
@@ -100,6 +115,9 @@ func LoadConfig() {
 		TwilioAuthToken:   getEnv("TWILIO_AUTH_TOKEN", ""),
 		TwilioPhoneNumber: getEnv("TWILIO_PHONE_NUMBER", ""),
 		FirebaseServerKey: getEnv("FIREBASE_SERVER_KEY", ""),
+        WhatsAppAPIKey:    getEnv("WHATSAPP_API_KEY", ""),
+        WhatsAppAPIKey:    getEnv("WHATSAPP_API_KEY", ""),
+        WhatsAppAPIURL:    getEnv("WHATSAPP_API_URL", "https://api.fonnte.com/send"),
 
 		// Email configuration
 		SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
@@ -111,6 +129,31 @@ func LoadConfig() {
 		// Rate limiting
 		RateLimitRequests: getIntEnv("RATE_LIMIT_REQUESTS", 100),
 		RateLimitWindow:   getDurationEnv("RATE_LIMIT_WINDOW", time.Minute),
+
+		// Localization
+		DefaultLanguage: getEnv("DEFAULT_LANGUAGE", "id-ID"),
+		Timezone:       getEnv("TIMEZONE", "Asia/Jakarta"),
+		Currency:       getEnv("CURRENCY", "IDR"),
+		DateFormat:     getEnv("DATE_FORMAT", "02/01/2006"),
+
+        // Reconciliation
+        ReconcileInterval: getDurationEnv("RECONCILE_INTERVAL", 5*time.Minute),
+
+        // Observability
+        SentryDSN: getEnv("SENTRY_DSN", ""),
+	}
+
+	// Fail fast if JWT secret is left as the insecure default
+	if Config.JWTSecret == "your-secret-key-change-this-in-production" {
+		log.Fatal("JWT_SECRET is using the insecure default value. Set a strong secret in environment variables.")
+	}
+
+	// Set global time location based on configured timezone
+	if loc, err := time.LoadLocation(Config.Timezone); err == nil {
+		time.Local = loc
+		log.Printf("Timezone set to %s", Config.Timezone)
+	} else {
+		log.Printf("Failed to load timezone %s: %v", Config.Timezone, err)
 	}
 
 	log.Printf("Configuration loaded successfully")
