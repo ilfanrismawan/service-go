@@ -119,6 +119,16 @@ type MidtransPaymentResponse struct {
 	StatusMessage string `json:"status_message"`
 }
 
+// MidtransCallbackPayload represents Midtrans callback/webhook payload
+type MidtransCallbackPayload struct {
+    OrderID           string `json:"order_id"`
+    TransactionID     string `json:"transaction_id"`
+    StatusCode        string `json:"status_code"`
+    GrossAmount       string `json:"gross_amount"`
+    SignatureKey      string `json:"signature_key"`
+    TransactionStatus string `json:"transaction_status"`
+}
+
 // Invoice represents an invoice
 type Invoice struct {
 	InvoiceNumber string    `json:"invoice_number"`

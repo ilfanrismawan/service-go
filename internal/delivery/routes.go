@@ -46,6 +46,9 @@ func SetupRoutes(r *gin.Engine) {
 			public.POST("/auth/forgot-password", authHandler.ForgotPassword)
 			public.POST("/auth/reset-password", authHandler.ResetPassword)
 
+			// Payment callbacks (public, signature verified in handler)
+			public.POST("/payments/midtrans/callback", paymentHandler.MidtransCallback)
+
 			// Public branch information
 			public.GET("/branches", branchHandler.GetBranches)
 			public.GET("/branches/nearest", branchHandler.GetNearestBranches)

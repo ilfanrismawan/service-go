@@ -24,6 +24,73 @@ func NewPaymentService() *PaymentService {
 	}
 }
 
+// HandleMidtransCallback verifies payload and updates payment/order state
+func (s *PaymentService) HandleMidtransCallback(ctx context.Context, cb *core.MidtransCallbackPayload, serverKey string) error {
+    // Verify signature: sha512(order_id+status_code+gross_amount+server_key)
+    expected := utils.SHA512Hex(cb.OrderID + cb.StatusCode + cb.GrossAmount + serverKey)
+    if expected != cb.SignatureKey {
+        return errors.New("invalid signature")
+    }
+
+    // Find payment by transaction ID first, fallback to invoice/order_id equals payment.ID if used as order_id
+    var payment *core.Payment
+    // Try by transaction ID
+    if cb.TransactionID != "" {
+        if p, err := s.paymentRepo.GetByTransactionID(ctx, cb.TransactionID); err == nil {
+            payment = p
+        }
+    }
+    if payment == nil {
+        // Try by invoice number or payment ID from order_id field
+        if p, err := s.paymentRepo.GetByInvoiceNumber(ctx, cb.OrderID); err == nil {
+            payment = p
+        }
+    }
+    if payment == nil {
+        return core.ErrPaymentNotFound
+    }
+
+    // Idempotency: if status already mapped, no-op
+    mapped := core.PaymentStatusPending
+    switch cb.TransactionStatus {
+    case "capture", "settlement":
+        mapped = core.PaymentStatusPaid
+    case "pending":
+        mapped = core.PaymentStatusPending
+    case "deny", "expire", "cancel":
+        mapped = core.PaymentStatusFailed
+    case "refund", "partial_refund":
+        mapped = core.PaymentStatusRefunded
+    default:
+        mapped = core.PaymentStatusPending
+    }
+    if payment.Status == mapped {
+        return nil
+    }
+
+    // Update payment
+    payment.Status = mapped
+    if cb.TransactionID != "" {
+        payment.TransactionID = cb.TransactionID
+    }
+    if mapped == core.PaymentStatusPaid {
+        now := core.GetCurrentTimestamp()
+        payment.PaidAt = &now
+    }
+    if err := s.paymentRepo.Update(ctx, payment); err != nil {
+        return err
+    }
+
+    // Update order on success
+    if mapped == core.PaymentStatusPaid {
+        if order, err := s.orderRepo.GetByID(ctx, payment.OrderID); err == nil {
+            order.Status = core.StatusReady
+            _ = s.orderRepo.Update(ctx, order)
+        }
+    }
+    return nil
+}
+
 // CreatePayment creates a new payment
 func (s *PaymentService) CreatePayment(ctx context.Context, req *core.PaymentRequest) (*core.PaymentResponse, error) {
 	// Validate order exists

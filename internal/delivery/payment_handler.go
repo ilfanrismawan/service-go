@@ -2,6 +2,7 @@ package delivery
 
 import (
 	"net/http"
+    "service/internal/config"
 	"service/internal/core"
 	"service/internal/service"
 	"service/internal/utils"
@@ -21,6 +22,45 @@ func NewPaymentHandler() *PaymentHandler {
 	return &PaymentHandler{
 		paymentService: service.NewPaymentService(),
 	}
+}
+
+// MidtransCallback handles Midtrans webhook callback (public endpoint)
+// @Summary Midtrans payment callback
+// @Description Handle Midtrans callback notifications
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Param request body core.MidtransCallbackPayload true "Midtrans callback payload"
+// @Success 200 {object} core.APIResponse
+// @Failure 400 {object} core.ErrorResponse
+// @Failure 500 {object} core.ErrorResponse
+// @Router /payments/midtrans/callback [post]
+func (h *PaymentHandler) MidtransCallback(c *gin.Context) {
+    var payload core.MidtransCallbackPayload
+    if err := c.ShouldBindJSON(&payload); err != nil {
+        c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+            "validation_error",
+            "Invalid callback payload",
+            err.Error(),
+        ))
+        return
+    }
+
+    // Delegate to service for signature verification and updates
+    if err := h.paymentService.HandleMidtransCallback(c.Request.Context(), &payload, config.Config.MidtransServerKey); err != nil {
+        status := http.StatusInternalServerError
+        if err == core.ErrPaymentNotFound {
+            status = http.StatusBadRequest
+        }
+        c.JSON(status, core.CreateErrorResponse(
+            "midtrans_callback_error",
+            err.Error(),
+            nil,
+        ))
+        return
+    }
+
+    c.JSON(http.StatusOK, core.SuccessResponse(nil, "Callback processed"))
 }
 
 // CreatePayment godoc
