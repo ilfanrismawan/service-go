@@ -1,0 +1,42 @@
+name: ChatGPT Commit Summary
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    environment: OPENAI_API_KEY
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get last commit message
+        id: commit
+        run: echo "message=$(git log -1 --pretty=%B)" >> $GITHUB_OUTPUT
+
+      - name: Generate commit summary with ChatGPT
+        id: chatgpt
+        run: |
+          echo "🔍 Mengirim commit ke ChatGPT..."
+          RESPONSE=$(curl -s https://api.openai.com/v1/chat/completions \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
+            -d '{
+              "model": "gpt-4o-mini",
+              "messages": [
+                {"role": "system", "content": "Kamu adalah asisten pengembang yang membuat ringkasan commit dengan jelas dan ringkas."},
+                {"role": "user", "content": "Ringkas commit berikut:\n\n${{ steps.commit.outputs.message }}"}
+              ]
+            }' | jq -r '.choices[0].message.content')
+
+          echo "Ringkasan dari ChatGPT:"
+          echo "$RESPONSE"
+
+      - name: Output summary to job logs
+        run: |
+          echo "### ChatGPT Commit Summary ###"
+          echo "${{ steps.chatgpt.outputs.RESPONSE }}"
