@@ -126,6 +126,76 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, core.SuccessResponse(response, "Login successful"))
 }
 
+// UpdateFCMToken godoc
+// @Summary Update FCM token
+// @Description Update Firebase Cloud Messaging token for push notifications
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body map[string]string true "FCM token request" example({"fcm_token":"<token>"})
+// @Success 200 {object} core.APIResponse
+// @Failure 400 {object} core.ErrorResponse
+// @Failure 401 {object} core.ErrorResponse
+// @Router /auth/fcm-token [put]
+func (h *AuthHandler) UpdateFCMToken(c *gin.Context) {
+	// Get user ID from context
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+			"unauthorized",
+			"User ID not found in context",
+			nil,
+		))
+		return
+	}
+
+	userUUID, ok := userID.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+			"internal_error",
+			"Invalid user ID type",
+			nil,
+		))
+		return
+	}
+
+	var req struct {
+		FCMToken string `json:"fcm_token" validate:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+			"invalid_request",
+			err.Error(),
+			nil,
+		))
+		return
+	}
+
+	// Validate
+	if req.FCMToken == "" {
+		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+			"validation_error",
+			"FCM token is required",
+			nil,
+		))
+		return
+	}
+
+	// Update FCM token
+	if err := h.authService.UpdateFCMToken(c.Request.Context(), userUUID, req.FCMToken); err != nil {
+		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+			"update_fcm_token_failed",
+			err.Error(),
+			nil,
+		))
+		return
+	}
+
+	c.JSON(http.StatusOK, core.SuccessResponse(nil, "FCM token updated successfully"))
+}
+
 // RefreshToken godoc
 // @Summary Refresh access token
 // @Description Refresh access token using refresh token

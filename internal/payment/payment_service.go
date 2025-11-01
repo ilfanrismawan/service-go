@@ -47,7 +47,13 @@ type MidtransPaymentRequest struct {
 	BankTransfer       *BankTransfer      `json:"bank_transfer,omitempty"`
 	Echannel           *Echannel          `json:"echannel,omitempty"`
 	Gopay              *Gopay             `json:"gopay,omitempty"`
+	OVO                *OVO               `json:"ovo,omitempty"`
+	Dana               *Dana              `json:"dana,omitempty"`
+	ShopeePay          *ShopeePay         `json:"shopeepay,omitempty"`
 	Qris               *Qris              `json:"qris,omitempty"`
+	Alfamart           *Alfamart          `json:"alfamart,omitempty"`
+	Indomaret          *Indomaret         `json:"indomaret,omitempty"`
+	CreditCard         *CreditCard         `json:"credit_card,omitempty"`
 	CustomExpiry       *CustomExpiry      `json:"custom_expiry,omitempty"`
 }
 
@@ -77,6 +83,45 @@ type Gopay struct {
 // Qris represents QRIS payment
 type Qris struct {
 	Acquirer string `json:"acquirer"`
+}
+
+// OVO represents OVO payment
+type OVO struct {
+	EnableCallback bool   `json:"enable_callback"`
+	CallbackURL    string `json:"callback_url,omitempty"`
+}
+
+// Dana represents Dana payment
+type Dana struct {
+	EnableCallback bool   `json:"enable_callback"`
+	CallbackURL    string `json:"callback_url,omitempty"`
+}
+
+// ShopeePay represents ShopeePay payment
+type ShopeePay struct {
+	EnableCallback bool   `json:"enable_callback"`
+	CallbackURL    string `json:"callback_url,omitempty"`
+}
+
+// Alfamart represents Alfamart payment
+type Alfamart struct {
+	Store   string `json:"store,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+// Indomaret represents Indomaret payment
+type Indomaret struct {
+	Store   string `json:"store,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+// CreditCard represents Credit Card payment
+type CreditCard struct {
+	TokenID    string `json:"token_id,omitempty"`
+	Secure     bool   `json:"secure,omitempty"`
+	SaveToken  bool   `json:"save_token_id,omitempty"`
+	Bank       string `json:"bank,omitempty"`
+	Installment bool  `json:"installment,omitempty"`
 }
 
 // CustomExpiry represents custom expiry settings
@@ -220,24 +265,85 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentID uuid.UUID
 
 	// Set payment method specific parameters
 	switch paymentMethod {
-	case core.PaymentMethodBankTransfer:
+	case core.PaymentMethodBankTransfer, core.PaymentMethodBCAVA:
 		midtransReq.BankTransfer = &BankTransfer{
-			Bank: "bca", // Default to BCA, can be made configurable
+			Bank: "bca",
 		}
+		midtransReq.PaymentType = "bank_transfer"
+	case core.PaymentMethodBNIVA:
+		midtransReq.BankTransfer = &BankTransfer{
+			Bank: "bni",
+		}
+		midtransReq.PaymentType = "bank_transfer"
+	case core.PaymentMethodBRIVA:
+		midtransReq.BankTransfer = &BankTransfer{
+			Bank: "bri",
+		}
+		midtransReq.PaymentType = "bank_transfer"
+	case core.PaymentMethodPermataVA:
+		midtransReq.BankTransfer = &BankTransfer{
+			Bank: "permata",
+		}
+		midtransReq.PaymentType = "bank_transfer"
 	case core.PaymentMethodMandiriEchannel:
 		midtransReq.Echannel = &Echannel{
 			BillInfo1: fmt.Sprintf("Order #%s", order.OrderNumber),
 			BillInfo2: "iPhone Service",
 		}
+		midtransReq.PaymentType = "echannel"
 	case core.PaymentMethodGopay:
 		midtransReq.Gopay = &Gopay{
 			EnableCallback: true,
-			CallbackURL:    fmt.Sprintf("%s/api/v1/payments/callback", config.Config.BaseURL),
+			CallbackURL:    fmt.Sprintf("%s/api/v1/payments/midtrans/callback", config.Config.BaseURL),
 		}
-	case core.PaymentMethodQris:
+		midtransReq.PaymentType = "gopay"
+	case core.PaymentMethodOVO:
+		midtransReq.OVO = &OVO{
+			EnableCallback: true,
+			CallbackURL:    fmt.Sprintf("%s/api/v1/payments/midtrans/callback", config.Config.BaseURL),
+		}
+		midtransReq.PaymentType = "ovo"
+	case core.PaymentMethodDana:
+		midtransReq.Dana = &Dana{
+			EnableCallback: true,
+			CallbackURL:    fmt.Sprintf("%s/api/v1/payments/midtrans/callback", config.Config.BaseURL),
+		}
+		midtransReq.PaymentType = "dana"
+	case core.PaymentMethodShopeePay:
+		midtransReq.ShopeePay = &ShopeePay{
+			EnableCallback: true,
+			CallbackURL:    fmt.Sprintf("%s/api/v1/payments/midtrans/callback", config.Config.BaseURL),
+		}
+		midtransReq.PaymentType = "shopeepay"
+	case core.PaymentMethodQris, core.PaymentMethodQRIS:
 		midtransReq.Qris = &Qris{
 			Acquirer: "gopay",
 		}
+		midtransReq.PaymentType = "qris"
+	case core.PaymentMethodAlfamart:
+		midtransReq.Alfamart = &Alfamart{
+			Store:   "alfamart",
+			Message: fmt.Sprintf("Bayar pesanan #%s", order.OrderNumber),
+		}
+		midtransReq.PaymentType = "cstore"
+	case core.PaymentMethodIndomaret:
+		midtransReq.Indomaret = &Indomaret{
+			Store:   "indomaret",
+			Message: fmt.Sprintf("Bayar pesanan #%s", order.OrderNumber),
+		}
+		midtransReq.PaymentType = "cstore"
+	case core.PaymentMethodCreditCard:
+		midtransReq.CreditCard = &CreditCard{
+			Secure:    true,
+			SaveToken: false,
+		}
+		midtransReq.PaymentType = "credit_card"
+	default:
+		// Default to bank_transfer
+		midtransReq.BankTransfer = &BankTransfer{
+			Bank: "bca",
+		}
+		midtransReq.PaymentType = "bank_transfer"
 	}
 
 	// Send request to Midtrans (mock implementation)

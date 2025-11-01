@@ -30,6 +30,7 @@ type User struct {
 	Role      UserRole       `json:"role" gorm:"type:text;not null"`
 	BranchID  *uuid.UUID     `json:"branch_id,omitempty" gorm:"type:uuid;references:id"`
 	Branch    *Branch        `json:"branch,omitempty" gorm:"foreignKey:BranchID"`
+	FCMToken  string         `json:"fcm_token,omitempty" gorm:"type:text"` // Firebase Cloud Messaging token
 	IsActive  bool           `json:"is_active" gorm:"default:true"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`

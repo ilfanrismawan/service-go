@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"service/internal/cache"
 	"service/internal/core"
 	"service/internal/repository"
 
@@ -11,12 +12,14 @@ import (
 // BranchService handles branch business logic
 type BranchService struct {
 	branchRepo *repository.BranchRepository
+	cache      *cache.CacheService
 }
 
 // NewBranchService creates a new branch service
 func NewBranchService() *BranchService {
 	return &BranchService{
 		branchRepo: repository.NewBranchRepository(),
+		cache:      cache.NewCacheService(),
 	}
 }
 
@@ -44,12 +47,22 @@ func (s *BranchService) CreateBranch(ctx context.Context, req *core.BranchReques
 	return &response, nil
 }
 
-// GetBranch retrieves a branch by ID
+// GetBranch retrieves a branch by ID (with cache)
 func (s *BranchService) GetBranch(ctx context.Context, id uuid.UUID) (*core.BranchResponse, error) {
+	// Try cache first
+	if cachedBranch, err := s.cache.GetBranch(ctx, id); err == nil {
+		response := cachedBranch.ToResponse()
+		return &response, nil
+	}
+
+	// Cache miss, get from database
 	branch, err := s.branchRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, core.ErrBranchNotFound
 	}
+
+	// Cache the result
+	_ = s.cache.SetBranch(ctx, branch)
 
 	response := branch.ToResponse()
 	return &response, nil
@@ -76,6 +89,10 @@ func (s *BranchService) UpdateBranch(ctx context.Context, id uuid.UUID, req *cor
 	if err := s.branchRepo.Update(ctx, branch); err != nil {
 		return nil, err
 	}
+
+	// Invalidate cache
+	_ = s.cache.InvalidateBranch(ctx, id)
+	_ = s.cache.InvalidateBranchList(ctx)
 
 	response := branch.ToResponse()
 	return &response, nil

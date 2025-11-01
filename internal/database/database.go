@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"service/internal/config"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
@@ -43,7 +44,7 @@ func InitPostgres() {
 		log.Fatal("Database connection failed")
 	}
 
-	// Verify connection
+	// Verify connection and configure connection pool
 	sqlDB, err := DB.DB()
 	if err != nil {
 		log.Printf("❌ Failed to get underlying *sql.DB: %v\n", err)
@@ -56,7 +57,14 @@ func InitPostgres() {
 		log.Fatal("Database ping failed")
 	}
 
+	// Configure connection pool for better performance
+	sqlDB.SetMaxOpenConns(25)                    // Maximum open connections
+	sqlDB.SetMaxIdleConns(10)                    // Maximum idle connections
+	sqlDB.SetConnMaxLifetime(5 * time.Minute)   // Connection max lifetime
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute)  // Connection max idle time
+
 	log.Println("✅ Connected to PostgreSQL successfully")
+	log.Println("✅ Database connection pool configured")
 
 	// Create uuid-ossp extension if it doesn't exist
 	if err := DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
