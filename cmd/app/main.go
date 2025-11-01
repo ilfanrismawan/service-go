@@ -27,10 +27,10 @@ import (
 	_ "service/docs" // Import docs for Swagger
 	"service/internal/config"
 	"service/internal/database"
-	"service/internal/delivery"
+	"service/internal/orders/handler"
 	"service/internal/middleware"
     "service/internal/monitoring"
-    svc "service/internal/service"
+    svc "service/internal/orders/service"
 	"service/internal/utils"
     "time"
 

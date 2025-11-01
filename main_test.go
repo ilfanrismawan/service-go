@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"service/internal/core"
-	"service/internal/delivery"
+	"service/internal/orders/handler"
 	"testing"
 
 	"github.com/gin-gonic/gin"
