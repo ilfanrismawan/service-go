@@ -67,6 +67,36 @@ func runMigrations() {
 	}
 	log.Println("✓ ChatMessage table migrated")
 
+	// Step 8: Create Queue table
+	if err := db.AutoMigrate(&core.Queue{}); err != nil {
+		log.Fatalf("Failed to migrate Queue table: %v", err)
+	}
+	log.Println("✓ Queue table migrated")
+
+	// Step 9: Create Warranty table
+	if err := db.AutoMigrate(&core.Warranty{}); err != nil {
+		log.Fatalf("Failed to migrate Warranty table: %v", err)
+	}
+	log.Println("✓ Warranty table migrated")
+
+	// Step 10: Create SparePartInventory table
+	if err := db.AutoMigrate(&core.SparePartInventory{}); err != nil {
+		log.Fatalf("Failed to migrate SparePartInventory table: %v", err)
+	}
+	log.Println("✓ SparePartInventory table migrated")
+
+	// Step 11: Create Rating table
+	if err := db.AutoMigrate(&core.Rating{}); err != nil {
+		log.Fatalf("Failed to migrate Rating table: %v", err)
+	}
+	log.Println("✓ Rating table migrated")
+
+	// Step 12: Create AuditTrail table
+	if err := db.AutoMigrate(&core.AuditTrail{}); err != nil {
+		log.Fatalf("Failed to migrate AuditTrail table: %v", err)
+	}
+	log.Println("✓ AuditTrail table migrated")
+
 	// Create indexes
 	createIndexes(db)
 
@@ -113,6 +143,38 @@ func createIndexes(db *gorm.DB) {
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_memberships_status ON memberships(status)")
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_memberships_total_spent ON memberships(total_spent)")
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_memberships_joined_at ON memberships(joined_at)")
+
+	// Queue indexes
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_queues_branch_id ON queues(branch_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_queues_customer_id ON queues(customer_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_queues_status ON queues(status)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_queues_created_at ON queues(created_at)")
+
+	// Warranty indexes
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_warranties_order_id ON warranties(order_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_warranties_end_date ON warranties(end_date)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_warranties_is_active ON warranties(is_active)")
+
+	// SparePartInventory indexes
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_spare_parts_branch_id ON spare_part_inventory(branch_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_spare_parts_part_code ON spare_part_inventory(part_code)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_spare_parts_stock ON spare_part_inventory(stock)")
+
+	// Rating indexes
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_ratings_order_id ON ratings(order_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_ratings_customer_id ON ratings(customer_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_ratings_branch_id ON ratings(branch_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_ratings_technician_id ON ratings(technician_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_ratings_rating ON ratings(rating)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_ratings_created_at ON ratings(created_at)")
+
+	// AuditTrail indexes
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_audit_trails_user_id ON audit_trails(user_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_audit_trails_resource ON audit_trails(resource)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_audit_trails_resource_id ON audit_trails(resource_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_audit_trails_action ON audit_trails(action)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_audit_trails_created_at ON audit_trails(created_at)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_audit_trails_ip_address ON audit_trails(ip_address)")
 
 	log.Println("Database indexes created successfully")
 }

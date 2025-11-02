@@ -44,9 +44,8 @@ type AppConfig struct {
 	TwilioAuthToken   string
 	TwilioPhoneNumber string
 	FirebaseServerKey string
-    WhatsAppAPIKey    string
-    WhatsAppAPIKey    string
-    WhatsAppAPIURL    string
+	WhatsAppAPIKey    string
+	WhatsAppAPIURL    string
 
 	// Email configuration
 	SMTPHost     string

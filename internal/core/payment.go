@@ -19,7 +19,16 @@ const (
 	PaymentMethodTransfer        PaymentMethod = "transfer"
 	PaymentMethodBankTransfer    PaymentMethod = "bank_transfer"
 	PaymentMethodMandiriEchannel PaymentMethod = "mandiri_echannel"
-    PaymentMethodShopeePay       PaymentMethod = "shopeepay"
+	PaymentMethodOVO             PaymentMethod = "ovo"
+	PaymentMethodDana             PaymentMethod = "dana"
+	PaymentMethodShopeePay       PaymentMethod = "shopeepay"
+	PaymentMethodBCAVA            PaymentMethod = "bca_va"
+	PaymentMethodBNIVA            PaymentMethod = "bni_va"
+	PaymentMethodBRIVA            PaymentMethod = "bri_va"
+	PaymentMethodPermataVA        PaymentMethod = "permata_va"
+	PaymentMethodAlfamart         PaymentMethod = "alfamart"
+	PaymentMethodIndomaret        PaymentMethod = "indomaret"
+	PaymentMethodCreditCard        PaymentMethod = "credit_card"
 )
 
 // PaymentStatus represents the status of a payment
@@ -45,6 +54,8 @@ type Payment struct {
 	TransactionID string         `json:"transaction_id,omitempty"` // External payment gateway transaction ID
 	InvoiceNumber string         `json:"invoice_number" gorm:"uniqueIndex;not null"`
 	InvoiceURL    string         `json:"invoice_url,omitempty"` // URL to the invoice
+	TaxAmount     float64        `json:"tax_amount" gorm:"default:0"` // PPN 11%
+	Subtotal      float64        `json:"subtotal" gorm:"default:0"`   // Amount before tax
 	PaidAt        *time.Time     `json:"paid_at,omitempty"`
 	Notes         string         `json:"notes,omitempty"`
 	CreatedAt     time.Time      `json:"created_at"`

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"service/internal/cache"
 	"service/internal/core"
 	"service/internal/orders/repository"
 	"time"
@@ -14,6 +15,7 @@ import (
 type MembershipService struct {
 	membershipRepo *repository.MembershipRepository
 	userRepo       *repository.UserRepository
+	cache          *cache.CacheService
 }
 
 // NewMembershipService creates a new membership service
@@ -21,6 +23,7 @@ func NewMembershipService() *MembershipService {
 	return &MembershipService{
 		membershipRepo: repository.NewMembershipRepository(),
 		userRepo:       repository.NewUserRepository(),
+		cache:          cache.NewCacheService(),
 	}
 }
 
@@ -239,12 +242,22 @@ func (s *MembershipService) StartTrial(ctx context.Context, userID uuid.UUID, ti
 	return membership, nil
 }
 
-// GetMembership gets a membership by user ID
+// GetMembership gets a membership by user ID (with cache)
 func (s *MembershipService) GetMembership(ctx context.Context, userID uuid.UUID) (*core.Membership, error) {
+	// Try cache first
+	if cachedMembership, err := s.cache.GetMembership(ctx, userID); err == nil {
+		return cachedMembership, nil
+	}
+
+	// Cache miss, get from database
 	membership, err := s.membershipRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("membership not found: %w", err)
 	}
+
+	// Cache the result
+	_ = s.cache.SetMembership(ctx, membership)
+
 	return membership, nil
 }
 
@@ -270,6 +283,9 @@ func (s *MembershipService) UpdateMembership(ctx context.Context, userID uuid.UU
 	if err := s.membershipRepo.Update(ctx, membership); err != nil {
 		return nil, fmt.Errorf("failed to update membership: %w", err)
 	}
+
+	// Invalidate cache
+	_ = s.cache.InvalidateMembership(ctx, userID)
 
 	return membership, nil
 }

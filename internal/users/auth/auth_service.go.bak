@@ -388,3 +388,20 @@ func (s *AuthService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	}
 	return s.userRepo.Delete(ctx, id)
 }
+
+// UpdateFCMToken updates FCM token for a user
+func (s *AuthService) UpdateFCMToken(ctx context.Context, userID uuid.UUID, fcmToken string) error {
+	// Get user
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return core.ErrUserNotFound
+	}
+
+	// Update FCM token
+	user.FCMToken = fcmToken
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return fmt.Errorf("failed to update FCM token: %w", err)
+	}
+
+	return nil
+}

@@ -66,9 +66,16 @@ type ServiceOrder struct {
 	ServicePhoto      string         `json:"service_photo,omitempty"`
 	DeliveryPhoto     string         `json:"delivery_photo,omitempty"`
 	Notes             string         `json:"notes,omitempty"`
-	CreatedAt         time.Time      `json:"created_at"`
-	UpdatedAt         time.Time      `json:"updated_at"`
-	DeletedAt         gorm.DeletedAt `json:"-" gorm:"index"`
+	// Legal & Compliance fields
+	InvoiceNumber    string    `json:"invoice_number,omitempty" gorm:"uniqueIndex"` // Nomor faktur pajak
+	TaxAmount        float64   `json:"tax_amount" gorm:"default:0"`                  // PPN 11%
+	CustomerIDCard   string    `json:"customer_id_card,omitempty"`                  // KTP customer (encrypted)
+	CustomerNPWP     string    `json:"customer_npwp,omitempty"`                     // NPWP customer
+	TermsAccepted    bool      `json:"terms_accepted" gorm:"default:false"`
+	PrivacyAccepted  bool      `json:"privacy_accepted" gorm:"default:false"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+	DeletedAt        gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
 // TableName returns the table name for ServiceOrder

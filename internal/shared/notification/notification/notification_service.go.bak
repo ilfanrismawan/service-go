@@ -53,53 +53,168 @@ func (s *NotificationService) SendSMSNotification(ctx context.Context, phone, me
 	return nil
 }
 
-// SendWhatsAppNotification sends WhatsApp notification (mock implementation)
+// SendWhatsAppNotification sends WhatsApp notification with template support
 func (s *NotificationService) SendWhatsAppNotification(ctx context.Context, phone, message string) error {
-    // If no API key configured, fallback to mock to keep dev UX smooth
-    if config.Config == nil || config.Config.TwilioAuthToken == "" && config.Config.FirebaseServerKey == "" { /* noop to reference existing fields */ }
-    apiKey := config.Config.WhatsAppAPIKey
-    if apiKey == "" {
-	log.Printf("💬 Mock WhatsApp sent to %s: %s", phone, message)
-        time.Sleep(150 * time.Millisecond)
-        return nil
-    }
+	return s.SendWhatsAppNotificationWithTemplate(ctx, phone, "", nil, message)
+}
 
-    // Fonnte simple integration
-    // Docs: POST https://api.fonnte.com/send with headers: Authorization: <TOKEN>
-    // Body (JSON): { "target": "08xxxx" or "+62...", "message": "..." }
-    payload := map[string]string{
-        "target":  phone,
-        "message": message,
-    }
-    body, _ := json.Marshal(payload)
-    req, err := http.NewRequestWithContext(ctx, "POST", "https://api.fonnte.com/send", bytes.NewBuffer(body))
-    if err != nil {
-        return err
-    }
-    req.Header.Set("Content-Type", "application/json")
-    req.Header.Set("Authorization", apiKey)
+// SendWhatsAppNotificationWithTemplate sends WhatsApp notification using template
+func (s *NotificationService) SendWhatsAppNotificationWithTemplate(ctx context.Context, phone string, templateType WhatsAppTemplateType, templateData map[string]interface{}, fallbackMessage string) error {
+	// If no API key configured, fallback to mock to keep dev UX smooth
+	if config.Config == nil || (config.Config.TwilioAuthToken == "" && config.Config.FirebaseServerKey == "") { /* noop */ }
+	apiKey := config.Config.WhatsAppAPIKey
 
-    client := &http.Client{Timeout: 10 * time.Second}
-    resp, err := client.Do(req)
-    if err != nil {
-        return err
-    }
-    defer resp.Body.Close()
-    if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-        log.Printf("WhatsApp provider error: status=%d", resp.StatusCode)
-        return fmt.Errorf("whatsapp provider error: %d", resp.StatusCode)
-    }
+	// Determine message content
+	var message string
+	if templateType != "" && templateData != nil {
+		message = GetWhatsAppTemplate(templateType, templateData)
+	} else {
+		message = fallbackMessage
+	}
+
+	if apiKey == "" {
+		log.Printf("💬 Mock WhatsApp sent to %s: %s", phone, message)
+		time.Sleep(150 * time.Millisecond)
+		return nil
+	}
+
+	// Fonnte simple integration
+	// Docs: POST https://api.fonnte.com/send with headers: Authorization: <TOKEN>
+	// Body (JSON): { "target": "08xxxx" or "+62...", "message": "..." }
+	apiURL := config.Config.WhatsAppAPIURL
+	if apiURL == "" {
+		apiURL = "https://api.fonnte.com/send"
+	}
+
+	payload := map[string]string{
+		"target":  phone,
+		"message": message,
+	}
+	body, _ := json.Marshal(payload)
+	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", apiKey)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		log.Printf("WhatsApp provider error: status=%d", resp.StatusCode)
+		return fmt.Errorf("whatsapp provider error: %d", resp.StatusCode)
+	}
 	return nil
 }
 
-// SendPushNotification sends push notification (mock implementation)
+// SendPushNotification sends push notification using FCM
 func (s *NotificationService) SendPushNotification(ctx context.Context, userID uuid.UUID, title, body string) error {
-	// Mock push notification - in production, integrate with Firebase FCM, AWS SNS, etc.
-	log.Printf("🔔 Mock Push notification sent to user %s: %s - %s", userID.String(), title, body)
+	// Get user to retrieve FCM token
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
 
-	// Simulate push notification delay
-	time.Sleep(50 * time.Millisecond)
+	// If no FCM token, log and return (don't fail)
+	if user.FCMToken == "" {
+		log.Printf("⚠️ No FCM token for user %s, skipping push notification", userID.String())
+		return nil
+	}
 
+	// Initialize FCM service
+	fcmService := NewFCMService()
+
+	// Create notification payload
+	notification := &FCMNotification{
+		Title: title,
+		Body:  body,
+		Sound: SoundDefault,
+	}
+
+	// Send notification
+	if err := fcmService.SendToToken(ctx, user.FCMToken, notification, nil); err != nil {
+		log.Printf("Failed to send FCM notification to user %s: %v", userID.String(), err)
+		return fmt.Errorf("failed to send push notification: %w", err)
+	}
+
+	log.Printf("✅ Push notification sent to user %s: %s - %s", userID.String(), title, body)
+	return nil
+}
+
+// SendPushNotificationWithData sends push notification with additional data
+func (s *NotificationService) SendPushNotificationWithData(ctx context.Context, userID uuid.UUID, title, body string, data map[string]interface{}) error {
+	// Get user to retrieve FCM token
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// If no FCM token, log and return (don't fail)
+	if user.FCMToken == "" {
+		log.Printf("⚠️ No FCM token for user %s, skipping push notification", userID.String())
+		return nil
+	}
+
+	// Initialize FCM service
+	fcmService := NewFCMService()
+
+	// Create notification payload
+	notification := &FCMNotification{
+		Title: title,
+		Body:  body,
+		Sound: SoundDefault,
+	}
+
+	// Send notification with data
+	if err := fcmService.SendToToken(ctx, user.FCMToken, notification, data); err != nil {
+		log.Printf("Failed to send FCM notification to user %s: %v", userID.String(), err)
+		return fmt.Errorf("failed to send push notification: %w", err)
+	}
+
+	log.Printf("✅ Push notification with data sent to user %s: %s - %s", userID.String(), title, body)
+	return nil
+}
+
+// SendPushNotificationToMultiple sends push notification to multiple users
+func (s *NotificationService) SendPushNotificationToMultiple(ctx context.Context, userIDs []uuid.UUID, title, body string) error {
+	// Get all users and collect FCM tokens
+	var tokens []string
+	for _, userID := range userIDs {
+		user, err := s.userRepo.GetByID(ctx, userID)
+		if err != nil {
+			continue // Skip users that can't be found
+		}
+		if user.FCMToken != "" {
+			tokens = append(tokens, user.FCMToken)
+		}
+	}
+
+	if len(tokens) == 0 {
+		log.Printf("⚠️ No FCM tokens found for %d users, skipping push notification", len(userIDs))
+		return nil
+	}
+
+	// Initialize FCM service
+	fcmService := NewFCMService()
+
+	// Create notification payload
+	notification := &FCMNotification{
+		Title: title,
+		Body:  body,
+		Sound: SoundDefault,
+	}
+
+	// Send to all tokens
+	if err := fcmService.SendToTokens(ctx, tokens, notification, nil); err != nil {
+		log.Printf("Failed to send FCM notification to multiple users: %v", err)
+		return fmt.Errorf("failed to send push notification: %w", err)
+	}
+
+	log.Printf("✅ Push notification sent to %d users", len(tokens))
 	return nil
 }
 
@@ -164,8 +279,14 @@ func (s *NotificationService) SendOrderStatusNotification(ctx context.Context, o
 		return fmt.Errorf("failed to save notification: %w", err)
 	}
 
-	// Send notifications through multiple channels
-	go s.sendMultiChannelNotification(ctx, user, message, fmt.Sprintf("Order #%s Update", order.OrderNumber))
+	// Send notifications through multiple channels with WhatsApp template
+	templateData := map[string]interface{}{
+		"order_number":  order.OrderNumber,
+		"status":        string(status),
+		"customer_name": user.FullName,
+		"branch_name":   order.Branch.Name,
+	}
+	go s.sendMultiChannelNotificationWithTemplate(ctx, user, TemplateStatusUpdate, templateData, message, fmt.Sprintf("Order #%s Update", order.OrderNumber))
 
 	return nil
 }
@@ -225,37 +346,52 @@ func (s *NotificationService) SendPaymentNotification(ctx context.Context, order
 		return fmt.Errorf("failed to save notification: %w", err)
 	}
 
-	// Send notifications through multiple channels
-	go s.sendMultiChannelNotification(ctx, user, message, fmt.Sprintf("Payment Update - Order #%s", order.OrderNumber))
+	// Send notifications through multiple channels with WhatsApp template
+	templateData := map[string]interface{}{
+		"order_number": order.OrderNumber,
+		"amount":       order.ActualCost,
+		"due_date":     time.Now().Add(24 * time.Hour),
+		"customer_name": user.FullName,
+	}
+	templateType := TemplatePaymentReminder
+	if status == core.PaymentStatusPaid {
+		templateType = TemplateStatusUpdate
+	}
+	go s.sendMultiChannelNotificationWithTemplate(ctx, user, templateType, templateData, message, fmt.Sprintf("Payment Update - Order #%s", order.OrderNumber))
 
 	return nil
 }
 
 // sendMultiChannelNotification sends notification through multiple channels
 func (s *NotificationService) sendMultiChannelNotification(ctx context.Context, user *core.User, message, title string) {
+	s.sendMultiChannelNotificationWithTemplate(ctx, user, "", nil, message, title)
+}
+
+// sendMultiChannelNotificationWithTemplate sends notification through multiple channels with WhatsApp template support
+func (s *NotificationService) sendMultiChannelNotificationWithTemplate(ctx context.Context, user *core.User, templateType WhatsAppTemplateType, templateData map[string]interface{}, fallbackMessage, title string) {
 	// Send email notification
 	if user.Email != "" {
-		if err := s.SendEmailNotification(ctx, user.Email, title, message); err != nil {
+		if err := s.SendEmailNotification(ctx, user.Email, title, fallbackMessage); err != nil {
 			log.Printf("Failed to send email notification: %v", err)
 		}
 	}
 
 	// Send SMS notification
 	if user.Phone != "" {
-		if err := s.SendSMSNotification(ctx, user.Phone, message); err != nil {
+		if err := s.SendSMSNotification(ctx, user.Phone, fallbackMessage); err != nil {
 			log.Printf("Failed to send SMS notification: %v", err)
 		}
 	}
 
-	// Send WhatsApp notification
+	// Send WhatsApp notification with template
 	if user.Phone != "" {
-		if err := s.SendWhatsAppNotification(ctx, user.Phone, message); err != nil {
+		if err := s.SendWhatsAppNotificationWithTemplate(ctx, user.Phone, templateType, templateData, fallbackMessage); err != nil {
 			log.Printf("Failed to send WhatsApp notification: %v", err)
 		}
 	}
 
 	// Send push notification
-	if err := s.SendPushNotification(ctx, user.ID, title, message); err != nil {
+	if err := s.SendPushNotification(ctx, user.ID, title, fallbackMessage); err != nil {
 		log.Printf("Failed to send push notification: %v", err)
 	}
 }

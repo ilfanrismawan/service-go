@@ -24,6 +24,7 @@ func SetupRoutes(r *gin.Engine) {
 	swaggerHandler := NewSwaggerHandler()
 	membershipHandler := NewMembershipHandler()
 	reportHandler := NewReportHandler()
+	ratingHandler := NewRatingHandler()
 
 	// Setup Swagger documentation routes
 	swaggerHandler.SetupSwaggerRoutes(r)
@@ -47,11 +48,11 @@ func SetupRoutes(r *gin.Engine) {
 				authPublic.POST("/login", authHandler.Login)
 				authPublic.POST("/refresh", authHandler.RefreshToken)
 				authPublic.POST("/logout", authHandler.Logout)
-				authPublic.POST("/forgot-password", authHandler.ForgotPassword)
-				authPublic.POST("/reset-password", authHandler.ResetPassword)
-			}
+			authPublic.POST("/forgot-password", authHandler.ForgotPassword)
+			authPublic.POST("/reset-password", authHandler.ResetPassword)
+		}
 
-			// Payment callbacks (public, signature verified in handler)
+		// Payment callbacks (public, signature verified in handler)
 			public.POST("/payments/midtrans/callback", paymentHandler.MidtransCallback)
 
 			// Public branch information
@@ -68,6 +69,7 @@ func SetupRoutes(r *gin.Engine) {
 			protected.GET("/auth/profile", authHandler.GetProfile)
 			protected.PUT("/auth/profile", authHandler.UpdateProfile)
 			protected.POST("/auth/change-password", authHandler.ChangePassword)
+			protected.PUT("/auth/fcm-token", authHandler.UpdateFCMToken)
 
 			// Order routes
 			protected.POST("/orders", orderHandler.CreateOrder)
@@ -125,6 +127,14 @@ func SetupRoutes(r *gin.Engine) {
 			protected.GET("/reports/monthly", reportHandler.GetMonthlyReport)
 			protected.GET("/reports/yearly", reportHandler.GetYearlyReport)
 			protected.GET("/reports/summary", reportHandler.GetReportSummary)
+
+			// Rating routes
+			protected.POST("/ratings", ratingHandler.CreateRating)
+			protected.GET("/ratings", ratingHandler.ListRatings)
+			protected.GET("/ratings/average", ratingHandler.GetAverageRating)
+			protected.GET("/ratings/:id", ratingHandler.GetRating)
+			protected.PUT("/ratings/:id", ratingHandler.UpdateRating)
+			protected.DELETE("/ratings/:id", ratingHandler.DeleteRating)
 		}
 
 		// Admin routes (admin role required)

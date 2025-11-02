@@ -119,10 +119,17 @@ func (s *PaymentService) CreatePayment(ctx context.Context, req *core.PaymentReq
 		invoiceNumber = utils.GenerateInvoiceNumber()
 	}
 
+	// Calculate PPN 11% (Indonesian tax)
+	subtotal := req.Amount
+	taxAmount := utils.CalculatePPN(subtotal)
+	totalAmount := utils.CalculateAmountWithTax(subtotal)
+
 	// Create payment entity
 	payment := &core.Payment{
 		OrderID:       orderID,
-		Amount:        req.Amount,
+		Subtotal:      subtotal,
+		TaxAmount:     taxAmount,
+		Amount:        totalAmount, // Total includes PPN
 		PaymentMethod: req.PaymentMethod,
 		Status:        core.PaymentStatusPending,
 		InvoiceNumber: invoiceNumber,
