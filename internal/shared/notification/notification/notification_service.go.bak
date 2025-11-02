@@ -1,13 +1,13 @@
 package notification
 
 import (
-    "bytes"
+	"bytes"
 	"context"
-    "encoding/json"
+	"encoding/json"
 	"fmt"
 	"log"
-    "net/http"
-    "service/internal/config"
+	"net/http"
+	"service/internal/config"
 	"service/internal/core"
 	"service/internal/repository"
 	"time"
@@ -61,7 +61,8 @@ func (s *NotificationService) SendWhatsAppNotification(ctx context.Context, phon
 // SendWhatsAppNotificationWithTemplate sends WhatsApp notification using template
 func (s *NotificationService) SendWhatsAppNotificationWithTemplate(ctx context.Context, phone string, templateType WhatsAppTemplateType, templateData map[string]interface{}, fallbackMessage string) error {
 	// If no API key configured, fallback to mock to keep dev UX smooth
-	if config.Config == nil || (config.Config.TwilioAuthToken == "" && config.Config.FirebaseServerKey == "") { /* noop */ }
+	if config.Config == nil || (config.Config.TwilioAuthToken == "" && config.Config.FirebaseServerKey == "") { /* noop */
+	}
 	apiKey := config.Config.WhatsAppAPIKey
 
 	// Determine message content
@@ -348,9 +349,9 @@ func (s *NotificationService) SendPaymentNotification(ctx context.Context, order
 
 	// Send notifications through multiple channels with WhatsApp template
 	templateData := map[string]interface{}{
-		"order_number": order.OrderNumber,
-		"amount":       order.ActualCost,
-		"due_date":     time.Now().Add(24 * time.Hour),
+		"order_number":  order.OrderNumber,
+		"amount":        order.ActualCost,
+		"due_date":      time.Now().Add(24 * time.Hour),
 		"customer_name": user.FullName,
 	}
 	templateType := TemplatePaymentReminder

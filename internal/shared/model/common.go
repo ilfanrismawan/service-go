@@ -1,11 +1,35 @@
+<<<<<<< HEAD
 package core
+=======
+package model
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 
 import (
 	"errors"
 	"math"
+<<<<<<< HEAD
 	"time"
 )
 
+=======
+	userDTO "service/internal/users/dto"
+	"time"
+)
+
+// UserRole represents the role of a user in the system
+// Moved here from users/dto because it's used cross-domain (in middleware, routes, etc.)
+type UserRole string
+
+const (
+	RoleAdminPusat  UserRole = "admin_pusat"
+	RoleAdminCabang UserRole = "admin_cabang"
+	RoleKasir       UserRole = "kasir"
+	RoleTeknisi     UserRole = "teknisi"
+	RoleKurir       UserRole = "kurir"
+	RolePelanggan   UserRole = "pelanggan"
+)
+
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 // APIResponse represents the standard API response format
 type APIResponse struct {
 	Status    string      `json:"status"`
@@ -48,10 +72,17 @@ type LoginRequest struct {
 
 // LoginResponse represents the login response payload
 type LoginResponse struct {
+<<<<<<< HEAD
 	AccessToken  string       `json:"access_token"`
 	RefreshToken string       `json:"refresh_token"`
 	User         UserResponse `json:"user"`
 	ExpiresIn    int64        `json:"expires_in"`
+=======
+	AccessToken  string               `json:"access_token"`
+	RefreshToken string               `json:"refresh_token"`
+	User         userDTO.UserResponse `json:"user"`
+	ExpiresIn    int64                `json:"expires_in"`
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 }
 
 // RefreshTokenRequest represents the refresh token request payload
@@ -76,6 +107,7 @@ type ResetPasswordRequest struct {
 	NewPassword string `json:"new_password" validate:"required,min=6"`
 }
 
+<<<<<<< HEAD
 // DashboardStats represents dashboard statistics
 type DashboardStats struct {
 	TotalOrders     int64   `json:"total_orders"`
@@ -86,6 +118,8 @@ type DashboardStats struct {
 	ActiveBranches  int64   `json:"active_branches"`
 }
 
+=======
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 // ServiceStats represents service statistics
 type ServiceStats struct {
 	ServiceType string  `json:"service_type"`

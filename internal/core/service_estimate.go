@@ -2,10 +2,10 @@ package core
 
 // ServiceEstimate represents service cost and time estimation
 type ServiceEstimate struct {
-	MinPrice      int64 `json:"min_price"`       // Harga minimum
-	MaxPrice      int64 `json:"max_price"`       // Harga maksimum
-	EstimatedDays int   `json:"estimated_days"`  // Estimasi hari pengerjaan
-	Warranty      int   `json:"warranty"`        // Garansi dalam hari
+	MinPrice      int64 `json:"min_price"`      // Harga minimum
+	MaxPrice      int64 `json:"max_price"`      // Harga maksimum
+	EstimatedDays int   `json:"estimated_days"` // Estimasi hari pengerjaan
+	Warranty      int   `json:"warranty"`       // Garansi dalam hari
 }
 
 // GetServiceEstimate returns estimated cost and time for a service type
@@ -60,4 +60,3 @@ func GetServiceEstimate(serviceType ServiceType) ServiceEstimate {
 		Warranty:      30,
 	}
 }
-

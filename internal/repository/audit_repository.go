@@ -124,4 +124,3 @@ type AuditFilters struct {
 	DateTo     *time.Time
 	IPAddress  string
 }
-

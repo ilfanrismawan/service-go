@@ -1,6 +1,14 @@
+<<<<<<< HEAD
 package core
 
 import (
+=======
+package model
+
+import (
+	orderDTO "service/internal/orders/dto"
+	userDTO "service/internal/users/dto"
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	"time"
 
 	"github.com/google/uuid"
@@ -42,6 +50,7 @@ const (
 
 // Notification represents a notification in the system
 type Notification struct {
+<<<<<<< HEAD
 	ID        uuid.UUID          `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
 	UserID    uuid.UUID          `json:"user_id" gorm:"type:uuid;not null"`
 	User      User               `json:"user" gorm:"foreignKey:UserID"`
@@ -56,6 +65,22 @@ type Notification struct {
 	CreatedAt time.Time          `json:"created_at"`
 	UpdatedAt time.Time          `json:"updated_at"`
 	DeletedAt gorm.DeletedAt     `json:"-" gorm:"index"`
+=======
+	ID        uuid.UUID              `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	UserID    uuid.UUID              `json:"user_id" gorm:"type:uuid;not null"`
+	User      userDTO.User           `json:"user" gorm:"foreignKey:UserID"`
+	OrderID   *uuid.UUID             `json:"order_id,omitempty" gorm:"type:uuid"`
+	Order     *orderDTO.ServiceOrder `json:"order,omitempty" gorm:"foreignKey:OrderID"`
+	Type      NotificationType       `json:"type" gorm:"not null"`
+	Title     string                 `json:"title" gorm:"not null"`
+	Message   string                 `json:"message" gorm:"not null"`
+	Status    NotificationStatus     `json:"status" gorm:"not null;default:'pending'"`
+	IsRead    bool                   `json:"is_read" gorm:"default:false"`
+	SentAt    *time.Time             `json:"sent_at,omitempty"`
+	CreatedAt time.Time              `json:"created_at"`
+	UpdatedAt time.Time              `json:"updated_at"`
+	DeletedAt gorm.DeletedAt         `json:"-" gorm:"index"`
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 }
 
 // TableName returns the table name for Notification
@@ -74,6 +99,7 @@ type NotificationRequest struct {
 
 // NotificationResponse represents the response payload for notification data
 type NotificationResponse struct {
+<<<<<<< HEAD
 	ID        uuid.UUID             `json:"id"`
 	UserID    uuid.UUID             `json:"user_id"`
 	User      UserResponse          `json:"user"`
@@ -87,6 +113,21 @@ type NotificationResponse struct {
 	SentAt    *time.Time            `json:"sent_at,omitempty"`
 	CreatedAt time.Time             `json:"created_at"`
 	UpdatedAt time.Time             `json:"updated_at"`
+=======
+	ID        uuid.UUID                      `json:"id"`
+	UserID    uuid.UUID                      `json:"user_id"`
+	User      userDTO.UserResponse           `json:"user"`
+	OrderID   *uuid.UUID                     `json:"order_id,omitempty"`
+	Order     *orderDTO.ServiceOrderResponse `json:"order,omitempty"`
+	Type      NotificationType               `json:"type"`
+	Title     string                         `json:"title"`
+	Message   string                         `json:"message"`
+	Status    NotificationStatus             `json:"status"`
+	IsRead    bool                           `json:"is_read"`
+	SentAt    *time.Time                     `json:"sent_at,omitempty"`
+	CreatedAt time.Time                      `json:"created_at"`
+	UpdatedAt time.Time                      `json:"updated_at"`
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 }
 
 // ToResponse converts Notification to NotificationResponse
@@ -116,6 +157,7 @@ func (n *Notification) ToResponse() NotificationResponse {
 
 // ChatMessage represents a chat message between customer and technician
 type ChatMessage struct {
+<<<<<<< HEAD
 	ID         uuid.UUID      `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
 	OrderID    uuid.UUID      `json:"order_id" gorm:"type:uuid;not null"`
 	Order      ServiceOrder   `json:"order" gorm:"foreignKey:OrderID"`
@@ -128,6 +170,20 @@ type ChatMessage struct {
 	CreatedAt  time.Time      `json:"created_at"`
 	UpdatedAt  time.Time      `json:"updated_at"`
 	DeletedAt  gorm.DeletedAt `json:"-" gorm:"index"`
+=======
+	ID         uuid.UUID             `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	OrderID    uuid.UUID             `json:"order_id" gorm:"type:uuid;not null"`
+	Order      orderDTO.ServiceOrder `json:"order" gorm:"foreignKey:OrderID"`
+	SenderID   uuid.UUID             `json:"sender_id" gorm:"type:uuid;not null"`
+	Sender     userDTO.User          `json:"sender" gorm:"foreignKey:SenderID"`
+	ReceiverID uuid.UUID             `json:"receiver_id" gorm:"type:uuid;not null"`
+	Receiver   userDTO.User          `json:"receiver" gorm:"foreignKey:ReceiverID"`
+	Message    string                `json:"message" gorm:"not null"`
+	IsRead     bool                  `json:"is_read" gorm:"default:false"`
+	CreatedAt  time.Time             `json:"created_at"`
+	UpdatedAt  time.Time             `json:"updated_at"`
+	DeletedAt  gorm.DeletedAt        `json:"-" gorm:"index"`
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 }
 
 // TableName returns the table name for ChatMessage
@@ -144,6 +200,7 @@ type ChatMessageRequest struct {
 
 // ChatMessageResponse represents the response payload for chat message data
 type ChatMessageResponse struct {
+<<<<<<< HEAD
 	ID         uuid.UUID            `json:"id"`
 	OrderID    uuid.UUID            `json:"order_id"`
 	Order      ServiceOrderResponse `json:"order"`
@@ -155,6 +212,19 @@ type ChatMessageResponse struct {
 	IsRead     bool                 `json:"is_read"`
 	CreatedAt  time.Time            `json:"created_at"`
 	UpdatedAt  time.Time            `json:"updated_at"`
+=======
+	ID         uuid.UUID                     `json:"id"`
+	OrderID    uuid.UUID                     `json:"order_id"`
+	Order      orderDTO.ServiceOrderResponse `json:"order"`
+	SenderID   uuid.UUID                     `json:"sender_id"`
+	Sender     userDTO.UserResponse          `json:"sender"`
+	ReceiverID uuid.UUID                     `json:"receiver_id"`
+	Receiver   userDTO.UserResponse          `json:"receiver"`
+	Message    string                        `json:"message"`
+	IsRead     bool                          `json:"is_read"`
+	CreatedAt  time.Time                     `json:"created_at"`
+	UpdatedAt  time.Time                     `json:"updated_at"`
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 }
 
 // ToResponse converts ChatMessage to ChatMessageResponse

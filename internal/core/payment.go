@@ -20,15 +20,15 @@ const (
 	PaymentMethodBankTransfer    PaymentMethod = "bank_transfer"
 	PaymentMethodMandiriEchannel PaymentMethod = "mandiri_echannel"
 	PaymentMethodOVO             PaymentMethod = "ovo"
-	PaymentMethodDana             PaymentMethod = "dana"
+	PaymentMethodDana            PaymentMethod = "dana"
 	PaymentMethodShopeePay       PaymentMethod = "shopeepay"
-	PaymentMethodBCAVA            PaymentMethod = "bca_va"
-	PaymentMethodBNIVA            PaymentMethod = "bni_va"
-	PaymentMethodBRIVA            PaymentMethod = "bri_va"
-	PaymentMethodPermataVA        PaymentMethod = "permata_va"
-	PaymentMethodAlfamart         PaymentMethod = "alfamart"
-	PaymentMethodIndomaret        PaymentMethod = "indomaret"
-	PaymentMethodCreditCard        PaymentMethod = "credit_card"
+	PaymentMethodBCAVA           PaymentMethod = "bca_va"
+	PaymentMethodBNIVA           PaymentMethod = "bni_va"
+	PaymentMethodBRIVA           PaymentMethod = "bri_va"
+	PaymentMethodPermataVA       PaymentMethod = "permata_va"
+	PaymentMethodAlfamart        PaymentMethod = "alfamart"
+	PaymentMethodIndomaret       PaymentMethod = "indomaret"
+	PaymentMethodCreditCard      PaymentMethod = "credit_card"
 )
 
 // PaymentStatus represents the status of a payment
@@ -53,7 +53,7 @@ type Payment struct {
 	Status        PaymentStatus  `json:"status" gorm:"not null;default:'pending'"`
 	TransactionID string         `json:"transaction_id,omitempty"` // External payment gateway transaction ID
 	InvoiceNumber string         `json:"invoice_number" gorm:"uniqueIndex;not null"`
-	InvoiceURL    string         `json:"invoice_url,omitempty"` // URL to the invoice
+	InvoiceURL    string         `json:"invoice_url,omitempty"`       // URL to the invoice
 	TaxAmount     float64        `json:"tax_amount" gorm:"default:0"` // PPN 11%
 	Subtotal      float64        `json:"subtotal" gorm:"default:0"`   // Amount before tax
 	PaidAt        *time.Time     `json:"paid_at,omitempty"`
@@ -120,7 +120,7 @@ type MidtransPaymentRequest struct {
 	OrderID       string  `json:"order_id" validate:"required"`
 	Amount        float64 `json:"amount" validate:"required,gt=0"`
 	CustomerEmail string  `json:"customer_email" validate:"required,email"`
-    CustomerPhone string  `json:"customer_phone" validate:"required,phone"`
+	CustomerPhone string  `json:"customer_phone" validate:"required,phone"`
 }
 
 // MidtransPaymentResponse represents the response from Midtrans API
@@ -133,12 +133,12 @@ type MidtransPaymentResponse struct {
 
 // MidtransCallbackPayload represents Midtrans callback/webhook payload
 type MidtransCallbackPayload struct {
-    OrderID           string `json:"order_id"`
-    TransactionID     string `json:"transaction_id"`
-    StatusCode        string `json:"status_code"`
-    GrossAmount       string `json:"gross_amount"`
-    SignatureKey      string `json:"signature_key"`
-    TransactionStatus string `json:"transaction_status"`
+	OrderID           string `json:"order_id"`
+	TransactionID     string `json:"transaction_id"`
+	StatusCode        string `json:"status_code"`
+	GrossAmount       string `json:"gross_amount"`
+	SignatureKey      string `json:"signature_key"`
+	TransactionStatus string `json:"transaction_status"`
 }
 
 // Invoice represents an invoice

@@ -34,5 +34,3 @@ func redirectToHTTPS(c *gin.Context) {
 	c.Redirect(http.StatusMovedPermanently, url.String())
 	c.Abort()
 }
-
-

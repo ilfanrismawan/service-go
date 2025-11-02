@@ -2,8 +2,13 @@ package repository
 
 import (
 	"context"
+<<<<<<< HEAD
 	"service/internal/core"
 	"service/internal/database"
+=======
+	"service/internal/payments/dto"
+	"service/internal/shared/database"
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	"sort"
 	"sync"
 	"time"
@@ -17,13 +22,21 @@ type PaymentRepository struct {
 	db       *gorm.DB
 	inMemory bool
 	mu       sync.RWMutex
+<<<<<<< HEAD
 	payments map[uuid.UUID]*core.Payment
+=======
+	payments map[uuid.UUID]*dto.Payment
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 }
 
 // NewPaymentRepository creates a new payment repository
 func NewPaymentRepository() *PaymentRepository {
 	if database.DB == nil {
+<<<<<<< HEAD
 		m := make(map[uuid.UUID]*core.Payment)
+=======
+		m := make(map[uuid.UUID]*dto.Payment)
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		return &PaymentRepository{
 			db:       nil,
 			inMemory: true,
@@ -36,7 +49,11 @@ func NewPaymentRepository() *PaymentRepository {
 }
 
 // Create creates a new payment
+<<<<<<< HEAD
 func (r *PaymentRepository) Create(ctx context.Context, payment *core.Payment) error {
+=======
+func (r *PaymentRepository) Create(ctx context.Context, payment *dto.Payment) error {
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	if r.inMemory {
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -53,7 +70,11 @@ func (r *PaymentRepository) Create(ctx context.Context, payment *core.Payment) e
 }
 
 // GetByID retrieves a payment by ID
+<<<<<<< HEAD
 func (r *PaymentRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.Payment, error) {
+=======
+func (r *PaymentRepository) GetByID(ctx context.Context, id uuid.UUID) (*dto.Payment, error) {
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
@@ -63,7 +84,11 @@ func (r *PaymentRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.Pa
 		}
 		return p, nil
 	}
+<<<<<<< HEAD
 	var payment core.Payment
+=======
+	var payment dto.Payment
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Order.Customer").
@@ -76,7 +101,11 @@ func (r *PaymentRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.Pa
 }
 
 // GetByInvoiceNumber retrieves a payment by invoice number
+<<<<<<< HEAD
 func (r *PaymentRepository) GetByInvoiceNumber(ctx context.Context, invoiceNumber string) (*core.Payment, error) {
+=======
+func (r *PaymentRepository) GetByInvoiceNumber(ctx context.Context, invoiceNumber string) (*dto.Payment, error) {
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
@@ -87,7 +116,11 @@ func (r *PaymentRepository) GetByInvoiceNumber(ctx context.Context, invoiceNumbe
 		}
 		return nil, gorm.ErrRecordNotFound
 	}
+<<<<<<< HEAD
 	var payment core.Payment
+=======
+	var payment dto.Payment
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Order.Customer").
@@ -100,7 +133,11 @@ func (r *PaymentRepository) GetByInvoiceNumber(ctx context.Context, invoiceNumbe
 }
 
 // GetByTransactionID retrieves a payment by its transaction ID
+<<<<<<< HEAD
 func (r *PaymentRepository) GetByTransactionID(ctx context.Context, transactionID string) (*core.Payment, error) {
+=======
+func (r *PaymentRepository) GetByTransactionID(ctx context.Context, transactionID string) (*dto.Payment, error) {
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
@@ -111,7 +148,11 @@ func (r *PaymentRepository) GetByTransactionID(ctx context.Context, transactionI
 		}
 		return nil, gorm.ErrRecordNotFound
 	}
+<<<<<<< HEAD
 	var payment core.Payment
+=======
+	var payment dto.Payment
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Order.Customer").
@@ -124,7 +165,11 @@ func (r *PaymentRepository) GetByTransactionID(ctx context.Context, transactionI
 }
 
 // Update updates a payment
+<<<<<<< HEAD
 func (r *PaymentRepository) Update(ctx context.Context, payment *core.Payment) error {
+=======
+func (r *PaymentRepository) Update(ctx context.Context, payment *dto.Payment) error {
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	if r.inMemory {
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -149,6 +194,7 @@ func (r *PaymentRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		delete(r.payments, id)
 		return nil
 	}
+<<<<<<< HEAD
 	return r.db.WithContext(ctx).Delete(&core.Payment{}, "id = ?", id).Error
 }
 
@@ -158,6 +204,17 @@ func (r *PaymentRepository) List(ctx context.Context, offset, limit int, filters
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 		var list []*core.Payment
+=======
+	return r.db.WithContext(ctx).Delete(&dto.Payment{}, "id = ?", id).Error
+}
+
+// List retrieves payments with pagination
+func (r *PaymentRepository) List(ctx context.Context, offset, limit int, filters *PaymentFilters) ([]*dto.Payment, int64, error) {
+	if r.inMemory {
+		r.mu.RLock()
+		defer r.mu.RUnlock()
+		var list []*dto.Payment
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		for _, p := range r.payments {
 			if filters != nil {
 				if filters.OrderID != nil && p.OrderID != *filters.OrderID {
@@ -175,7 +232,11 @@ func (r *PaymentRepository) List(ctx context.Context, offset, limit int, filters
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		total := int64(len(list))
 		if offset > len(list) {
+<<<<<<< HEAD
 			return []*core.Payment{}, total, nil
+=======
+			return []*dto.Payment{}, total, nil
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		}
 		end := offset + limit
 		if end > len(list) {
@@ -183,10 +244,17 @@ func (r *PaymentRepository) List(ctx context.Context, offset, limit int, filters
 		}
 		return list[offset:end], total, nil
 	}
+<<<<<<< HEAD
 	var payments []*core.Payment
 	var total int64
 
 	query := r.db.WithContext(ctx).Model(&core.Payment{})
+=======
+	var payments []*dto.Payment
+	var total int64
+
+	query := r.db.WithContext(ctx).Model(&dto.Payment{})
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 
 	if filters != nil {
 		if filters.OrderID != nil {
@@ -224,11 +292,19 @@ func (r *PaymentRepository) List(ctx context.Context, offset, limit int, filters
 }
 
 // GetByOrderID retrieves payments by order ID
+<<<<<<< HEAD
 func (r *PaymentRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID) ([]*core.Payment, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 		var list []*core.Payment
+=======
+func (r *PaymentRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID) ([]*dto.Payment, error) {
+	if r.inMemory {
+		r.mu.RLock()
+		defer r.mu.RUnlock()
+		var list []*dto.Payment
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		for _, p := range r.payments {
 			if p.OrderID == orderID {
 				list = append(list, p)
@@ -237,7 +313,11 @@ func (r *PaymentRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID)
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		return list, nil
 	}
+<<<<<<< HEAD
 	var payments []*core.Payment
+=======
+	var payments []*dto.Payment
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Order.Customer").
@@ -249,11 +329,19 @@ func (r *PaymentRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID)
 }
 
 // GetByStatus retrieves payments by status
+<<<<<<< HEAD
 func (r *PaymentRepository) GetByStatus(ctx context.Context, status core.PaymentStatus) ([]*core.Payment, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 		var list []*core.Payment
+=======
+func (r *PaymentRepository) GetByStatus(ctx context.Context, status dto.PaymentStatus) ([]*dto.Payment, error) {
+	if r.inMemory {
+		r.mu.RLock()
+		defer r.mu.RUnlock()
+		var list []*dto.Payment
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		for _, p := range r.payments {
 			if p.Status == status {
 				list = append(list, p)
@@ -262,7 +350,11 @@ func (r *PaymentRepository) GetByStatus(ctx context.Context, status core.Payment
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		return list, nil
 	}
+<<<<<<< HEAD
 	var payments []*core.Payment
+=======
+	var payments []*dto.Payment
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Order.Customer").
@@ -289,7 +381,11 @@ func (r *PaymentRepository) CheckInvoiceExists(ctx context.Context, invoiceNumbe
 		return false, nil
 	}
 	var count int64
+<<<<<<< HEAD
 	query := r.db.WithContext(ctx).Model(&core.Payment{}).Where("invoice_number = ?", invoiceNumber)
+=======
+	query := r.db.WithContext(ctx).Model(&dto.Payment{}).Where("invoice_number = ?", invoiceNumber)
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 
 	if excludeID != nil {
 		query = query.Where("id != ?", *excludeID)
@@ -306,16 +402,26 @@ func (r *PaymentRepository) GetTotalRevenueByDateRange(ctx context.Context, star
 		defer r.mu.RUnlock()
 		var total float64
 		for _, p := range r.payments {
+<<<<<<< HEAD
 			if !p.CreatedAt.Before(startDate) && !p.CreatedAt.After(endDate) && p.Status == core.PaymentStatusPaid {
+=======
+			if !p.CreatedAt.Before(startDate) && !p.CreatedAt.After(endDate) && p.Status == dto.PaymentStatusPaid {
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 				total += p.Amount
 			}
 		}
 		return total, nil
 	}
 	var total float64
+<<<<<<< HEAD
 	err := r.db.WithContext(ctx).Model(&core.Payment{}).
 		Select("COALESCE(SUM(amount), 0)").
 		Where("created_at >= ? AND created_at <= ? AND status = ?", startDate, endDate, core.PaymentStatusPaid).
+=======
+	err := r.db.WithContext(ctx).Model(&dto.Payment{}).
+		Select("COALESCE(SUM(amount), 0)").
+		Where("created_at >= ? AND created_at <= ? AND status = ?", startDate, endDate, dto.PaymentStatusPaid).
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		Scan(&total).Error
 	return total, err
 }
@@ -331,17 +437,28 @@ func (r *PaymentRepository) GetRevenueByBranchInDateRange(ctx context.Context, s
 		defer r.mu.RUnlock()
 		m := make(map[string]float64)
 		for _, p := range r.payments {
+<<<<<<< HEAD
 			if !p.CreatedAt.Before(startDate) && !p.CreatedAt.After(endDate) && p.Status == core.PaymentStatusPaid {
+=======
+			if !p.CreatedAt.Before(startDate) && !p.CreatedAt.After(endDate) && p.Status == dto.PaymentStatusPaid {
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 				m[p.OrderID.String()] += p.Amount
 			}
 		}
 		return m, nil
 	}
 
+<<<<<<< HEAD
 	err := r.db.WithContext(ctx).Model(&core.Payment{}).
 		Select("o.branch_id, COALESCE(SUM(p.amount), 0) as revenue").
 		Joins("JOIN service_orders o ON p.order_id = o.id").
 		Where("p.created_at >= ? AND p.created_at <= ? AND p.status = ?", startDate, endDate, core.PaymentStatusPaid).
+=======
+	err := r.db.WithContext(ctx).Model(&dto.Payment{}).
+		Select("o.branch_id, COALESCE(SUM(p.amount), 0) as revenue").
+		Joins("JOIN service_orders o ON p.order_id = o.id").
+		Where("p.created_at >= ? AND p.created_at <= ? AND p.status = ?", startDate, endDate, dto.PaymentStatusPaid).
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		Group("o.branch_id").
 		Scan(&results).Error
 
@@ -368,16 +485,26 @@ func (r *PaymentRepository) GetRevenueByPaymentMethodInDateRange(ctx context.Con
 		defer r.mu.RUnlock()
 		m := make(map[string]float64)
 		for _, p := range r.payments {
+<<<<<<< HEAD
 			if !p.CreatedAt.Before(startDate) && !p.CreatedAt.After(endDate) && p.Status == core.PaymentStatusPaid {
+=======
+			if !p.CreatedAt.Before(startDate) && !p.CreatedAt.After(endDate) && p.Status == dto.PaymentStatusPaid {
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 				m[string(p.PaymentMethod)] += p.Amount
 			}
 		}
 		return m, nil
 	}
 
+<<<<<<< HEAD
 	err := r.db.WithContext(ctx).Model(&core.Payment{}).
 		Select("payment_method, COALESCE(SUM(amount), 0) as revenue").
 		Where("created_at >= ? AND created_at <= ? AND status = ?", startDate, endDate, core.PaymentStatusPaid).
+=======
+	err := r.db.WithContext(ctx).Model(&dto.Payment{}).
+		Select("payment_method, COALESCE(SUM(amount), 0) as revenue").
+		Where("created_at >= ? AND created_at <= ? AND status = ?", startDate, endDate, dto.PaymentStatusPaid).
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		Group("payment_method").
 		Scan(&results).Error
 
@@ -396,8 +523,13 @@ func (r *PaymentRepository) GetRevenueByPaymentMethodInDateRange(ctx context.Con
 // PaymentFilters represents filters for payment queries
 type PaymentFilters struct {
 	OrderID       *uuid.UUID
+<<<<<<< HEAD
 	Status        *core.PaymentStatus
 	PaymentMethod *core.PaymentMethod
+=======
+	Status        *dto.PaymentStatus
+	PaymentMethod *dto.PaymentMethod
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	DateFrom      *string
 	DateTo        *string
 }

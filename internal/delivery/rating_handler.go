@@ -377,4 +377,3 @@ func (h *RatingHandler) GetAverageRating(c *gin.Context) {
 
 	c.JSON(http.StatusOK, core.SuccessResponse(average, "Average rating retrieved successfully"))
 }
-

@@ -3,7 +3,11 @@ package delivery
 import (
 	"net/http"
 	"service/internal/core"
+<<<<<<< HEAD
 	"service/internal/orders/service"
+=======
+	branchService "service/internal/branches/service"
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	"service/internal/utils"
 	"strconv"
 
@@ -13,13 +17,13 @@ import (
 
 // BranchHandler handles branch endpoints
 type BranchHandler struct {
-	branchService *service.BranchService
+	branchService *branchService.BranchService
 }
 
 // NewBranchHandler creates a new branch handler
 func NewBranchHandler() *BranchHandler {
 	return &BranchHandler{
-		branchService: service.NewBranchService(),
+		branchService: branchService.NewBranchService(),
 	}
 }
 

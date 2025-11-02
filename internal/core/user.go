@@ -47,7 +47,7 @@ type UserRequest struct {
 	Email    string   `json:"email" validate:"required,email"`
 	Password string   `json:"password" validate:"required,min=6"`
 	FullName string   `json:"full_name" validate:"required"`
-    Phone    string   `json:"phone" validate:"required,phone"`
+	Phone    string   `json:"phone" validate:"required,phone"`
 	Role     UserRole `json:"role" validate:"required"`
 	BranchID *string  `json:"branch_id,omitempty"`
 }

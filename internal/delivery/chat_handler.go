@@ -3,7 +3,11 @@ package delivery
 import (
 	"net/http"
 	"service/internal/core"
+<<<<<<< HEAD
 	"service/internal/orders/service"
+=======
+	chatService "service/internal/shared/service"
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	"service/internal/utils"
 	"strconv"
 
@@ -13,13 +17,13 @@ import (
 
 // ChatHandler handles chat endpoints
 type ChatHandler struct {
-	chatService *service.ChatService
+	chatService *chatService.ChatService
 }
 
 // NewChatHandler creates a new chat handler
 func NewChatHandler() *ChatHandler {
 	return &ChatHandler{
-		chatService: service.NewChatService(),
+		chatService: chatService.NewChatService(),
 	}
 }
 

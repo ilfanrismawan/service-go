@@ -243,8 +243,8 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
-    // Sanitize free-text notes
-    utils.SanitizeStructStrings(&req)
+	// Sanitize free-text notes
+	utils.SanitizeStructStrings(&req)
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {

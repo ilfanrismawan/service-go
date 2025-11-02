@@ -106,4 +106,3 @@ type SparePartInventoryFilters struct {
 	Supplier     string
 	LowStockOnly bool
 }
-

@@ -11,22 +11,22 @@ import (
 type QueueStatus string
 
 const (
-	QueueStatusWaiting  QueueStatus = "waiting"
-	QueueStatusServed   QueueStatus = "served"
+	QueueStatusWaiting   QueueStatus = "waiting"
+	QueueStatusServed    QueueStatus = "served"
 	QueueStatusCancelled QueueStatus = "cancelled"
 )
 
 // Queue represents a queue for walk-in customers
 type Queue struct {
-	ID         uuid.UUID   `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
-	BranchID   uuid.UUID   `json:"branch_id" gorm:"type:uuid;not null"`
-	Branch     Branch      `json:"branch" gorm:"foreignKey:BranchID"`
-	QueueNo    string      `json:"queue_no" gorm:"not null"` // "A001"
-	CustomerID *uuid.UUID  `json:"customer_id,omitempty" gorm:"type:uuid"`
-	Customer   *User       `json:"customer,omitempty" gorm:"foreignKey:CustomerID"`
-	Status     QueueStatus `json:"status" gorm:"not null;default:'waiting'"`
-	CreatedAt  time.Time   `json:"created_at"`
-	UpdatedAt  time.Time   `json:"updated_at"`
+	ID         uuid.UUID      `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	BranchID   uuid.UUID      `json:"branch_id" gorm:"type:uuid;not null"`
+	Branch     Branch         `json:"branch" gorm:"foreignKey:BranchID"`
+	QueueNo    string         `json:"queue_no" gorm:"not null"` // "A001"
+	CustomerID *uuid.UUID     `json:"customer_id,omitempty" gorm:"type:uuid"`
+	Customer   *User          `json:"customer,omitempty" gorm:"foreignKey:CustomerID"`
+	Status     QueueStatus    `json:"status" gorm:"not null;default:'waiting'"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
 	DeletedAt  gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
@@ -34,4 +34,3 @@ type Queue struct {
 func (Queue) TableName() string {
 	return "queues"
 }
-

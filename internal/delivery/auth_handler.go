@@ -46,8 +46,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-    // Sanitize strings to prevent XSS
-    utils.SanitizeStructStrings(&req)
+	// Sanitize strings to prevent XSS
+	utils.SanitizeStructStrings(&req)
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
@@ -258,27 +258,27 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 // @Failure 401 {object} core.ErrorResponse
 // @Router /auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
-    var req core.RefreshTokenRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
-            "validation_error",
-            "Invalid request data",
-            err.Error(),
-        ))
-        return
-    }
+	var req core.RefreshTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+			"validation_error",
+			"Invalid request data",
+			err.Error(),
+		))
+		return
+	}
 
-    if err := h.authService.Logout(c.Request.Context(), req.RefreshToken); err != nil {
-        status := http.StatusUnauthorized
-        c.JSON(status, core.CreateErrorResponse(
-            "logout_failed",
-            err.Error(),
-            nil,
-        ))
-        return
-    }
+	if err := h.authService.Logout(c.Request.Context(), req.RefreshToken); err != nil {
+		status := http.StatusUnauthorized
+		c.JSON(status, core.CreateErrorResponse(
+			"logout_failed",
+			err.Error(),
+			nil,
+		))
+		return
+	}
 
-    c.JSON(http.StatusOK, core.SuccessResponse(nil, "Logged out"))
+	c.JSON(http.StatusOK, core.SuccessResponse(nil, "Logged out"))
 }
 
 // GetProfile godoc
@@ -377,8 +377,8 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-    // Sanitize strings to prevent XSS
-    utils.SanitizeStructStrings(&req)
+	// Sanitize strings to prevent XSS
+	utils.SanitizeStructStrings(&req)
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {

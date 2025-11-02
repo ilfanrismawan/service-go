@@ -508,8 +508,8 @@ func (h *MembershipHandler) StartTrial(c *gin.Context) {
 	}
 
 	tier := core.MembershipTier(tierStr)
-	if tier != core.MembershipTierBasic && tier != core.MembershipTierPremium && 
-	   tier != core.MembershipTierVIP && tier != core.MembershipTierElite {
+	if tier != core.MembershipTierBasic && tier != core.MembershipTierPremium &&
+		tier != core.MembershipTierVIP && tier != core.MembershipTierElite {
 		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
 			"validation_error",
 			"Invalid tier. Must be one of: basic, premium, vip, elite",
@@ -585,8 +585,8 @@ func (h *MembershipHandler) UpgradeMembership(c *gin.Context) {
 	tier := core.MembershipTier(tierStr)
 	subscriptionType := core.SubscriptionType(subscriptionTypeStr)
 
-	if tier != core.MembershipTierBasic && tier != core.MembershipTierPremium && 
-	   tier != core.MembershipTierVIP && tier != core.MembershipTierElite {
+	if tier != core.MembershipTierBasic && tier != core.MembershipTierPremium &&
+		tier != core.MembershipTierVIP && tier != core.MembershipTierElite {
 		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
 			"validation_error",
 			"Invalid tier. Must be one of: basic, premium, vip, elite",

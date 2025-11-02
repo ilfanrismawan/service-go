@@ -182,10 +182,10 @@ func (r *NotificationRepository) MarkAsFailed(ctx context.Context, id uuid.UUID)
 
 // NotificationFilters represents filters for notification queries
 type NotificationFilters struct {
-	UserID    *uuid.UUID
-	OrderID   *uuid.UUID
-	Type      *core.NotificationType
-	Status    *core.NotificationStatus
-	DateFrom  *string
-	DateTo    *string
+	UserID   *uuid.UUID
+	OrderID  *uuid.UUID
+	Type     *core.NotificationType
+	Status   *core.NotificationStatus
+	DateFrom *string
+	DateTo   *string
 }

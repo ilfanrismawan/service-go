@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 package core
+=======
+package model
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 
 import (
 	"time"
@@ -29,8 +33,13 @@ type FileUploadRequest struct {
 
 // OrderPhotoUploadRequest represents the request for order photo upload
 type OrderPhotoUploadRequest struct {
+<<<<<<< HEAD
 	OrderID    string `json:"order_id" validate:"required"`
 	PhotoType  string `json:"photo_type" validate:"required,oneof=pickup service delivery"`
+=======
+	OrderID   string `json:"order_id" validate:"required"`
+	PhotoType string `json:"photo_type" validate:"required,oneof=pickup service delivery"`
+>>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 }
 
 // UserAvatarUploadRequest represents the request for user avatar upload
