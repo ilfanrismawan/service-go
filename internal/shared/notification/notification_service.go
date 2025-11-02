@@ -1,15 +1,16 @@
 package notification
 
 import (
-    "bytes"
+	"bytes"
 	"context"
-    "encoding/json"
+	"encoding/json"
 	"fmt"
 	"log"
-    "net/http"
-    "service/internal/shared/config"
-	"service/internal/shared/model"
+	"net/http"
+	"service/internal/core"
 	"service/internal/repository"
+	"service/internal/shared/config"
+	"service/internal/shared/model"
 	"time"
 
 	"github.com/google/uuid"
@@ -61,7 +62,8 @@ func (s *NotificationService) SendWhatsAppNotification(ctx context.Context, phon
 // SendWhatsAppNotificationWithTemplate sends WhatsApp notification using template
 func (s *NotificationService) SendWhatsAppNotificationWithTemplate(ctx context.Context, phone string, templateType WhatsAppTemplateType, templateData map[string]interface{}, fallbackMessage string) error {
 	// If no API key configured, fallback to mock to keep dev UX smooth
-	if config.Config == nil || (config.Config.TwilioAuthToken == "" && config.Config.FirebaseServerKey == "") { /* noop */ }
+	if config.Config == nil || (config.Config.TwilioAuthToken == "" && config.Config.FirebaseServerKey == "") { /* noop */
+	}
 	apiKey := config.Config.WhatsAppAPIKey
 
 	// Determine message content
@@ -348,9 +350,9 @@ func (s *NotificationService) SendPaymentNotification(ctx context.Context, order
 
 	// Send notifications through multiple channels with WhatsApp template
 	templateData := map[string]interface{}{
-		"order_number": order.OrderNumber,
-		"amount":       order.ActualCost,
-		"due_date":     time.Now().Add(24 * time.Hour),
+		"order_number":  order.OrderNumber,
+		"amount":        order.ActualCost,
+		"due_date":      time.Now().Add(24 * time.Hour),
 		"customer_name": user.FullName,
 	}
 	templateType := TemplatePaymentReminder
@@ -494,4 +496,92 @@ func (s *NotificationService) SendSystemNotification(ctx context.Context, messag
 	}
 
 	return nil
+}
+
+// SendNotification sends a custom notification
+func (s *NotificationService) SendNotification(ctx context.Context, req *core.NotificationRequest) (*core.Notification, error) {
+	// Parse user ID
+	userID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		return nil, core.ErrUserNotFound
+	}
+
+	// Get user details
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, core.ErrUserNotFound
+	}
+
+	// Parse order ID if provided
+	var orderID *uuid.UUID
+	if req.OrderID != nil && *req.OrderID != "" {
+		parsed, err := uuid.Parse(*req.OrderID)
+		if err == nil {
+			orderID = &parsed
+		}
+	}
+
+	// Create notification record
+	notification := &core.Notification{
+		UserID:    user.ID,
+		OrderID:   orderID,
+		Type:      req.Type,
+		Message:   req.Message,
+		IsRead:    false,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	// Save notification to database
+	if err := s.notificationRepo.Create(ctx, notification); err != nil {
+		return nil, fmt.Errorf("failed to save notification: %w", err)
+	}
+
+	// Send notifications through multiple channels
+	go s.sendMultiChannelNotification(ctx, user, req.Message, req.Title)
+
+	return notification, nil
+}
+
+// GetNotifications retrieves notifications for a user
+func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.UUID, page, limit int) (*model.PaginatedResponse, error) {
+	offset := (page - 1) * limit
+	notifications, total, err := s.notificationRepo.ListByUserID(ctx, userID, offset, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get notifications: %w", err)
+	}
+
+	var responses []interface{}
+	for _, n := range notifications {
+		responses = append(responses, n.ToResponse())
+	}
+
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
+	pagination := model.PaginationResponse{
+		Page:       page,
+		Limit:      limit,
+		Total:      total,
+		TotalPages: totalPages,
+	}
+
+	return &model.PaginatedResponse{
+		Status:     "success",
+		Data:       responses,
+		Pagination: pagination,
+		Message:    "Notifications retrieved successfully",
+		Timestamp:  model.GetCurrentTimestamp(),
+	}, nil
+}
+
+// MarkAsRead marks a notification as read
+func (s *NotificationService) MarkAsRead(ctx context.Context, notificationID uuid.UUID) error {
+	notification, err := s.notificationRepo.GetByID(ctx, notificationID)
+	if err != nil {
+		return fmt.Errorf("failed to get notification: %w", err)
+	}
+
+	notification.IsRead = true
+	notification.UpdatedAt = time.Now()
+
+	return s.notificationRepo.Update(ctx, notification)
 }

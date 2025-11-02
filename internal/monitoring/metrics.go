@@ -11,46 +11,46 @@ import (
 // Metrics holds all Prometheus metrics
 type Metrics struct {
 	// HTTP metrics
-	HTTPRequestsTotal     *prometheus.CounterVec
-	HTTPRequestDuration   *prometheus.HistogramVec
-	HTTPRequestsInFlight  *prometheus.GaugeVec
+	HTTPRequestsTotal    *prometheus.CounterVec
+	HTTPRequestDuration  *prometheus.HistogramVec
+	HTTPRequestsInFlight *prometheus.GaugeVec
 
 	// Business metrics
-	OrdersTotal          *prometheus.CounterVec
-	OrdersByStatus       *prometheus.GaugeVec
-	OrdersByBranch       *prometheus.GaugeVec
-	OrdersByTechnician   *prometheus.GaugeVec
-	OrdersByCourier      *prometheus.GaugeVec
+	OrdersTotal        *prometheus.CounterVec
+	OrdersByStatus     *prometheus.GaugeVec
+	OrdersByBranch     *prometheus.GaugeVec
+	OrdersByTechnician *prometheus.GaugeVec
+	OrdersByCourier    *prometheus.GaugeVec
 
 	// Payment metrics
-	PaymentsTotal        *prometheus.CounterVec
-	PaymentsByMethod     *prometheus.CounterVec
-	PaymentsByStatus     *prometheus.GaugeVec
-	PaymentAmount        *prometheus.HistogramVec
+	PaymentsTotal    *prometheus.CounterVec
+	PaymentsByMethod *prometheus.CounterVec
+	PaymentsByStatus *prometheus.GaugeVec
+	PaymentAmount    *prometheus.HistogramVec
 
 	// User metrics
-	UsersTotal           *prometheus.GaugeVec
-	UsersByRole          *prometheus.GaugeVec
-	UsersByBranch        *prometheus.GaugeVec
-	ActiveUsers          *prometheus.GaugeVec
+	UsersTotal    *prometheus.GaugeVec
+	UsersByRole   *prometheus.GaugeVec
+	UsersByBranch *prometheus.GaugeVec
+	ActiveUsers   *prometheus.GaugeVec
 
 	// Branch metrics
-	BranchesTotal        *prometheus.GaugeVec
-	BranchesByCity       *prometheus.GaugeVec
-	BranchesByProvince   *prometheus.GaugeVec
-	ActiveBranches       *prometheus.GaugeVec
+	BranchesTotal      *prometheus.GaugeVec
+	BranchesByCity     *prometheus.GaugeVec
+	BranchesByProvince *prometheus.GaugeVec
+	ActiveBranches     *prometheus.GaugeVec
 
 	// Notification metrics
-	NotificationsTotal   *prometheus.CounterVec
-	NotificationsByType  *prometheus.CounterVec
-	NotificationsByUser  *prometheus.CounterVec
-	UnreadNotifications  *prometheus.GaugeVec
+	NotificationsTotal  *prometheus.CounterVec
+	NotificationsByType *prometheus.CounterVec
+	NotificationsByUser *prometheus.CounterVec
+	UnreadNotifications *prometheus.GaugeVec
 
 	// System metrics
-	DatabaseConnections  *prometheus.GaugeVec
-	RedisConnections     *prometheus.GaugeVec
-	CacheHitRate         *prometheus.GaugeVec
-	CacheMissRate        *prometheus.GaugeVec
+	DatabaseConnections *prometheus.GaugeVec
+	RedisConnections    *prometheus.GaugeVec
+	CacheHitRate        *prometheus.GaugeVec
+	CacheMissRate       *prometheus.GaugeVec
 }
 
 // NewMetrics creates a new Metrics instance

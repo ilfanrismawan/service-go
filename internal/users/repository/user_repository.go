@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"service/internal/users/dto"
 	"service/internal/shared/database"
+	"service/internal/users/dto"
 	"sort"
 	"sync"
 	"time"

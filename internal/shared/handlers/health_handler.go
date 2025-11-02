@@ -3,8 +3,8 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"service/internal/shared/model"
 	"service/internal/shared/database"
+	"service/internal/shared/model"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -57,7 +57,7 @@ func (h *HealthHandler) HealthCheck(c *gin.Context) {
 		statusCode = http.StatusServiceUnavailable
 	}
 
-	c.JSON(statusCode, core.SuccessResponse(healthData, "Health check completed"))
+	c.JSON(statusCode, model.SuccessResponse(healthData, "Health check completed"))
 }
 
 // LivenessCheck godoc
@@ -69,7 +69,7 @@ func (h *HealthHandler) HealthCheck(c *gin.Context) {
 // @Success 200 {object} core.APIResponse
 // @Router /health/live [get]
 func (h *HealthHandler) LivenessCheck(c *gin.Context) {
-	c.JSON(http.StatusOK, core.SuccessResponse(gin.H{
+	c.JSON(http.StatusOK, model.SuccessResponse(gin.H{
 		"status":    "alive",
 		"timestamp": time.Now().Format(time.RFC3339),
 	}, "Application is alive"))
@@ -110,7 +110,7 @@ func (h *HealthHandler) ReadinessCheck(c *gin.Context) {
 		statusCode = http.StatusServiceUnavailable
 	}
 
-	c.JSON(statusCode, core.SuccessResponse(readinessData, "Readiness check completed"))
+	c.JSON(statusCode, model.SuccessResponse(readinessData, "Readiness check completed"))
 }
 
 // checkDatabase checks database connection health
@@ -248,7 +248,7 @@ func (h *HealthHandler) Metrics(c *gin.Context) {
 		"uptime":    time.Since(startTime).String(),
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(metricsData, "Metrics retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(metricsData, "Metrics retrieved successfully"))
 }
 
 // startTime tracks application start time

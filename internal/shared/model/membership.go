@@ -2,8 +2,8 @@ package model
 
 import (
 	"fmt"
-	"time"
 	userDTO "service/internal/users/dto"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -42,7 +42,7 @@ const (
 type Membership struct {
 	ID                 uuid.UUID        `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
 	UserID             uuid.UUID        `json:"user_id" gorm:"type:uuid;not null;uniqueIndex"`
-	User               userDTO.User             `json:"user" gorm:"foreignKey:UserID"`
+	User               userDTO.User     `json:"user" gorm:"foreignKey:UserID"`
 	Tier               MembershipTier   `json:"tier" gorm:"not null;default:'basic'"`
 	Status             MembershipStatus `json:"status" gorm:"not null;default:'trial'"`
 	SubscriptionType   SubscriptionType `json:"subscription_type" gorm:"not null;default:'monthly'"`

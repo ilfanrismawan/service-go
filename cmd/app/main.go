@@ -22,17 +22,17 @@
 package main
 
 import (
-    "context"
+	"context"
 	"log"
 	_ "service/docs" // Import docs for Swagger
+	svc "service/internal/payments/service"
+	"service/internal/router"
 	"service/internal/shared/config"
 	"service/internal/shared/database"
-	"service/internal/router"
 	"service/internal/shared/middleware"
-    "service/internal/shared/monitoring"
+	"service/internal/shared/monitoring"
 	"service/internal/shared/utils"
-	svc "service/internal/payments/service"
-    "time"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,10 +41,10 @@ func main() {
 	// Load configuration
 	config.LoadConfig()
 
-    // Initialize Sentry (if DSN is provided)
-    if err := middleware.InitSentry(config.Config.SentryDSN, config.Config.Environment); err != nil {
-        log.Printf("Failed to initialize Sentry: %v", err)
-    }
+	// Initialize Sentry (if DSN is provided)
+	if err := middleware.InitSentry(config.Config.SentryDSN, config.Config.Environment); err != nil {
+		log.Printf("Failed to initialize Sentry: %v", err)
+	}
 
 	// Initialize database
 	database.InitPostgres()
@@ -58,16 +58,16 @@ func main() {
 	// Setup Gin router
 	r := setupRouter()
 
-    // Start background reconciliation job
-    go func() {
-        ticker := time.NewTicker(config.Config.ReconcileInterval)
-        defer ticker.Stop()
-        ps := svc.NewPaymentService()
-        for {
-            <-ticker.C
-            _ = ps.ReconcilePendingPayments(context.Background())
-        }
-    }()
+	// Start background reconciliation job
+	go func() {
+		ticker := time.NewTicker(config.Config.ReconcileInterval)
+		defer ticker.Stop()
+		ps := svc.NewPaymentService()
+		for {
+			<-ticker.C
+			_ = ps.ReconcilePendingPayments(context.Background())
+		}
+	}()
 
 	// Start server
 	log.Printf("🚀 iPhone Service API starting on port %s\n", config.Config.Port)
@@ -88,10 +88,10 @@ func setupRouter() *gin.Engine {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-    r := gin.New()
+	r := gin.New()
 
-    // Initialize metrics and expose Prometheus endpoint
-    metrics := monitoring.NewMetrics()
+	// Initialize metrics and expose Prometheus endpoint
+	metrics := monitoring.NewMetrics()
 
 	// Enable CORS for Swagger UI
 	r.Use(func(c *gin.Context) {
@@ -109,28 +109,28 @@ func setupRouter() *gin.Engine {
 	})
 
 	// Add middleware
-    r.Use(middleware.CORSMiddleware())
-    // Sentry capture middleware (only if DSN is set)
-    if config.Config.SentryDSN != "" {
-        r.Use(middleware.SentryMiddleware())
-    }
-    // Enforce HTTPS only in production
-    if config.Config.Environment == "production" {
-        r.Use(middleware.HTTPSRedirectMiddleware())
-    }
+	r.Use(middleware.CORSMiddleware())
+	// Sentry capture middleware (only if DSN is set)
+	if config.Config.SentryDSN != "" {
+		r.Use(middleware.SentryMiddleware())
+	}
+	// Enforce HTTPS only in production
+	if config.Config.Environment == "production" {
+		r.Use(middleware.HTTPSRedirectMiddleware())
+	}
 	r.Use(middleware.RequestIDMiddleware())
 	r.Use(middleware.SecurityHeadersMiddleware())
-    r.Use(middleware.MetricsMiddleware(metrics))
+	r.Use(middleware.MetricsMiddleware(metrics))
 	r.Use(middleware.LoggingMiddleware())
 	r.Use(middleware.ErrorLoggingMiddleware())
 	r.Use(middleware.SecurityLoggingMiddleware())
 	r.Use(middleware.PerformanceLoggingMiddleware())
 	r.Use(gin.Recovery())
 
-    // Expose Prometheus metrics at /metrics (no auth)
-    r.GET("/metrics", middleware.PrometheusHandler())
+	// Expose Prometheus metrics at /metrics (no auth)
+	r.GET("/metrics", middleware.PrometheusHandler())
 
-    // Setup API routes
+	// Setup API routes
 	router.SetupRoutes(r)
 
 	return r

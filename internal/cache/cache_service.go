@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"service/internal/branches/dto"
-	"service/internal/shared/model"
 	orderDTO "service/internal/orders/dto"
 	"service/internal/shared/database"
+	"service/internal/shared/model"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,14 +15,14 @@ import (
 
 const (
 	// Cache TTL
-	CacheTTL_Branch      = 30 * time.Minute
-	CacheTTL_Membership  = 15 * time.Minute
+	CacheTTL_Branch       = 30 * time.Minute
+	CacheTTL_Membership   = 15 * time.Minute
 	CacheTTL_ServicePrice = 1 * time.Hour
-	
+
 	// Cache keys prefix
-	CacheKey_Branch      = "branch:%s"
-	CacheKey_BranchList  = "branches:list"
-	CacheKey_Membership  = "membership:%s"
+	CacheKey_Branch       = "branch:%s"
+	CacheKey_BranchList   = "branches:list"
+	CacheKey_Membership   = "membership:%s"
 	CacheKey_ServicePrice = "service_price:%s"
 )
 
@@ -167,4 +167,3 @@ func (c *CacheService) SetServicePrice(ctx context.Context, serviceType orderDTO
 
 	return database.Redis.Set(ctx, key, data, CacheTTL_ServicePrice).Err()
 }
-

@@ -10,12 +10,12 @@ import (
 type WhatsAppTemplateType string
 
 const (
-	TemplateOrderConfirmation WhatsAppTemplateType = "order_confirmation"
-	TemplateStatusUpdate      WhatsAppTemplateType = "status_update"
-	TemplatePaymentReminder   WhatsAppTemplateType = "payment_reminder"
-	TemplatePickupNotification WhatsAppTemplateType = "pickup_notification"
+	TemplateOrderConfirmation    WhatsAppTemplateType = "order_confirmation"
+	TemplateStatusUpdate         WhatsAppTemplateType = "status_update"
+	TemplatePaymentReminder      WhatsAppTemplateType = "payment_reminder"
+	TemplatePickupNotification   WhatsAppTemplateType = "pickup_notification"
 	TemplateDeliveryNotification WhatsAppTemplateType = "delivery_notification"
-	TemplatePromoMessage      WhatsAppTemplateType = "promo_message"
+	TemplatePromoMessage         WhatsAppTemplateType = "promo_message"
 )
 
 // GetWhatsAppTemplate returns formatted WhatsApp message based on template type
@@ -189,4 +189,3 @@ func getStatusText(status string) string {
 	}
 	return status
 }
-

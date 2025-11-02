@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"service/internal/core"
 	"service/internal/shared/model"
 	service "service/internal/shared/service"
 	"service/internal/shared/utils"
@@ -39,7 +40,7 @@ func NewMembershipHandler() *MembershipHandler {
 func (h *MembershipHandler) CreateMembership(c *gin.Context) {
 	var req core.MembershipRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -49,7 +50,7 @@ func (h *MembershipHandler) CreateMembership(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -60,7 +61,7 @@ func (h *MembershipHandler) CreateMembership(c *gin.Context) {
 	// Get user ID from context (set by auth middleware)
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User not authenticated",
 			nil,
@@ -70,7 +71,7 @@ func (h *MembershipHandler) CreateMembership(c *gin.Context) {
 
 	membership, err := h.membershipService.CreateMembership(c.Request.Context(), userID.(uuid.UUID), req.Tier)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"membership_creation_failed",
 			err.Error(),
 			nil,
@@ -78,7 +79,7 @@ func (h *MembershipHandler) CreateMembership(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, core.SuccessResponse(membership.ToResponse(), "Membership created successfully"))
+	c.JSON(http.StatusCreated, model.SuccessResponse(membership.ToResponse(), "Membership created successfully"))
 }
 
 // GetMembership godoc
@@ -97,7 +98,7 @@ func (h *MembershipHandler) GetMembership(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User not authenticated",
 			nil,
@@ -107,7 +108,7 @@ func (h *MembershipHandler) GetMembership(c *gin.Context) {
 
 	membership, err := h.membershipService.GetMembership(c.Request.Context(), userID.(uuid.UUID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, core.CreateErrorResponse(
+		c.JSON(http.StatusNotFound, model.CreateErrorResponse(
 			"membership_not_found",
 			err.Error(),
 			nil,
@@ -115,7 +116,7 @@ func (h *MembershipHandler) GetMembership(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(membership.ToResponse(), "Membership retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(membership.ToResponse(), "Membership retrieved successfully"))
 }
 
 // UpdateMembership godoc
@@ -135,7 +136,7 @@ func (h *MembershipHandler) GetMembership(c *gin.Context) {
 func (h *MembershipHandler) UpdateMembership(c *gin.Context) {
 	var req core.MembershipRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -145,7 +146,7 @@ func (h *MembershipHandler) UpdateMembership(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -156,7 +157,7 @@ func (h *MembershipHandler) UpdateMembership(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User not authenticated",
 			nil,
@@ -166,7 +167,7 @@ func (h *MembershipHandler) UpdateMembership(c *gin.Context) {
 
 	membership, err := h.membershipService.UpdateMembership(c.Request.Context(), userID.(uuid.UUID), &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"membership_update_failed",
 			err.Error(),
 			nil,
@@ -174,7 +175,7 @@ func (h *MembershipHandler) UpdateMembership(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(membership.ToResponse(), "Membership updated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(membership.ToResponse(), "Membership updated successfully"))
 }
 
 // ListMemberships godoc
@@ -224,7 +225,7 @@ func (h *MembershipHandler) ListMemberships(c *gin.Context) {
 
 	memberships, total, err := h.membershipService.ListMemberships(c.Request.Context(), page, limit, tierPtr, statusPtr)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"membership_list_failed",
 			err.Error(),
 			nil,
@@ -249,7 +250,7 @@ func (h *MembershipHandler) ListMemberships(c *gin.Context) {
 			TotalPages: int((total + int64(limit) - 1) / int64(limit)),
 		},
 		Message:   "Memberships retrieved successfully",
-		Timestamp: core.GetCurrentTimestamp(),
+		Timestamp: model.GetCurrentTimestamp(),
 	}
 
 	c.JSON(http.StatusOK, paginatedResponse)
@@ -269,7 +270,7 @@ func (h *MembershipHandler) ListMemberships(c *gin.Context) {
 func (h *MembershipHandler) GetMembershipStats(c *gin.Context) {
 	stats, err := h.membershipService.GetMembershipStats(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"membership_stats_failed",
 			err.Error(),
 			nil,
@@ -277,7 +278,7 @@ func (h *MembershipHandler) GetMembershipStats(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(stats, "Membership statistics retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(stats, "Membership statistics retrieved successfully"))
 }
 
 // GetTopSpenders godoc
@@ -302,7 +303,7 @@ func (h *MembershipHandler) GetTopSpenders(c *gin.Context) {
 
 	memberships, err := h.membershipService.GetTopSpenders(c.Request.Context(), limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"top_spenders_failed",
 			err.Error(),
 			nil,
@@ -316,7 +317,7 @@ func (h *MembershipHandler) GetTopSpenders(c *gin.Context) {
 		responses = append(responses, membership.ToResponse())
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(responses, "Top spenders retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(responses, "Top spenders retrieved successfully"))
 }
 
 // RedeemPoints godoc
@@ -335,7 +336,7 @@ func (h *MembershipHandler) GetTopSpenders(c *gin.Context) {
 func (h *MembershipHandler) RedeemPoints(c *gin.Context) {
 	pointsStr := c.Query("points")
 	if pointsStr == "" {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Points parameter is required",
 			nil,
@@ -345,7 +346,7 @@ func (h *MembershipHandler) RedeemPoints(c *gin.Context) {
 
 	points, err := strconv.ParseInt(pointsStr, 10, 64)
 	if err != nil || points <= 0 {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid points value",
 			nil,
@@ -356,7 +357,7 @@ func (h *MembershipHandler) RedeemPoints(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User not authenticated",
 			nil,
@@ -366,7 +367,7 @@ func (h *MembershipHandler) RedeemPoints(c *gin.Context) {
 
 	result, err := h.membershipService.RedeemPoints(c.Request.Context(), userID.(uuid.UUID), points)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"points_redemption_failed",
 			err.Error(),
 			nil,
@@ -374,7 +375,7 @@ func (h *MembershipHandler) RedeemPoints(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(result, "Points redeemed successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(result, "Points redeemed successfully"))
 }
 
 // SubscribeToMembership godoc
@@ -393,7 +394,7 @@ func (h *MembershipHandler) RedeemPoints(c *gin.Context) {
 func (h *MembershipHandler) SubscribeToMembership(c *gin.Context) {
 	var req core.SubscriptionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -403,7 +404,7 @@ func (h *MembershipHandler) SubscribeToMembership(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -414,7 +415,7 @@ func (h *MembershipHandler) SubscribeToMembership(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User not authenticated",
 			nil,
@@ -424,7 +425,7 @@ func (h *MembershipHandler) SubscribeToMembership(c *gin.Context) {
 
 	result, err := h.membershipService.SubscribeToMembership(c.Request.Context(), userID.(uuid.UUID), &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"subscription_failed",
 			err.Error(),
 			nil,
@@ -432,7 +433,7 @@ func (h *MembershipHandler) SubscribeToMembership(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, core.SuccessResponse(result, "Subscription created successfully"))
+	c.JSON(http.StatusCreated, model.SuccessResponse(result, "Subscription created successfully"))
 }
 
 // CancelSubscription godoc
@@ -451,7 +452,7 @@ func (h *MembershipHandler) SubscribeToMembership(c *gin.Context) {
 func (h *MembershipHandler) CancelSubscription(c *gin.Context) {
 	var req core.CancelSubscriptionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -462,7 +463,7 @@ func (h *MembershipHandler) CancelSubscription(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User not authenticated",
 			nil,
@@ -472,7 +473,7 @@ func (h *MembershipHandler) CancelSubscription(c *gin.Context) {
 
 	err := h.membershipService.CancelSubscription(c.Request.Context(), userID.(uuid.UUID), &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"cancellation_failed",
 			err.Error(),
 			nil,
@@ -480,7 +481,7 @@ func (h *MembershipHandler) CancelSubscription(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "Subscription cancelled successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(nil, "Subscription cancelled successfully"))
 }
 
 // StartTrial godoc
@@ -499,7 +500,7 @@ func (h *MembershipHandler) CancelSubscription(c *gin.Context) {
 func (h *MembershipHandler) StartTrial(c *gin.Context) {
 	tierStr := c.Query("tier")
 	if tierStr == "" {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Tier parameter is required",
 			nil,
@@ -508,9 +509,9 @@ func (h *MembershipHandler) StartTrial(c *gin.Context) {
 	}
 
 	tier := core.MembershipTier(tierStr)
-	if tier != core.MembershipTierBasic && tier != core.MembershipTierPremium && 
-	   tier != core.MembershipTierVIP && tier != core.MembershipTierElite {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+	if tier != core.MembershipTierBasic && tier != core.MembershipTierPremium &&
+		tier != core.MembershipTierVIP && tier != core.MembershipTierElite {
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid tier. Must be one of: basic, premium, vip, elite",
 			nil,
@@ -521,7 +522,7 @@ func (h *MembershipHandler) StartTrial(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User not authenticated",
 			nil,
@@ -531,7 +532,7 @@ func (h *MembershipHandler) StartTrial(c *gin.Context) {
 
 	membership, err := h.membershipService.StartTrial(c.Request.Context(), userID.(uuid.UUID), tier)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"trial_start_failed",
 			err.Error(),
 			nil,
@@ -539,7 +540,7 @@ func (h *MembershipHandler) StartTrial(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, core.SuccessResponse(membership.ToResponse(), "Trial started successfully"))
+	c.JSON(http.StatusCreated, model.SuccessResponse(membership.ToResponse(), "Trial started successfully"))
 }
 
 // GetMembershipTiers godoc
@@ -552,7 +553,7 @@ func (h *MembershipHandler) StartTrial(c *gin.Context) {
 // @Router /membership/tiers [get]
 func (h *MembershipHandler) GetMembershipTiers(c *gin.Context) {
 	tiers := h.membershipService.GetMembershipTiers(c.Request.Context())
-	c.JSON(http.StatusOK, core.SuccessResponse(tiers, "Membership tiers retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(tiers, "Membership tiers retrieved successfully"))
 }
 
 // UpgradeMembership godoc
@@ -574,7 +575,7 @@ func (h *MembershipHandler) UpgradeMembership(c *gin.Context) {
 	subscriptionTypeStr := c.Query("subscription_type")
 
 	if tierStr == "" || subscriptionTypeStr == "" {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Tier and subscription_type parameters are required",
 			nil,
@@ -585,9 +586,9 @@ func (h *MembershipHandler) UpgradeMembership(c *gin.Context) {
 	tier := core.MembershipTier(tierStr)
 	subscriptionType := core.SubscriptionType(subscriptionTypeStr)
 
-	if tier != core.MembershipTierBasic && tier != core.MembershipTierPremium && 
-	   tier != core.MembershipTierVIP && tier != core.MembershipTierElite {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+	if tier != core.MembershipTierBasic && tier != core.MembershipTierPremium &&
+		tier != core.MembershipTierVIP && tier != core.MembershipTierElite {
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid tier. Must be one of: basic, premium, vip, elite",
 			nil,
@@ -596,7 +597,7 @@ func (h *MembershipHandler) UpgradeMembership(c *gin.Context) {
 	}
 
 	if subscriptionType != core.SubscriptionTypeMonthly && subscriptionType != core.SubscriptionTypeYearly {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid subscription type. Must be one of: monthly, yearly",
 			nil,
@@ -607,7 +608,7 @@ func (h *MembershipHandler) UpgradeMembership(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User not authenticated",
 			nil,
@@ -617,7 +618,7 @@ func (h *MembershipHandler) UpgradeMembership(c *gin.Context) {
 
 	result, err := h.membershipService.UpgradeMembership(c.Request.Context(), userID.(uuid.UUID), tier, subscriptionType)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"upgrade_failed",
 			err.Error(),
 			nil,
@@ -625,7 +626,7 @@ func (h *MembershipHandler) UpgradeMembership(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(result, "Membership upgraded successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(result, "Membership upgraded successfully"))
 }
 
 // GetMembershipUsage godoc
@@ -643,7 +644,7 @@ func (h *MembershipHandler) GetMembershipUsage(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User not authenticated",
 			nil,
@@ -653,7 +654,7 @@ func (h *MembershipHandler) GetMembershipUsage(c *gin.Context) {
 
 	usage, err := h.membershipService.GetMembershipUsage(c.Request.Context(), userID.(uuid.UUID))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"usage_retrieval_failed",
 			err.Error(),
 			nil,
@@ -661,5 +662,5 @@ func (h *MembershipHandler) GetMembershipUsage(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(usage, "Membership usage retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(usage, "Membership usage retrieved successfully"))
 }

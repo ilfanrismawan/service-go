@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"service/internal/shared/model"
 	"service/internal/database"
+	"service/internal/shared/model"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

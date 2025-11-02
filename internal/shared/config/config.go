@@ -60,15 +60,15 @@ type AppConfig struct {
 
 	// Localization
 	DefaultLanguage string
-	Timezone       string
-	Currency       string
-	DateFormat     string
+	Timezone        string
+	Currency        string
+	DateFormat      string
 
-    // Reconciliation
-    ReconcileInterval time.Duration
+	// Reconciliation
+	ReconcileInterval time.Duration
 
-    // Observability
-    SentryDSN string
+	// Observability
+	SentryDSN string
 }
 
 var Config *AppConfig
@@ -114,8 +114,8 @@ func LoadConfig() {
 		TwilioAuthToken:   getEnv("TWILIO_AUTH_TOKEN", ""),
 		TwilioPhoneNumber: getEnv("TWILIO_PHONE_NUMBER", ""),
 		FirebaseServerKey: getEnv("FIREBASE_SERVER_KEY", ""),
-        WhatsAppAPIKey:    getEnv("WHATSAPP_API_KEY", ""),
-        WhatsAppAPIURL:    getEnv("WHATSAPP_API_URL", "https://api.fonnte.com/send"),
+		WhatsAppAPIKey:    getEnv("WHATSAPP_API_KEY", ""),
+		WhatsAppAPIURL:    getEnv("WHATSAPP_API_URL", "https://api.fonnte.com/send"),
 
 		// Email configuration
 		SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
@@ -130,15 +130,15 @@ func LoadConfig() {
 
 		// Localization
 		DefaultLanguage: getEnv("DEFAULT_LANGUAGE", "id-ID"),
-		Timezone:       getEnv("TIMEZONE", "Asia/Jakarta"),
-		Currency:       getEnv("CURRENCY", "IDR"),
-		DateFormat:     getEnv("DATE_FORMAT", "02/01/2006"),
+		Timezone:        getEnv("TIMEZONE", "Asia/Jakarta"),
+		Currency:        getEnv("CURRENCY", "IDR"),
+		DateFormat:      getEnv("DATE_FORMAT", "02/01/2006"),
 
-        // Reconciliation
-        ReconcileInterval: getDurationEnv("RECONCILE_INTERVAL", 5*time.Minute),
+		// Reconciliation
+		ReconcileInterval: getDurationEnv("RECONCILE_INTERVAL", 5*time.Minute),
 
-        // Observability
-        SentryDSN: getEnv("SENTRY_DSN", ""),
+		// Observability
+		SentryDSN: getEnv("SENTRY_DSN", ""),
 	}
 
 	// Fail fast if JWT secret is left as the insecure default (only in production)

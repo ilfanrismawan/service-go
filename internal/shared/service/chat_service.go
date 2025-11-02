@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
+	orderDTO "service/internal/orders/dto"
 	"service/internal/repository"
 	"service/internal/shared/model"
-	orderDTO "service/internal/orders/dto"
 	"time"
 
 	"github.com/google/uuid"
@@ -41,7 +41,7 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID uuid.UUID, req *
 		Message:    req.Message,
 		CreatedAt:  time.Now(),
 	}
-	
+
 	if err := s.chatRepo.Create(ctx, message); err != nil {
 		return nil, err
 	}
@@ -93,3 +93,23 @@ func (s *ChatService) GetUserChats(ctx context.Context, userID uuid.UUID) ([]*or
 	return []*orderDTO.ServiceOrderResponse{}, nil
 }
 
+// MarkAsRead marks a single message as read
+func (s *ChatService) MarkAsRead(ctx context.Context, messageID uuid.UUID) error {
+	message, err := s.chatRepo.GetByID(ctx, messageID)
+	if err != nil {
+		return err
+	}
+	
+	message.IsRead = true
+	return s.chatRepo.Update(ctx, message)
+}
+
+// MarkOrderMessagesAsRead marks all messages in an order as read for a specific user
+func (s *ChatService) MarkOrderMessagesAsRead(ctx context.Context, orderID, userID uuid.UUID) error {
+	return s.chatRepo.MarkOrderMessagesAsRead(ctx, orderID, userID)
+}
+
+// GetUnreadCount gets the count of unread messages for a user
+func (s *ChatService) GetUnreadCount(ctx context.Context, userID uuid.UUID) (int64, error) {
+	return s.chatRepo.GetUnreadCount(ctx, userID)
+}

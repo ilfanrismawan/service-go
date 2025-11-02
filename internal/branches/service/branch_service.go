@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"service/internal/cache"
 	"service/internal/branches/dto"
 	"service/internal/branches/repository"
+	"service/internal/cache"
 	"service/internal/shared/model"
 
 	"github.com/google/uuid"

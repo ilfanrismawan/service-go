@@ -122,16 +122,16 @@ func (s *AuthService) Login(ctx context.Context, req *core.LoginRequest) (*core.
 
 // RefreshToken refreshes access token using refresh token
 func (s *AuthService) RefreshToken(ctx context.Context, req *core.RefreshTokenRequest) (*core.LoginResponse, error) {
-    // Validate refresh token
-    claims, err := utils.ValidateRefreshToken(req.RefreshToken)
+	// Validate refresh token
+	claims, err := utils.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
 		return nil, core.ErrInvalidToken
 	}
 
-    // Check blacklist
-    if revoked, err := utils.IsRefreshTokenRevoked(ctx, req.RefreshToken); err == nil && revoked {
-        return nil, core.ErrInvalidToken
-    }
+	// Check blacklist
+	if revoked, err := utils.IsRefreshTokenRevoked(ctx, req.RefreshToken); err == nil && revoked {
+		return nil, core.ErrInvalidToken
+	}
 
 	// Get user by ID
 	user, err := s.userRepo.GetByID(ctx, claims.UserID)
@@ -150,16 +150,16 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *core.RefreshTokenRe
 		return nil, err
 	}
 
-    // Generate new refresh token (rotation)
-    refreshToken, err := utils.GenerateRefreshToken(user.ID)
+	// Generate new refresh token (rotation)
+	refreshToken, err := utils.GenerateRefreshToken(user.ID)
 	if err != nil {
 		return nil, err
 	}
 
-    // Revoke old refresh token
-    if parsed, err := utils.ParseRefreshToken(req.RefreshToken); err == nil && parsed.ExpiresAt != nil {
-        _ = utils.RevokeRefreshToken(ctx, req.RefreshToken, parsed.ExpiresAt.Time)
-    }
+	// Revoke old refresh token
+	if parsed, err := utils.ParseRefreshToken(req.RefreshToken); err == nil && parsed.ExpiresAt != nil {
+		_ = utils.RevokeRefreshToken(ctx, req.RefreshToken, parsed.ExpiresAt.Time)
+	}
 
 	// Return login response
 	response := &core.LoginResponse{
@@ -174,11 +174,11 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *core.RefreshTokenRe
 
 // Logout revokes a refresh token
 func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
-    parsed, err := utils.ParseRefreshToken(refreshToken)
-    if err != nil || parsed.ExpiresAt == nil {
-        return core.ErrInvalidToken
-    }
-    return utils.RevokeRefreshToken(ctx, refreshToken, parsed.ExpiresAt.Time)
+	parsed, err := utils.ParseRefreshToken(refreshToken)
+	if err != nil || parsed.ExpiresAt == nil {
+		return core.ErrInvalidToken
+	}
+	return utils.RevokeRefreshToken(ctx, refreshToken, parsed.ExpiresAt.Time)
 }
 
 // ChangePassword changes user password

@@ -58,10 +58,10 @@ func InitPostgres() {
 	}
 
 	// Configure connection pool for better performance
-	sqlDB.SetMaxOpenConns(25)                    // Maximum open connections
-	sqlDB.SetMaxIdleConns(10)                    // Maximum idle connections
-	sqlDB.SetConnMaxLifetime(5 * time.Minute)   // Connection max lifetime
-	sqlDB.SetConnMaxIdleTime(10 * time.Minute)  // Connection max idle time
+	sqlDB.SetMaxOpenConns(25)                  // Maximum open connections
+	sqlDB.SetMaxIdleConns(10)                  // Maximum idle connections
+	sqlDB.SetConnMaxLifetime(5 * time.Minute)  // Connection max lifetime
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute) // Connection max idle time
 
 	log.Println("✅ Connected to PostgreSQL successfully")
 	log.Println("✅ Database connection pool configured")

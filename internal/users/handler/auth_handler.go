@@ -2,10 +2,10 @@ package handler
 
 import (
 	"net/http"
-	"service/internal/users/auth"
-	"service/internal/users/dto"
 	"service/internal/shared/model"
 	"service/internal/shared/utils"
+	"service/internal/users/auth"
+	"service/internal/users/dto"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -47,8 +47,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-    // Sanitize strings to prevent XSS
-    utils.SanitizeStructStrings(&req)
+	// Sanitize strings to prevent XSS
+	utils.SanitizeStructStrings(&req)
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
@@ -259,27 +259,27 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 // @Failure 401 {object} dto.ErrorResponse
 // @Router /auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
-    var req model.RefreshTokenRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
-            "validation_error",
-            "Invalid request data",
-            err.Error(),
-        ))
-        return
-    }
+	var req model.RefreshTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"validation_error",
+			"Invalid request data",
+			err.Error(),
+		))
+		return
+	}
 
-    if err := h.authService.Logout(c.Request.Context(), req.RefreshToken); err != nil {
-        status := http.StatusUnauthorized
-        c.JSON(status, model.CreateErrorResponse(
-            "logout_failed",
-            err.Error(),
-            nil,
-        ))
-        return
-    }
+	if err := h.authService.Logout(c.Request.Context(), req.RefreshToken); err != nil {
+		status := http.StatusUnauthorized
+		c.JSON(status, model.CreateErrorResponse(
+			"logout_failed",
+			err.Error(),
+			nil,
+		))
+		return
+	}
 
-    c.JSON(http.StatusOK, model.SuccessResponse(nil, "Logged out"))
+	c.JSON(http.StatusOK, model.SuccessResponse(nil, "Logged out"))
 }
 
 // GetProfile godoc
@@ -378,8 +378,8 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-    // Sanitize strings to prevent XSS
-    utils.SanitizeStructStrings(&req)
+	// Sanitize strings to prevent XSS
+	utils.SanitizeStructStrings(&req)
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {

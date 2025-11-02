@@ -63,4 +63,3 @@ func DecodeQRCode(img image.Image) (string, error) {
 	// This would require adding a QR decoder library
 	return "", nil
 }
-

@@ -5,10 +5,10 @@ import (
 	"service/internal/orders/dto"
 	"service/internal/orders/repository"
 	"service/internal/orders/service"
-	userRepo "service/internal/users/repository"
-	userDTO "service/internal/users/dto"
 	"service/internal/shared/model"
 	"service/internal/shared/utils"
+	userDTO "service/internal/users/dto"
+	userRepo "service/internal/users/repository"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -247,8 +247,8 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
-    // Sanitize free-text notes
-    utils.SanitizeStructStrings(&req)
+	// Sanitize free-text notes
+	utils.SanitizeStructStrings(&req)
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
@@ -588,7 +588,7 @@ func (h *OrderHandler) GetOrders(c *gin.Context) {
 	}
 
 	// Create paginated response
-		pagination := model.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
@@ -649,7 +649,7 @@ func (h *OrderHandler) GetAllOrders(c *gin.Context) {
 	}
 
 	// Create paginated response
-		pagination := model.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
@@ -815,7 +815,7 @@ func (h *OrderHandler) GetCashierOrders(c *gin.Context) {
 	}
 
 	// Create paginated response
-		pagination := model.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
@@ -875,7 +875,7 @@ func (h *OrderHandler) GetBranchOrders(c *gin.Context) {
 	}
 
 	// Create paginated response
-		pagination := model.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
@@ -944,7 +944,7 @@ func (h *OrderHandler) GetTechnicianOrders(c *gin.Context) {
 	}
 
 	// Create paginated response
-		pagination := model.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
@@ -1013,7 +1013,7 @@ func (h *OrderHandler) GetCourierOrders(c *gin.Context) {
 	}
 
 	// Create paginated response
-		pagination := model.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
@@ -1061,7 +1061,7 @@ func (h *OrderHandler) GetAvailableJobs(c *gin.Context) {
 	}
 
 	// Create paginated response
-		pagination := model.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,

@@ -30,25 +30,25 @@ func NewFCMService() *FCMService {
 // FCMMessage represents FCM message payload
 type FCMMessage struct {
 	To               string                 `json:"to,omitempty"`               // Single device token
-	RegistrationIDs  []string                `json:"registration_ids,omitempty"` // Multiple device tokens
-	Condition        string                  `json:"condition,omitempty"`         // Topic condition
-	Notification     *FCMNotification        `json:"notification,omitempty"`
-	Data             map[string]interface{}  `json:"data,omitempty"`
-	Priority         string                  `json:"priority,omitempty"`         // "normal" or "high"
-	ContentAvailable bool                    `json:"content_available,omitempty"`
-	MutableContent   bool                    `json:"mutable_content,omitempty"`
+	RegistrationIDs  []string               `json:"registration_ids,omitempty"` // Multiple device tokens
+	Condition        string                 `json:"condition,omitempty"`        // Topic condition
+	Notification     *FCMNotification       `json:"notification,omitempty"`
+	Data             map[string]interface{} `json:"data,omitempty"`
+	Priority         string                 `json:"priority,omitempty"` // "normal" or "high"
+	ContentAvailable bool                   `json:"content_available,omitempty"`
+	MutableContent   bool                   `json:"mutable_content,omitempty"`
 }
 
 // FCMNotification represents FCM notification payload
 type FCMNotification struct {
-	Title        string `json:"title,omitempty"`
-	Body         string `json:"body,omitempty"`
-	Sound        string `json:"sound,omitempty"`
-	Badge        string `json:"badge,omitempty"`
-	ClickAction  string `json:"click_action,omitempty"`
-	ImageURL     string `json:"image,omitempty"`
-	Tag          string `json:"tag,omitempty"`
-	Color        string `json:"color,omitempty"`
+	Title       string `json:"title,omitempty"`
+	Body        string `json:"body,omitempty"`
+	Sound       string `json:"sound,omitempty"`
+	Badge       string `json:"badge,omitempty"`
+	ClickAction string `json:"click_action,omitempty"`
+	ImageURL    string `json:"image,omitempty"`
+	Tag         string `json:"tag,omitempty"`
+	Color       string `json:"color,omitempty"`
 }
 
 // FCMResponse represents FCM API response
@@ -191,4 +191,3 @@ func (s *FCMService) sendMessage(ctx context.Context, message *FCMMessage) error
 	log.Printf("✅ FCM notification sent successfully")
 	return nil
 }
-

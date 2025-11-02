@@ -154,4 +154,3 @@ func OptionalAuthMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
-

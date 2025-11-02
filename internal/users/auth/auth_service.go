@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"service/internal/users/dto"
-	"service/internal/users/repository"
 	"service/internal/shared/model"
 	"service/internal/shared/utils"
+	"service/internal/users/dto"
+	"service/internal/users/repository"
 	"time"
 
 	"github.com/google/uuid"
@@ -123,16 +123,16 @@ func (s *AuthService) Login(ctx context.Context, req *model.LoginRequest) (*mode
 
 // RefreshToken refreshes access token using refresh token
 func (s *AuthService) RefreshToken(ctx context.Context, req *model.RefreshTokenRequest) (*model.LoginResponse, error) {
-    // Validate refresh token
-    claims, err := utils.ValidateRefreshToken(req.RefreshToken)
+	// Validate refresh token
+	claims, err := utils.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
 		return nil, model.ErrInvalidToken
 	}
 
-    // Check blacklist
-    if revoked, err := utils.IsRefreshTokenRevoked(ctx, req.RefreshToken); err == nil && revoked {
-        return nil, model.ErrInvalidToken
-    }
+	// Check blacklist
+	if revoked, err := utils.IsRefreshTokenRevoked(ctx, req.RefreshToken); err == nil && revoked {
+		return nil, model.ErrInvalidToken
+	}
 
 	// Get user by ID
 	user, err := s.userRepo.GetByID(ctx, claims.UserID)
@@ -151,16 +151,16 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *model.RefreshTokenR
 		return nil, err
 	}
 
-    // Generate new refresh token (rotation)
-    refreshToken, err := utils.GenerateRefreshToken(user.ID)
+	// Generate new refresh token (rotation)
+	refreshToken, err := utils.GenerateRefreshToken(user.ID)
 	if err != nil {
 		return nil, err
 	}
 
-    // Revoke old refresh token
-    if parsed, err := utils.ParseRefreshToken(req.RefreshToken); err == nil && parsed.ExpiresAt != nil {
-        _ = utils.RevokeRefreshToken(ctx, req.RefreshToken, parsed.ExpiresAt.Time)
-    }
+	// Revoke old refresh token
+	if parsed, err := utils.ParseRefreshToken(req.RefreshToken); err == nil && parsed.ExpiresAt != nil {
+		_ = utils.RevokeRefreshToken(ctx, req.RefreshToken, parsed.ExpiresAt.Time)
+	}
 
 	// Return login response
 	response := &model.LoginResponse{
@@ -175,11 +175,11 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *model.RefreshTokenR
 
 // Logout revokes a refresh token
 func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
-    parsed, err := utils.ParseRefreshToken(refreshToken)
-    if err != nil || parsed.ExpiresAt == nil {
-        return model.ErrInvalidToken
-    }
-    return utils.RevokeRefreshToken(ctx, refreshToken, parsed.ExpiresAt.Time)
+	parsed, err := utils.ParseRefreshToken(refreshToken)
+	if err != nil || parsed.ExpiresAt == nil {
+		return model.ErrInvalidToken
+	}
+	return utils.RevokeRefreshToken(ctx, refreshToken, parsed.ExpiresAt.Time)
 }
 
 // ChangePassword changes user password

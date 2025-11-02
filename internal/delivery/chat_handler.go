@@ -3,7 +3,7 @@ package delivery
 import (
 	"net/http"
 	"service/internal/core"
-	"service/internal/service"
+	chatService "service/internal/shared/service"
 	"service/internal/utils"
 	"strconv"
 
@@ -13,13 +13,13 @@ import (
 
 // ChatHandler handles chat endpoints
 type ChatHandler struct {
-	chatService *service.ChatService
+	chatService *chatService.ChatService
 }
 
 // NewChatHandler creates a new chat handler
 func NewChatHandler() *ChatHandler {
 	return &ChatHandler{
-		chatService: service.NewChatService(),
+		chatService: chatService.NewChatService(),
 	}
 }
 

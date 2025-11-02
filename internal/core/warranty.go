@@ -9,16 +9,16 @@ import (
 
 // Warranty represents warranty tracking for service orders
 type Warranty struct {
-	ID               uuid.UUID   `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
-	OrderID          uuid.UUID   `json:"order_id" gorm:"type:uuid;not null"`
-	Order            ServiceOrder `json:"order" gorm:"foreignKey:OrderID"`
-	WarrantyDays     int         `json:"warranty_days" gorm:"not null"` // Garansi dalam hari
-	StartDate        time.Time   `json:"start_date" gorm:"not null"`
-	EndDate          time.Time   `json:"end_date" gorm:"not null"`
-	IsActive         bool        `json:"is_active" gorm:"default:true"`
-	NotificationSent bool       `json:"notification_sent" gorm:"default:false"` // Notifikasi sebelum habis sudah dikirim
-	CreatedAt        time.Time   `json:"created_at"`
-	UpdatedAt        time.Time   `json:"updated_at"`
+	ID               uuid.UUID      `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	OrderID          uuid.UUID      `json:"order_id" gorm:"type:uuid;not null"`
+	Order            ServiceOrder   `json:"order" gorm:"foreignKey:OrderID"`
+	WarrantyDays     int            `json:"warranty_days" gorm:"not null"` // Garansi dalam hari
+	StartDate        time.Time      `json:"start_date" gorm:"not null"`
+	EndDate          time.Time      `json:"end_date" gorm:"not null"`
+	IsActive         bool           `json:"is_active" gorm:"default:true"`
+	NotificationSent bool           `json:"notification_sent" gorm:"default:false"` // Notifikasi sebelum habis sudah dikirim
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
 	DeletedAt        gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
@@ -49,4 +49,3 @@ func (w *Warranty) ShouldNotify() bool {
 	daysRemaining := w.DaysRemaining()
 	return daysRemaining > 0 && daysRemaining <= 7
 }
-

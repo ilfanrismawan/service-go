@@ -1,9 +1,9 @@
 package dto
 
 import (
-	"time"
-	userDTO "service/internal/users/dto"
 	branchDTO "service/internal/branches/dto"
+	userDTO "service/internal/users/dto"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -36,48 +36,48 @@ const (
 
 // ServiceOrder represents an iPhone service order
 type ServiceOrder struct {
-	ID                uuid.UUID      `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
-	OrderNumber       string         `json:"order_number" gorm:"uniqueIndex;not null"`
-	CustomerID        uuid.UUID      `json:"customer_id" gorm:"type:uuid;not null"`
-	UserID            uuid.UUID      `json:"user_id" gorm:"type:uuid;not null"` // Alias for CustomerID
-	Customer          userDTO.User           `json:"customer" gorm:"foreignKey:CustomerID"`
-	BranchID          uuid.UUID      `json:"branch_id" gorm:"type:uuid;not null"`
-	Branch            branchDTO.Branch         `json:"branch" gorm:"foreignKey:BranchID"`
-	TechnicianID      *uuid.UUID     `json:"technician_id,omitempty" gorm:"type:uuid"`
-	Technician        *userDTO.User          `json:"technician,omitempty" gorm:"foreignKey:TechnicianID"`
-	CourierID         *uuid.UUID     `json:"courier_id,omitempty" gorm:"type:uuid"`
-	Courier           *userDTO.User          `json:"courier,omitempty" gorm:"foreignKey:CourierID"`
-	IPhoneModel       string         `json:"iphone_model" gorm:"not null"`
-	IPhoneColor       string         `json:"iphone_color" gorm:"not null"`
-	IPhoneIMEI        string         `json:"iphone_imei" gorm:"not null"`
-	IPhoneType        string         `json:"iphone_type" gorm:"not null"` // Alias for IPhoneModel
-	ServiceType       ServiceType    `json:"service_type" gorm:"not null"`
-	Description       string         `json:"description" gorm:"not null"`
-	Complaint         string         `json:"complaint" gorm:"not null"` // Alias for Description
-	PickupAddress     string         `json:"pickup_address" gorm:"not null"`
-	PickupLocation    string         `json:"pickup_location" gorm:"not null"` // Alias for PickupAddress
-	PickupLatitude    float64        `json:"pickup_latitude" gorm:"not null"`
-	PickupLongitude   float64        `json:"pickup_longitude" gorm:"not null"`
-	Status            OrderStatus    `json:"status" gorm:"not null;default:'pending_pickup'"`
-	EstimatedCost     float64        `json:"estimated_cost" gorm:"default:0"`
-	ActualCost        float64        `json:"actual_cost" gorm:"default:0"`
-	ServiceCost       float64        `json:"service_cost" gorm:"default:0"`       // Alias for ActualCost
-	EstimatedDuration int            `json:"estimated_duration" gorm:"default:0"` // in hours
-	ActualDuration    int            `json:"actual_duration" gorm:"default:0"`    // in hours
-	PickupPhoto       string         `json:"pickup_photo,omitempty"`
-	ServicePhoto      string         `json:"service_photo,omitempty"`
-	DeliveryPhoto     string         `json:"delivery_photo,omitempty"`
-	Notes             string         `json:"notes,omitempty"`
+	ID                uuid.UUID        `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	OrderNumber       string           `json:"order_number" gorm:"uniqueIndex;not null"`
+	CustomerID        uuid.UUID        `json:"customer_id" gorm:"type:uuid;not null"`
+	UserID            uuid.UUID        `json:"user_id" gorm:"type:uuid;not null"` // Alias for CustomerID
+	Customer          userDTO.User     `json:"customer" gorm:"foreignKey:CustomerID"`
+	BranchID          uuid.UUID        `json:"branch_id" gorm:"type:uuid;not null"`
+	Branch            branchDTO.Branch `json:"branch" gorm:"foreignKey:BranchID"`
+	TechnicianID      *uuid.UUID       `json:"technician_id,omitempty" gorm:"type:uuid"`
+	Technician        *userDTO.User    `json:"technician,omitempty" gorm:"foreignKey:TechnicianID"`
+	CourierID         *uuid.UUID       `json:"courier_id,omitempty" gorm:"type:uuid"`
+	Courier           *userDTO.User    `json:"courier,omitempty" gorm:"foreignKey:CourierID"`
+	IPhoneModel       string           `json:"iphone_model" gorm:"not null"`
+	IPhoneColor       string           `json:"iphone_color" gorm:"not null"`
+	IPhoneIMEI        string           `json:"iphone_imei" gorm:"not null"`
+	IPhoneType        string           `json:"iphone_type" gorm:"not null"` // Alias for IPhoneModel
+	ServiceType       ServiceType      `json:"service_type" gorm:"not null"`
+	Description       string           `json:"description" gorm:"not null"`
+	Complaint         string           `json:"complaint" gorm:"not null"` // Alias for Description
+	PickupAddress     string           `json:"pickup_address" gorm:"not null"`
+	PickupLocation    string           `json:"pickup_location" gorm:"not null"` // Alias for PickupAddress
+	PickupLatitude    float64          `json:"pickup_latitude" gorm:"not null"`
+	PickupLongitude   float64          `json:"pickup_longitude" gorm:"not null"`
+	Status            OrderStatus      `json:"status" gorm:"not null;default:'pending_pickup'"`
+	EstimatedCost     float64          `json:"estimated_cost" gorm:"default:0"`
+	ActualCost        float64          `json:"actual_cost" gorm:"default:0"`
+	ServiceCost       float64          `json:"service_cost" gorm:"default:0"`       // Alias for ActualCost
+	EstimatedDuration int              `json:"estimated_duration" gorm:"default:0"` // in hours
+	ActualDuration    int              `json:"actual_duration" gorm:"default:0"`    // in hours
+	PickupPhoto       string           `json:"pickup_photo,omitempty"`
+	ServicePhoto      string           `json:"service_photo,omitempty"`
+	DeliveryPhoto     string           `json:"delivery_photo,omitempty"`
+	Notes             string           `json:"notes,omitempty"`
 	// Legal & Compliance fields
-	InvoiceNumber    string    `json:"invoice_number,omitempty" gorm:"uniqueIndex"` // Nomor faktur pajak
-	TaxAmount        float64   `json:"tax_amount" gorm:"default:0"`                  // PPN 11%
-	CustomerIDCard   string    `json:"customer_id_card,omitempty"`                  // KTP customer (encrypted)
-	CustomerNPWP     string    `json:"customer_npwp,omitempty"`                     // NPWP customer
-	TermsAccepted    bool      `json:"terms_accepted" gorm:"default:false"`
-	PrivacyAccepted  bool      `json:"privacy_accepted" gorm:"default:false"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
-	DeletedAt        gorm.DeletedAt `json:"-" gorm:"index"`
+	InvoiceNumber   string         `json:"invoice_number,omitempty" gorm:"uniqueIndex"` // Nomor faktur pajak
+	TaxAmount       float64        `json:"tax_amount" gorm:"default:0"`                 // PPN 11%
+	CustomerIDCard  string         `json:"customer_id_card,omitempty"`                  // KTP customer (encrypted)
+	CustomerNPWP    string         `json:"customer_npwp,omitempty"`                     // NPWP customer
+	TermsAccepted   bool           `json:"terms_accepted" gorm:"default:false"`
+	PrivacyAccepted bool           `json:"privacy_accepted" gorm:"default:false"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	DeletedAt       gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
 // TableName returns the table name for ServiceOrder
@@ -105,35 +105,35 @@ type ServiceOrderRequest struct {
 
 // ServiceOrderResponse represents the response payload for service order data
 type ServiceOrderResponse struct {
-	ID                uuid.UUID      `json:"id"`
-	OrderNumber       string         `json:"order_number"`
-	CustomerID        uuid.UUID      `json:"customer_id"`
-	Customer          userDTO.UserResponse   `json:"customer"`
-	BranchID          uuid.UUID      `json:"branch_id"`
+	ID                uuid.UUID                `json:"id"`
+	OrderNumber       string                   `json:"order_number"`
+	CustomerID        uuid.UUID                `json:"customer_id"`
+	Customer          userDTO.UserResponse     `json:"customer"`
+	BranchID          uuid.UUID                `json:"branch_id"`
 	Branch            branchDTO.BranchResponse `json:"branch"`
-	TechnicianID      *uuid.UUID     `json:"technician_id,omitempty"`
-	Technician        *userDTO.UserResponse  `json:"technician,omitempty"`
-	CourierID         *uuid.UUID     `json:"courier_id,omitempty"`
-	Courier           *userDTO.UserResponse  `json:"courier,omitempty"`
-	iPhoneModel       string         `json:"iphone_model"`
-	iPhoneColor       string         `json:"iphone_color"`
-	iPhoneIMEI        string         `json:"iphone_imei"`
-	ServiceType       ServiceType    `json:"service_type"`
-	Description       string         `json:"description"`
-	PickupAddress     string         `json:"pickup_address"`
-	PickupLatitude    float64        `json:"pickup_latitude"`
-	PickupLongitude   float64        `json:"pickup_longitude"`
-	Status            OrderStatus    `json:"status"`
-	EstimatedCost     float64        `json:"estimated_cost"`
-	ActualCost        float64        `json:"actual_cost"`
-	EstimatedDuration int            `json:"estimated_duration"`
-	ActualDuration    int            `json:"actual_duration"`
-	PickupPhoto       string         `json:"pickup_photo,omitempty"`
-	ServicePhoto      string         `json:"service_photo,omitempty"`
-	DeliveryPhoto     string         `json:"delivery_photo,omitempty"`
-	Notes             string         `json:"notes,omitempty"`
-	CreatedAt         time.Time      `json:"created_at"`
-	UpdatedAt         time.Time      `json:"updated_at"`
+	TechnicianID      *uuid.UUID               `json:"technician_id,omitempty"`
+	Technician        *userDTO.UserResponse    `json:"technician,omitempty"`
+	CourierID         *uuid.UUID               `json:"courier_id,omitempty"`
+	Courier           *userDTO.UserResponse    `json:"courier,omitempty"`
+	iPhoneModel       string                   `json:"iphone_model"`
+	iPhoneColor       string                   `json:"iphone_color"`
+	iPhoneIMEI        string                   `json:"iphone_imei"`
+	ServiceType       ServiceType              `json:"service_type"`
+	Description       string                   `json:"description"`
+	PickupAddress     string                   `json:"pickup_address"`
+	PickupLatitude    float64                  `json:"pickup_latitude"`
+	PickupLongitude   float64                  `json:"pickup_longitude"`
+	Status            OrderStatus              `json:"status"`
+	EstimatedCost     float64                  `json:"estimated_cost"`
+	ActualCost        float64                  `json:"actual_cost"`
+	EstimatedDuration int                      `json:"estimated_duration"`
+	ActualDuration    int                      `json:"actual_duration"`
+	PickupPhoto       string                   `json:"pickup_photo,omitempty"`
+	ServicePhoto      string                   `json:"service_photo,omitempty"`
+	DeliveryPhoto     string                   `json:"delivery_photo,omitempty"`
+	Notes             string                   `json:"notes,omitempty"`
+	CreatedAt         time.Time                `json:"created_at"`
+	UpdatedAt         time.Time                `json:"updated_at"`
 }
 
 // ToResponse converts ServiceOrder to ServiceOrderResponse

@@ -93,4 +93,3 @@ func IsValidImageFormat(filename string) bool {
 	}
 	return validFormats[ext]
 }
-

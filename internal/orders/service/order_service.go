@@ -3,12 +3,12 @@ package service
 import (
 	"context"
 	"errors"
+	branchRepo "service/internal/branches/repository"
 	"service/internal/orders/dto"
 	"service/internal/orders/repository"
-	userRepo "service/internal/users/repository"
-	branchRepo "service/internal/branches/repository"
 	"service/internal/shared/model"
 	"service/internal/shared/utils"
+	userRepo "service/internal/users/repository"
 
 	"github.com/google/uuid"
 )

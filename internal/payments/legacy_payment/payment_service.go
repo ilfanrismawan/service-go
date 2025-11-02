@@ -8,13 +8,13 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"service/internal/shared/config"
-	"service/internal/payments/dto"
-	"service/internal/payments/repository"
 	orderDTO "service/internal/orders/dto"
 	orderRepo "service/internal/orders/repository"
-	userRepo "service/internal/users/repository"
+	"service/internal/payments/dto"
+	"service/internal/payments/repository"
+	"service/internal/shared/config"
 	"service/internal/shared/utils"
+	userRepo "service/internal/users/repository"
 	"time"
 
 	"github.com/google/uuid"
@@ -56,7 +56,7 @@ type MidtransPaymentRequest struct {
 	Qris               *Qris              `json:"qris,omitempty"`
 	Alfamart           *Alfamart          `json:"alfamart,omitempty"`
 	Indomaret          *Indomaret         `json:"indomaret,omitempty"`
-	CreditCard         *CreditCard         `json:"credit_card,omitempty"`
+	CreditCard         *CreditCard        `json:"credit_card,omitempty"`
 	CustomExpiry       *CustomExpiry      `json:"custom_expiry,omitempty"`
 }
 
@@ -120,11 +120,11 @@ type Indomaret struct {
 
 // CreditCard represents Credit Card payment
 type CreditCard struct {
-	TokenID    string `json:"token_id,omitempty"`
-	Secure     bool   `json:"secure,omitempty"`
-	SaveToken  bool   `json:"save_token_id,omitempty"`
-	Bank       string `json:"bank,omitempty"`
-	Installment bool  `json:"installment,omitempty"`
+	TokenID     string `json:"token_id,omitempty"`
+	Secure      bool   `json:"secure,omitempty"`
+	SaveToken   bool   `json:"save_token_id,omitempty"`
+	Bank        string `json:"bank,omitempty"`
+	Installment bool   `json:"installment,omitempty"`
 }
 
 // CustomExpiry represents custom expiry settings

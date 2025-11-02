@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"net/http"
+	"service/internal/core"
 	"service/internal/shared/model"
-	service "service/internal/shared/service"
+	"service/internal/shared/notification"
 	"service/internal/shared/utils"
 	"strconv"
 
@@ -13,13 +14,13 @@ import (
 
 // NotificationHandler handles notification endpoints
 type NotificationHandler struct {
-	notificationService *service.NotificationService
+	notificationService *notification.NotificationService
 }
 
 // NewNotificationHandler creates a new notification handler
 func NewNotificationHandler() *NotificationHandler {
 	return &NotificationHandler{
-		notificationService: service.NewNotificationService(),
+		notificationService: notification.NewNotificationService(),
 	}
 }
 
@@ -39,7 +40,7 @@ func NewNotificationHandler() *NotificationHandler {
 func (h *NotificationHandler) SendNotification(c *gin.Context) {
 	var req core.NotificationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -49,7 +50,7 @@ func (h *NotificationHandler) SendNotification(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -63,7 +64,7 @@ func (h *NotificationHandler) SendNotification(c *gin.Context) {
 		if err == core.ErrUserNotFound {
 			statusCode = http.StatusBadRequest
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"notification_send_failed",
 			err.Error(),
 			nil,
@@ -71,7 +72,7 @@ func (h *NotificationHandler) SendNotification(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, core.SuccessResponse(notification, "Notification sent successfully"))
+		c.JSON(http.StatusCreated, model.SuccessResponse(notification, "Notification sent successfully"))
 }
 
 // GetNotifications godoc
@@ -91,7 +92,7 @@ func (h *NotificationHandler) GetNotifications(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -101,7 +102,7 @@ func (h *NotificationHandler) GetNotifications(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -125,7 +126,7 @@ func (h *NotificationHandler) GetNotifications(c *gin.Context) {
 
 	result, err := h.notificationService.GetNotifications(c.Request.Context(), userUUID, page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"notifications_fetch_failed",
 			err.Error(),
 			nil,
@@ -154,7 +155,7 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid notification ID format",
 			nil,
@@ -164,7 +165,7 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 
 	err = h.notificationService.MarkAsRead(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"mark_read_failed",
 			err.Error(),
 			nil,
@@ -172,7 +173,7 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "Notification marked as read"))
+		c.JSON(http.StatusOK, model.SuccessResponse(nil, "Notification marked as read"))
 }
 
 // SendOrderStatusNotification godoc
@@ -193,7 +194,7 @@ func (h *NotificationHandler) SendOrderStatusNotification(c *gin.Context) {
 	orderIDStr := c.Param("orderId")
 	orderID, err := uuid.Parse(orderIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_order_id",
 			"Invalid order ID format",
 			nil,
@@ -224,7 +225,7 @@ func (h *NotificationHandler) SendOrderStatusNotification(c *gin.Context) {
 	}
 
 	if !valid {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_status",
 			"Invalid order status",
 			nil,
@@ -234,7 +235,7 @@ func (h *NotificationHandler) SendOrderStatusNotification(c *gin.Context) {
 
 	err = h.notificationService.SendOrderStatusNotification(c.Request.Context(), orderID, status)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"order_status_notification_failed",
 			err.Error(),
 			nil,
@@ -242,7 +243,7 @@ func (h *NotificationHandler) SendOrderStatusNotification(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "Order status notification sent successfully"))
+		c.JSON(http.StatusOK, model.SuccessResponse(nil, "Order status notification sent successfully"))
 }
 
 // SendPaymentNotification godoc
@@ -263,7 +264,7 @@ func (h *NotificationHandler) SendPaymentNotification(c *gin.Context) {
 	orderIDStr := c.Param("orderId")
 	orderID, err := uuid.Parse(orderIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_order_id",
 			"Invalid order ID format",
 			nil,
@@ -292,7 +293,7 @@ func (h *NotificationHandler) SendPaymentNotification(c *gin.Context) {
 	}
 
 	if !valid {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_status",
 			"Invalid payment status",
 			nil,
@@ -302,7 +303,7 @@ func (h *NotificationHandler) SendPaymentNotification(c *gin.Context) {
 
 	err = h.notificationService.SendPaymentNotification(c.Request.Context(), orderID, status)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"payment_notification_failed",
 			err.Error(),
 			nil,
@@ -310,5 +311,5 @@ func (h *NotificationHandler) SendPaymentNotification(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "Payment notification sent successfully"))
+		c.JSON(http.StatusOK, model.SuccessResponse(nil, "Payment notification sent successfully"))
 }

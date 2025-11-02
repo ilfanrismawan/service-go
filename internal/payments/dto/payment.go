@@ -1,8 +1,8 @@
 package dto
 
 import (
-	"time"
 	orderDTO "service/internal/orders/dto"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -21,15 +21,15 @@ const (
 	PaymentMethodBankTransfer    PaymentMethod = "bank_transfer"
 	PaymentMethodMandiriEchannel PaymentMethod = "mandiri_echannel"
 	PaymentMethodOVO             PaymentMethod = "ovo"
-	PaymentMethodDana             PaymentMethod = "dana"
+	PaymentMethodDana            PaymentMethod = "dana"
 	PaymentMethodShopeePay       PaymentMethod = "shopeepay"
-	PaymentMethodBCAVA            PaymentMethod = "bca_va"
-	PaymentMethodBNIVA            PaymentMethod = "bni_va"
-	PaymentMethodBRIVA            PaymentMethod = "bri_va"
-	PaymentMethodPermataVA        PaymentMethod = "permata_va"
-	PaymentMethodAlfamart         PaymentMethod = "alfamart"
-	PaymentMethodIndomaret        PaymentMethod = "indomaret"
-	PaymentMethodCreditCard        PaymentMethod = "credit_card"
+	PaymentMethodBCAVA           PaymentMethod = "bca_va"
+	PaymentMethodBNIVA           PaymentMethod = "bni_va"
+	PaymentMethodBRIVA           PaymentMethod = "bri_va"
+	PaymentMethodPermataVA       PaymentMethod = "permata_va"
+	PaymentMethodAlfamart        PaymentMethod = "alfamart"
+	PaymentMethodIndomaret       PaymentMethod = "indomaret"
+	PaymentMethodCreditCard      PaymentMethod = "credit_card"
 )
 
 // PaymentStatus represents the status of a payment
@@ -45,23 +45,23 @@ const (
 
 // Payment represents a payment transaction
 type Payment struct {
-	ID            uuid.UUID      `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
-	OrderID       uuid.UUID      `json:"order_id" gorm:"type:uuid;not null"`
-	UserID        uuid.UUID      `json:"user_id" gorm:"type:uuid;not null"` // Alias for Order.CustomerID
-	Order         orderDTO.ServiceOrder   `json:"order" gorm:"foreignKey:OrderID"`
-	Amount        float64        `json:"amount" gorm:"not null"`
-	PaymentMethod PaymentMethod  `json:"payment_method" gorm:"not null"`
-	Status        PaymentStatus  `json:"status" gorm:"not null;default:'pending'"`
-	TransactionID string         `json:"transaction_id,omitempty"` // External payment gateway transaction ID
-	InvoiceNumber string         `json:"invoice_number" gorm:"uniqueIndex;not null"`
-	InvoiceURL    string         `json:"invoice_url,omitempty"` // URL to the invoice
-	TaxAmount     float64        `json:"tax_amount" gorm:"default:0"` // PPN 11%
-	Subtotal      float64        `json:"subtotal" gorm:"default:0"`   // Amount before tax
-	PaidAt        *time.Time     `json:"paid_at,omitempty"`
-	Notes         string         `json:"notes,omitempty"`
-	CreatedAt     time.Time      `json:"created_at"`
-	UpdatedAt     time.Time      `json:"updated_at"`
-	DeletedAt     gorm.DeletedAt `json:"-" gorm:"index"`
+	ID            uuid.UUID             `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	OrderID       uuid.UUID             `json:"order_id" gorm:"type:uuid;not null"`
+	UserID        uuid.UUID             `json:"user_id" gorm:"type:uuid;not null"` // Alias for Order.CustomerID
+	Order         orderDTO.ServiceOrder `json:"order" gorm:"foreignKey:OrderID"`
+	Amount        float64               `json:"amount" gorm:"not null"`
+	PaymentMethod PaymentMethod         `json:"payment_method" gorm:"not null"`
+	Status        PaymentStatus         `json:"status" gorm:"not null;default:'pending'"`
+	TransactionID string                `json:"transaction_id,omitempty"` // External payment gateway transaction ID
+	InvoiceNumber string                `json:"invoice_number" gorm:"uniqueIndex;not null"`
+	InvoiceURL    string                `json:"invoice_url,omitempty"`       // URL to the invoice
+	TaxAmount     float64               `json:"tax_amount" gorm:"default:0"` // PPN 11%
+	Subtotal      float64               `json:"subtotal" gorm:"default:0"`   // Amount before tax
+	PaidAt        *time.Time            `json:"paid_at,omitempty"`
+	Notes         string                `json:"notes,omitempty"`
+	CreatedAt     time.Time             `json:"created_at"`
+	UpdatedAt     time.Time             `json:"updated_at"`
+	DeletedAt     gorm.DeletedAt        `json:"-" gorm:"index"`
 }
 
 // TableName returns the table name for Payment
@@ -79,18 +79,18 @@ type PaymentRequest struct {
 
 // PaymentResponse represents the response payload for payment data
 type PaymentResponse struct {
-	ID            uuid.UUID            `json:"id"`
-	OrderID       uuid.UUID            `json:"order_id"`
+	ID            uuid.UUID                     `json:"id"`
+	OrderID       uuid.UUID                     `json:"order_id"`
 	Order         orderDTO.ServiceOrderResponse `json:"order"`
-	Amount        float64              `json:"amount"`
-	PaymentMethod PaymentMethod        `json:"payment_method"`
-	Status        PaymentStatus        `json:"status"`
-	TransactionID string               `json:"transaction_id,omitempty"`
-	InvoiceNumber string               `json:"invoice_number"`
-	PaidAt        *time.Time           `json:"paid_at,omitempty"`
-	Notes         string               `json:"notes,omitempty"`
-	CreatedAt     time.Time            `json:"created_at"`
-	UpdatedAt     time.Time            `json:"updated_at"`
+	Amount        float64                       `json:"amount"`
+	PaymentMethod PaymentMethod                 `json:"payment_method"`
+	Status        PaymentStatus                 `json:"status"`
+	TransactionID string                        `json:"transaction_id,omitempty"`
+	InvoiceNumber string                        `json:"invoice_number"`
+	PaidAt        *time.Time                    `json:"paid_at,omitempty"`
+	Notes         string                        `json:"notes,omitempty"`
+	CreatedAt     time.Time                     `json:"created_at"`
+	UpdatedAt     time.Time                     `json:"updated_at"`
 }
 
 // ToResponse converts Payment to PaymentResponse
@@ -121,7 +121,7 @@ type MidtransPaymentRequest struct {
 	OrderID       string  `json:"order_id" validate:"required"`
 	Amount        float64 `json:"amount" validate:"required,gt=0"`
 	CustomerEmail string  `json:"customer_email" validate:"required,email"`
-    CustomerPhone string  `json:"customer_phone" validate:"required,phone"`
+	CustomerPhone string  `json:"customer_phone" validate:"required,phone"`
 }
 
 // MidtransPaymentResponse represents the response from Midtrans API
@@ -134,12 +134,12 @@ type MidtransPaymentResponse struct {
 
 // MidtransCallbackPayload represents Midtrans callback/webhook payload
 type MidtransCallbackPayload struct {
-    OrderID           string `json:"order_id"`
-    TransactionID     string `json:"transaction_id"`
-    StatusCode        string `json:"status_code"`
-    GrossAmount       string `json:"gross_amount"`
-    SignatureKey      string `json:"signature_key"`
-    TransactionStatus string `json:"transaction_status"`
+	OrderID           string `json:"order_id"`
+	TransactionID     string `json:"transaction_id"`
+	StatusCode        string `json:"status_code"`
+	GrossAmount       string `json:"gross_amount"`
+	SignatureKey      string `json:"signature_key"`
+	TransactionStatus string `json:"transaction_status"`
 }
 
 // Invoice represents an invoice

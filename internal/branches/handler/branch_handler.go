@@ -387,7 +387,7 @@ func (h *BranchHandler) GetBranches(c *gin.Context) {
 	}
 
 	// Create paginated response
-		pagination := model.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,

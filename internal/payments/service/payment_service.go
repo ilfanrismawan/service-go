@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"errors"
-	"service/internal/payments/dto"
-    pay "service/internal/payments/legacy_payment"
-	"service/internal/payments/repository"
 	orderDTO "service/internal/orders/dto"
 	orderRepo "service/internal/orders/repository"
+	"service/internal/payments/dto"
+	pay "service/internal/payments/legacy_payment"
+	"service/internal/payments/repository"
 	"service/internal/shared/model"
 	"service/internal/shared/utils"
 
@@ -30,69 +30,69 @@ func NewPaymentService() *PaymentService {
 
 // HandleMidtransCallback verifies payload and updates payment/order state
 func (s *PaymentService) HandleMidtransCallback(ctx context.Context, cb *dto.MidtransCallbackPayload, serverKey string) error {
-    // Verify signature: sha512(order_id+status_code+gross_amount+server_key)
-    expected := utils.SHA512Hex(cb.OrderID + cb.StatusCode + cb.GrossAmount + serverKey)
-    if expected != cb.SignatureKey {
-        return errors.New("invalid signature")
-    }
+	// Verify signature: sha512(order_id+status_code+gross_amount+server_key)
+	expected := utils.SHA512Hex(cb.OrderID + cb.StatusCode + cb.GrossAmount + serverKey)
+	if expected != cb.SignatureKey {
+		return errors.New("invalid signature")
+	}
 
-    // Find payment by transaction ID first, fallback to invoice/order_id equals payment.ID if used as order_id
-    var payment *dto.Payment
-    // Try by transaction ID
-    if cb.TransactionID != "" {
-        if p, err := s.paymentRepo.GetByTransactionID(ctx, cb.TransactionID); err == nil {
-            payment = p
-        }
-    }
-    if payment == nil {
-        // Try by invoice number or payment ID from order_id field
-        if p, err := s.paymentRepo.GetByInvoiceNumber(ctx, cb.OrderID); err == nil {
-            payment = p
-        }
-    }
-    if payment == nil {
+	// Find payment by transaction ID first, fallback to invoice/order_id equals payment.ID if used as order_id
+	var payment *dto.Payment
+	// Try by transaction ID
+	if cb.TransactionID != "" {
+		if p, err := s.paymentRepo.GetByTransactionID(ctx, cb.TransactionID); err == nil {
+			payment = p
+		}
+	}
+	if payment == nil {
+		// Try by invoice number or payment ID from order_id field
+		if p, err := s.paymentRepo.GetByInvoiceNumber(ctx, cb.OrderID); err == nil {
+			payment = p
+		}
+	}
+	if payment == nil {
 		return model.ErrPaymentNotFound
-    }
+	}
 
-    // Idempotency: if status already mapped, no-op
-    mapped := dto.PaymentStatusPending
-    switch cb.TransactionStatus {
-    case "capture", "settlement":
-        mapped = dto.PaymentStatusPaid
-    case "pending":
-        mapped = dto.PaymentStatusPending
-    case "deny", "expire", "cancel":
-        mapped = dto.PaymentStatusFailed
-    case "refund", "partial_refund":
-        mapped = dto.PaymentStatusRefunded
-    default:
-        mapped = dto.PaymentStatusPending
-    }
-    if payment.Status == mapped {
-        return nil
-    }
+	// Idempotency: if status already mapped, no-op
+	mapped := dto.PaymentStatusPending
+	switch cb.TransactionStatus {
+	case "capture", "settlement":
+		mapped = dto.PaymentStatusPaid
+	case "pending":
+		mapped = dto.PaymentStatusPending
+	case "deny", "expire", "cancel":
+		mapped = dto.PaymentStatusFailed
+	case "refund", "partial_refund":
+		mapped = dto.PaymentStatusRefunded
+	default:
+		mapped = dto.PaymentStatusPending
+	}
+	if payment.Status == mapped {
+		return nil
+	}
 
-    // Update payment
-    payment.Status = mapped
-    if cb.TransactionID != "" {
-        payment.TransactionID = cb.TransactionID
-    }
-    if mapped == dto.PaymentStatusPaid {
-        now := model.GetCurrentTimestamp()
-        payment.PaidAt = &now
-    }
-    if err := s.paymentRepo.Update(ctx, payment); err != nil {
-        return err
-    }
+	// Update payment
+	payment.Status = mapped
+	if cb.TransactionID != "" {
+		payment.TransactionID = cb.TransactionID
+	}
+	if mapped == dto.PaymentStatusPaid {
+		now := model.GetCurrentTimestamp()
+		payment.PaidAt = &now
+	}
+	if err := s.paymentRepo.Update(ctx, payment); err != nil {
+		return err
+	}
 
-    // Update order on success
-    if mapped == dto.PaymentStatusPaid {
-        if order, err := s.orderRepo.GetByID(ctx, payment.OrderID); err == nil {
-            order.Status = orderDTO.StatusReady
-            _ = s.orderRepo.Update(ctx, order)
-        }
-    }
-    return nil
+	// Update order on success
+	if mapped == dto.PaymentStatusPaid {
+		if order, err := s.orderRepo.GetByID(ctx, payment.OrderID); err == nil {
+			order.Status = orderDTO.StatusReady
+			_ = s.orderRepo.Update(ctx, order)
+		}
+	}
+	return nil
 }
 
 // CreatePayment creates a new payment
@@ -243,56 +243,56 @@ func (s *PaymentService) ProcessMidtransPayment(ctx context.Context, req *dto.Mi
 
 // ReconcilePendingPayments checks pending Midtrans payments and updates their status
 func (s *PaymentService) ReconcilePendingPayments(ctx context.Context) error {
-    // Get pending payments
-    pendingList, err := s.paymentRepo.GetByStatus(ctx, dto.PaymentStatusPending)
-    if err != nil {
-        return err
-    }
-    if len(pendingList) == 0 {
-        return nil
-    }
-    ms := pay.NewMidtransService()
-    for _, p := range pendingList {
-        // Only reconcile online payments
-        if p.PaymentMethod != dto.PaymentMethodMidtrans && p.PaymentMethod != dto.PaymentMethodGopay && p.PaymentMethod != dto.PaymentMethodQris && p.PaymentMethod != dto.PaymentMethodBankTransfer && p.PaymentMethod != dto.PaymentMethodMandiriEchannel {
-            continue
-        }
-        if p.TransactionID == "" {
-            continue
-        }
-        resp, err := ms.GetPaymentStatus(ctx, p.TransactionID)
-        if err != nil {
-            continue
-        }
-        // Map Midtrans status
-        newStatus := dto.PaymentStatusPending
-        switch resp.TransactionStatus {
-        case "capture", "settlement":
-            newStatus = dto.PaymentStatusPaid
-        case "pending":
-            newStatus = dto.PaymentStatusPending
-        case "deny", "expire", "cancel":
-            newStatus = dto.PaymentStatusFailed
-        case "refund", "partial_refund":
-            newStatus = dto.PaymentStatusRefunded
-        }
-        if p.Status == newStatus {
-            continue
-        }
-        p.Status = newStatus
-        if newStatus == dto.PaymentStatusPaid {
-            now := model.GetCurrentTimestamp()
-            p.PaidAt = &now
-        }
-        _ = s.paymentRepo.Update(ctx, p)
-        if newStatus == dto.PaymentStatusPaid {
-            if order, err := s.orderRepo.GetByID(ctx, p.OrderID); err == nil {
-                order.Status = orderDTO.StatusReady
-                _ = s.orderRepo.Update(ctx, order)
-            }
-        }
-    }
-    return nil
+	// Get pending payments
+	pendingList, err := s.paymentRepo.GetByStatus(ctx, dto.PaymentStatusPending)
+	if err != nil {
+		return err
+	}
+	if len(pendingList) == 0 {
+		return nil
+	}
+	ms := pay.NewMidtransService()
+	for _, p := range pendingList {
+		// Only reconcile online payments
+		if p.PaymentMethod != dto.PaymentMethodMidtrans && p.PaymentMethod != dto.PaymentMethodGopay && p.PaymentMethod != dto.PaymentMethodQris && p.PaymentMethod != dto.PaymentMethodBankTransfer && p.PaymentMethod != dto.PaymentMethodMandiriEchannel {
+			continue
+		}
+		if p.TransactionID == "" {
+			continue
+		}
+		resp, err := ms.GetPaymentStatus(ctx, p.TransactionID)
+		if err != nil {
+			continue
+		}
+		// Map Midtrans status
+		newStatus := dto.PaymentStatusPending
+		switch resp.TransactionStatus {
+		case "capture", "settlement":
+			newStatus = dto.PaymentStatusPaid
+		case "pending":
+			newStatus = dto.PaymentStatusPending
+		case "deny", "expire", "cancel":
+			newStatus = dto.PaymentStatusFailed
+		case "refund", "partial_refund":
+			newStatus = dto.PaymentStatusRefunded
+		}
+		if p.Status == newStatus {
+			continue
+		}
+		p.Status = newStatus
+		if newStatus == dto.PaymentStatusPaid {
+			now := model.GetCurrentTimestamp()
+			p.PaidAt = &now
+		}
+		_ = s.paymentRepo.Update(ctx, p)
+		if newStatus == dto.PaymentStatusPaid {
+			if order, err := s.orderRepo.GetByID(ctx, p.OrderID); err == nil {
+				order.Status = orderDTO.StatusReady
+				_ = s.orderRepo.Update(ctx, order)
+			}
+		}
+	}
+	return nil
 }
 
 // ListPayments retrieves payments with pagination and filters

@@ -3,8 +3,8 @@ package model
 import (
 	"errors"
 	"math"
-	"time"
 	userDTO "service/internal/users/dto"
+	"time"
 )
 
 // UserRole represents the role of a user in the system
@@ -62,10 +62,10 @@ type LoginRequest struct {
 
 // LoginResponse represents the login response payload
 type LoginResponse struct {
-	AccessToken  string              `json:"access_token"`
-	RefreshToken string              `json:"refresh_token"`
+	AccessToken  string               `json:"access_token"`
+	RefreshToken string               `json:"refresh_token"`
 	User         userDTO.UserResponse `json:"user"`
-	ExpiresIn    int64               `json:"expires_in"`
+	ExpiresIn    int64                `json:"expires_in"`
 }
 
 // RefreshTokenRequest represents the refresh token request payload

@@ -29,8 +29,8 @@ type FileUploadRequest struct {
 
 // OrderPhotoUploadRequest represents the request for order photo upload
 type OrderPhotoUploadRequest struct {
-	OrderID    string `json:"order_id" validate:"required"`
-	PhotoType  string `json:"photo_type" validate:"required,oneof=pickup service delivery"`
+	OrderID   string `json:"order_id" validate:"required"`
+	PhotoType string `json:"photo_type" validate:"required,oneof=pickup service delivery"`
 }
 
 // UserAvatarUploadRequest represents the request for user avatar upload

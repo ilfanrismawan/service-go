@@ -15,4 +15,3 @@ func CalculateSubtotal(totalAmount float64) float64 {
 func CalculateAmountWithTax(subtotal float64) float64 {
 	return subtotal + CalculatePPN(subtotal)
 }
-

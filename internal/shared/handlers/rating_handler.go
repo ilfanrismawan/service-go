@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"net/http"
-	"service/internal/shared/model"
+	"service/internal/core"
 	"service/internal/repository"
+	"service/internal/shared/model"
 	service "service/internal/shared/service"
 	"service/internal/shared/utils"
 	"strconv"
@@ -41,7 +42,7 @@ func (h *RatingHandler) CreateRating(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -51,7 +52,7 @@ func (h *RatingHandler) CreateRating(c *gin.Context) {
 
 	customerID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -61,7 +62,7 @@ func (h *RatingHandler) CreateRating(c *gin.Context) {
 
 	var req core.RatingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_request",
 			err.Error(),
 			nil,
@@ -74,7 +75,7 @@ func (h *RatingHandler) CreateRating(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			err.Error(),
 			nil,
@@ -84,7 +85,7 @@ func (h *RatingHandler) CreateRating(c *gin.Context) {
 
 	rating, err := h.ratingService.CreateRating(c.Request.Context(), customerID, &req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"rating_creation_failed",
 			err.Error(),
 			nil,
@@ -92,7 +93,7 @@ func (h *RatingHandler) CreateRating(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, core.SuccessResponse(rating, "Rating created successfully"))
+	c.JSON(http.StatusCreated, model.SuccessResponse(rating, "Rating created successfully"))
 }
 
 // GetRating godoc
@@ -111,7 +112,7 @@ func (h *RatingHandler) GetRating(c *gin.Context) {
 	ratingIDStr := c.Param("id")
 	ratingID, err := uuid.Parse(ratingIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_rating_id",
 			"Invalid rating ID format",
 			nil,
@@ -121,7 +122,7 @@ func (h *RatingHandler) GetRating(c *gin.Context) {
 
 	rating, err := h.ratingService.GetRating(c.Request.Context(), ratingID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, core.CreateErrorResponse(
+		c.JSON(http.StatusNotFound, model.CreateErrorResponse(
 			"rating_not_found",
 			err.Error(),
 			nil,
@@ -129,7 +130,7 @@ func (h *RatingHandler) GetRating(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(rating, "Rating retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(rating, "Rating retrieved successfully"))
 }
 
 // ListRatings godoc
@@ -186,7 +187,7 @@ func (h *RatingHandler) ListRatings(c *gin.Context) {
 
 	result, err := h.ratingService.ListRatings(c.Request.Context(), page, limit, filters)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"list_ratings_failed",
 			err.Error(),
 			nil,
@@ -215,7 +216,7 @@ func (h *RatingHandler) UpdateRating(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -225,7 +226,7 @@ func (h *RatingHandler) UpdateRating(c *gin.Context) {
 
 	customerID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -236,7 +237,7 @@ func (h *RatingHandler) UpdateRating(c *gin.Context) {
 	ratingIDStr := c.Param("id")
 	ratingID, err := uuid.Parse(ratingIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_rating_id",
 			"Invalid rating ID format",
 			nil,
@@ -246,7 +247,7 @@ func (h *RatingHandler) UpdateRating(c *gin.Context) {
 
 	var req core.RatingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_request",
 			err.Error(),
 			nil,
@@ -259,7 +260,7 @@ func (h *RatingHandler) UpdateRating(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			err.Error(),
 			nil,
@@ -269,7 +270,7 @@ func (h *RatingHandler) UpdateRating(c *gin.Context) {
 
 	rating, err := h.ratingService.UpdateRating(c.Request.Context(), ratingID, customerID, &req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"rating_update_failed",
 			err.Error(),
 			nil,
@@ -277,7 +278,7 @@ func (h *RatingHandler) UpdateRating(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(rating, "Rating updated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(rating, "Rating updated successfully"))
 }
 
 // DeleteRating godoc
@@ -297,7 +298,7 @@ func (h *RatingHandler) DeleteRating(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -307,7 +308,7 @@ func (h *RatingHandler) DeleteRating(c *gin.Context) {
 
 	customerID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -318,7 +319,7 @@ func (h *RatingHandler) DeleteRating(c *gin.Context) {
 	ratingIDStr := c.Param("id")
 	ratingID, err := uuid.Parse(ratingIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_rating_id",
 			"Invalid rating ID format",
 			nil,
@@ -327,7 +328,7 @@ func (h *RatingHandler) DeleteRating(c *gin.Context) {
 	}
 
 	if err := h.ratingService.DeleteRating(c.Request.Context(), ratingID, customerID); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"rating_deletion_failed",
 			err.Error(),
 			nil,
@@ -335,7 +336,7 @@ func (h *RatingHandler) DeleteRating(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "Rating deleted successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(nil, "Rating deleted successfully"))
 }
 
 // GetAverageRating godoc
@@ -367,7 +368,7 @@ func (h *RatingHandler) GetAverageRating(c *gin.Context) {
 
 	average, err := h.ratingService.GetAverageRating(c.Request.Context(), branchID, technicianID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"average_rating_failed",
 			err.Error(),
 			nil,
@@ -375,6 +376,5 @@ func (h *RatingHandler) GetAverageRating(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(average, "Average rating retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(average, "Average rating retrieved successfully"))
 }
-

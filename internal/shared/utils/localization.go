@@ -23,33 +23,33 @@ func FormatCurrency(amount float64) string {
 func FormatIDR(amount float64) string {
 	// Round to nearest integer
 	rupiah := int64(math.Round(amount))
-	
+
 	// Convert to string and add thousand separators
 	str := strconv.FormatInt(rupiah, 10)
 	n := len(str)
 	if n <= 3 {
 		return fmt.Sprintf("Rp. %s", str)
 	}
-	
+
 	// Add dots as thousand separators
 	var result strings.Builder
 	result.WriteString("Rp. ")
-	
+
 	// Calculate first group length (remainder when divided by 3)
 	firstGroupLen := n % 3
 	if firstGroupLen == 0 {
 		firstGroupLen = 3
 	}
-	
+
 	// Write first group
 	result.WriteString(str[:firstGroupLen])
-	
+
 	// Write remaining groups with dots
 	for i := firstGroupLen; i < n; i += 3 {
 		result.WriteString(".")
 		result.WriteString(str[i : i+3])
 	}
-	
+
 	return result.String()
 }
 
@@ -62,4 +62,3 @@ func FormatDate(t interface{}) string {
 	// For now, return ISO format
 	return ""
 }
-

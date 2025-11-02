@@ -30,11 +30,11 @@ func RateLimitMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get client IP
 		clientIP := c.ClientIP()
-		
+
 		// Get rate limit configuration
-		requests := 100 // Default requests per window
+		requests := 100       // Default requests per window
 		window := time.Minute // Default window
-		
+
 		// Check rate limit
 		allowed, err := limiter.IsAllowed(clientIP, requests, window)
 		if err != nil {
@@ -46,7 +46,7 @@ func RateLimitMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		
+
 		if !allowed {
 			c.JSON(http.StatusTooManyRequests, core.CreateErrorResponse(
 				"rate_limit_exceeded",
@@ -56,7 +56,7 @@ func RateLimitMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		
+
 		c.Next()
 	}
 }
@@ -64,16 +64,16 @@ func RateLimitMiddleware() gin.HandlerFunc {
 // IsAllowed checks if a request is allowed based on rate limit
 func (r *RateLimiter) IsAllowed(key string, requests int, window time.Duration) (bool, error) {
 	ctx := context.Background()
-	
+
 	// Create rate limit key
 	rateLimitKey := "rate_limit:" + key
-	
+
 	// Get current count
 	count, err := r.redis.Get(ctx, rateLimitKey).Int()
 	if err != nil && err != redis.Nil {
 		return false, err
 	}
-	
+
 	// If count is 0, this is the first request in the window
 	if count == 0 {
 		// Set count to 1 and set expiration
@@ -83,18 +83,18 @@ func (r *RateLimiter) IsAllowed(key string, requests int, window time.Duration) 
 		}
 		return true, nil
 	}
-	
+
 	// Check if count exceeds limit
 	if count >= requests {
 		return false, nil
 	}
-	
+
 	// Increment count
 	err = r.redis.Incr(ctx, rateLimitKey).Err()
 	if err != nil {
 		return false, err
 	}
-	
+
 	return true, nil
 }
 
@@ -102,17 +102,17 @@ func (r *RateLimiter) IsAllowed(key string, requests int, window time.Duration) 
 func (r *RateLimiter) GetRateLimitInfo(key string, requests int, window time.Duration) (map[string]interface{}, error) {
 	ctx := context.Background()
 	rateLimitKey := "rate_limit:" + key
-	
+
 	count, err := r.redis.Get(ctx, rateLimitKey).Int()
 	if err != nil && err != redis.Nil {
 		return nil, err
 	}
-	
+
 	ttl, err := r.redis.TTL(ctx, rateLimitKey).Result()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return map[string]interface{}{
 		"limit":     requests,
 		"remaining": requests - count,
@@ -143,7 +143,7 @@ func UserRateLimitMiddleware() gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		
+
 		// Use user ID for rate limiting
 		userKey := "user_rate_limit:" + userID.(uuid.UUID).String()
 		allowed, err := limiter.IsAllowed(userKey, 200, time.Minute)
@@ -156,7 +156,7 @@ func UserRateLimitMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		
+
 		if !allowed {
 			c.JSON(http.StatusTooManyRequests, core.CreateErrorResponse(
 				"rate_limit_exceeded",
@@ -166,7 +166,7 @@ func UserRateLimitMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		
+
 		c.Next()
 	}
 }
@@ -186,7 +186,7 @@ func APIKeyRateLimitMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		
+
 		// Use API key for rate limiting
 		key := "api_rate_limit:" + apiKey
 		allowed, err := limiter.IsAllowed(key, 1000, time.Hour)
@@ -199,7 +199,7 @@ func APIKeyRateLimitMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		
+
 		if !allowed {
 			c.JSON(http.StatusTooManyRequests, core.CreateErrorResponse(
 				"rate_limit_exceeded",
@@ -209,7 +209,7 @@ func APIKeyRateLimitMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		
+
 		c.Next()
 	}
 }

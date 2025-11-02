@@ -1,10 +1,10 @@
 package model
 
 import (
-	"time"
-	userDTO "service/internal/users/dto"
 	branchDTO "service/internal/branches/dto"
 	orderDTO "service/internal/orders/dto"
+	userDTO "service/internal/users/dto"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -12,21 +12,21 @@ import (
 
 // Rating represents a customer rating and review
 type Rating struct {
-	ID          uuid.UUID   `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
-	OrderID     uuid.UUID   `json:"order_id" gorm:"type:uuid;not null"`
-	Order       orderDTO.ServiceOrder `json:"order" gorm:"foreignKey:OrderID"`
-	CustomerID  uuid.UUID   `json:"customer_id" gorm:"type:uuid;not null"`
-	Customer    userDTO.User        `json:"customer" gorm:"foreignKey:CustomerID"`
-	BranchID    *uuid.UUID  `json:"branch_id,omitempty" gorm:"type:uuid"`
-	Branch      *branchDTO.Branch     `json:"branch,omitempty" gorm:"foreignKey:BranchID"`
-	TechnicianID *uuid.UUID  `json:"technician_id,omitempty" gorm:"type:uuid"`
-	Technician   *userDTO.User       `json:"technician,omitempty" gorm:"foreignKey:TechnicianID"`
-	Rating      int         `json:"rating" gorm:"not null;check:rating >= 1 AND rating <= 5"` // 1-5 stars
-	Review      string      `json:"review" gorm:"type:text"`
-	IsPublic    bool        `json:"is_public" gorm:"default:true"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
+	ID           uuid.UUID             `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	OrderID      uuid.UUID             `json:"order_id" gorm:"type:uuid;not null"`
+	Order        orderDTO.ServiceOrder `json:"order" gorm:"foreignKey:OrderID"`
+	CustomerID   uuid.UUID             `json:"customer_id" gorm:"type:uuid;not null"`
+	Customer     userDTO.User          `json:"customer" gorm:"foreignKey:CustomerID"`
+	BranchID     *uuid.UUID            `json:"branch_id,omitempty" gorm:"type:uuid"`
+	Branch       *branchDTO.Branch     `json:"branch,omitempty" gorm:"foreignKey:BranchID"`
+	TechnicianID *uuid.UUID            `json:"technician_id,omitempty" gorm:"type:uuid"`
+	Technician   *userDTO.User         `json:"technician,omitempty" gorm:"foreignKey:TechnicianID"`
+	Rating       int                   `json:"rating" gorm:"not null;check:rating >= 1 AND rating <= 5"` // 1-5 stars
+	Review       string                `json:"review" gorm:"type:text"`
+	IsPublic     bool                  `json:"is_public" gorm:"default:true"`
+	CreatedAt    time.Time             `json:"created_at"`
+	UpdatedAt    time.Time             `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt        `json:"-" gorm:"index"`
 }
 
 // TableName returns the table name for Rating
@@ -36,27 +36,27 @@ func (Rating) TableName() string {
 
 // RatingRequest represents the request payload for creating a rating
 type RatingRequest struct {
-	OrderID     string `json:"order_id" validate:"required"`
-	Rating      int    `json:"rating" validate:"required,min=1,max=5"`
-	Review      string `json:"review,omitempty"`
-	IsPublic    bool   `json:"is_public" gorm:"default:true"`
+	OrderID  string `json:"order_id" validate:"required"`
+	Rating   int    `json:"rating" validate:"required,min=1,max=5"`
+	Review   string `json:"review,omitempty"`
+	IsPublic bool   `json:"is_public" gorm:"default:true"`
 }
 
 // RatingResponse represents the response payload for rating data
 type RatingResponse struct {
-	ID          uuid.UUID   `json:"id"`
-	OrderID     uuid.UUID   `json:"order_id"`
-	CustomerID  uuid.UUID   `json:"customer_id"`
-	Customer    userDTO.UserResponse `json:"customer"`
-	BranchID    *uuid.UUID  `json:"branch_id,omitempty"`
-	Branch      *branchDTO.BranchResponse `json:"branch,omitempty"`
-	TechnicianID *uuid.UUID  `json:"technician_id,omitempty"`
-	Technician   *userDTO.UserResponse `json:"technician,omitempty"`
-	Rating      int         `json:"rating"`
-	Review      string      `json:"review,omitempty"`
-	IsPublic    bool        `json:"is_public"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
+	ID           uuid.UUID                 `json:"id"`
+	OrderID      uuid.UUID                 `json:"order_id"`
+	CustomerID   uuid.UUID                 `json:"customer_id"`
+	Customer     userDTO.UserResponse      `json:"customer"`
+	BranchID     *uuid.UUID                `json:"branch_id,omitempty"`
+	Branch       *branchDTO.BranchResponse `json:"branch,omitempty"`
+	TechnicianID *uuid.UUID                `json:"technician_id,omitempty"`
+	Technician   *userDTO.UserResponse     `json:"technician,omitempty"`
+	Rating       int                       `json:"rating"`
+	Review       string                    `json:"review,omitempty"`
+	IsPublic     bool                      `json:"is_public"`
+	CreatedAt    time.Time                 `json:"created_at"`
+	UpdatedAt    time.Time                 `json:"updated_at"`
 }
 
 // ToResponse converts Rating to RatingResponse
@@ -102,4 +102,3 @@ type AverageRating struct {
 	Rating2       int64   `json:"rating_2"`
 	Rating1       int64   `json:"rating_1"`
 }
-

@@ -2,13 +2,13 @@ package router
 
 import (
 	"net/http"
-	"service/internal/users/handler"
 	branchHandler "service/internal/branches/handler"
 	orderHandler "service/internal/orders/handler"
 	paymentHandler "service/internal/payments/handler"
-	"service/internal/shared/model"
-	"service/internal/shared/middleware"
 	sharedHandlers "service/internal/shared/handlers"
+	"service/internal/shared/middleware"
+	"service/internal/shared/model"
+	"service/internal/users/handler"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,7 +20,7 @@ func SetupRoutes(r *gin.Engine) {
 	branchHdlr := branchHandler.NewBranchHandler()
 	orderHdlr := orderHandler.NewOrderHandler()
 	paymentHdlr := paymentHandler.NewPaymentHandler()
-	
+
 	// Initialize shared handlers
 	notificationHandler := sharedHandlers.NewNotificationHandler()
 	chatHandler := sharedHandlers.NewChatHandler()
@@ -55,9 +55,9 @@ func SetupRoutes(r *gin.Engine) {
 				authPublic.POST("/login", authHandler.Login)
 				authPublic.POST("/refresh", authHandler.RefreshToken)
 				authPublic.POST("/logout", authHandler.Logout)
-			authPublic.POST("/forgot-password", authHandler.ForgotPassword)
-			authPublic.POST("/reset-password", authHandler.ResetPassword)
-		}
+				authPublic.POST("/forgot-password", authHandler.ForgotPassword)
+				authPublic.POST("/reset-password", authHandler.ResetPassword)
+			}
 
 			// Payment callbacks (public, signature verified in handler)
 			public.POST("/payments/midtrans/callback", paymentHdlr.MidtransCallback)
