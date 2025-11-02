@@ -25,13 +25,13 @@ import (
     "context"
 	"log"
 	_ "service/docs" // Import docs for Swagger
-	"service/internal/config"
-	"service/internal/database"
-	"service/internal/delivery"
-	"service/internal/middleware"
-    "service/internal/monitoring"
-    svc "service/internal/service"
-	"service/internal/utils"
+	"service/internal/shared/config"
+	"service/internal/shared/database"
+	"service/internal/router"
+	"service/internal/shared/middleware"
+    "service/internal/shared/monitoring"
+	"service/internal/shared/utils"
+	svc "service/internal/payments/service"
     "time"
 
 	"github.com/gin-gonic/gin"
@@ -131,7 +131,7 @@ func setupRouter() *gin.Engine {
     r.GET("/metrics", middleware.PrometheusHandler())
 
     // Setup API routes
-	delivery.SetupRoutes(r)
+	router.SetupRoutes(r)
 
 	return r
 }

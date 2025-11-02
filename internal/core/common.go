@@ -76,16 +76,6 @@ type ResetPasswordRequest struct {
 	NewPassword string `json:"new_password" validate:"required,min=6"`
 }
 
-// DashboardStats represents dashboard statistics
-type DashboardStats struct {
-	TotalOrders     int64   `json:"total_orders"`
-	TotalRevenue    float64 `json:"total_revenue"`
-	PendingOrders   int64   `json:"pending_orders"`
-	CompletedOrders int64   `json:"completed_orders"`
-	ActiveCustomers int64   `json:"active_customers"`
-	ActiveBranches  int64   `json:"active_branches"`
-}
-
 // ServiceStats represents service statistics
 type ServiceStats struct {
 	ServiceType string  `json:"service_type"`

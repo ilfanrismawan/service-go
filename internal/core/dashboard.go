@@ -35,6 +35,8 @@ type DashboardStats struct {
 	// Overall stats
 	TotalRevenue      float64   `json:"total_revenue"`
 	TotalOrders       int64     `json:"total_orders"`
+	PendingOrders     int64     `json:"pending_orders"`
+	CompletedOrders   int64     `json:"completed_orders"`
 	ActiveCustomers   int64     `json:"active_customers"`
 	ActiveBranches    int64     `json:"active_branches"`
 	

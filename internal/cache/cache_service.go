@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"service/internal/core"
-	"service/internal/database"
+	"service/internal/branches/dto"
+	"service/internal/shared/model"
+	orderDTO "service/internal/orders/dto"
+	"service/internal/shared/database"
 	"time"
 
 	"github.com/google/uuid"
@@ -33,7 +35,7 @@ func NewCacheService() *CacheService {
 }
 
 // GetBranch retrieves branch from cache or returns nil
-func (c *CacheService) GetBranch(ctx context.Context, branchID uuid.UUID) (*core.Branch, error) {
+func (c *CacheService) GetBranch(ctx context.Context, branchID uuid.UUID) (*dto.Branch, error) {
 	if database.Redis == nil {
 		return nil, fmt.Errorf("redis not initialized")
 	}
@@ -44,7 +46,7 @@ func (c *CacheService) GetBranch(ctx context.Context, branchID uuid.UUID) (*core
 		return nil, err
 	}
 
-	var branch core.Branch
+	var branch dto.Branch
 	if err := json.Unmarshal([]byte(data), &branch); err != nil {
 		return nil, err
 	}
@@ -53,7 +55,7 @@ func (c *CacheService) GetBranch(ctx context.Context, branchID uuid.UUID) (*core
 }
 
 // SetBranch caches a branch
-func (c *CacheService) SetBranch(ctx context.Context, branch *core.Branch) error {
+func (c *CacheService) SetBranch(ctx context.Context, branch *dto.Branch) error {
 	if database.Redis == nil {
 		return fmt.Errorf("redis not initialized")
 	}
@@ -87,7 +89,7 @@ func (c *CacheService) InvalidateBranchList(ctx context.Context) error {
 }
 
 // GetMembership retrieves membership from cache
-func (c *CacheService) GetMembership(ctx context.Context, userID uuid.UUID) (*core.Membership, error) {
+func (c *CacheService) GetMembership(ctx context.Context, userID uuid.UUID) (*model.Membership, error) {
 	if database.Redis == nil {
 		return nil, fmt.Errorf("redis not initialized")
 	}
@@ -98,7 +100,7 @@ func (c *CacheService) GetMembership(ctx context.Context, userID uuid.UUID) (*co
 		return nil, err
 	}
 
-	var membership core.Membership
+	var membership model.Membership
 	if err := json.Unmarshal([]byte(data), &membership); err != nil {
 		return nil, err
 	}
@@ -107,7 +109,7 @@ func (c *CacheService) GetMembership(ctx context.Context, userID uuid.UUID) (*co
 }
 
 // SetMembership caches a membership
-func (c *CacheService) SetMembership(ctx context.Context, membership *core.Membership) error {
+func (c *CacheService) SetMembership(ctx context.Context, membership *model.Membership) error {
 	if database.Redis == nil {
 		return fmt.Errorf("redis not initialized")
 	}
@@ -132,7 +134,7 @@ func (c *CacheService) InvalidateMembership(ctx context.Context, userID uuid.UUI
 }
 
 // GetServicePrice retrieves service price estimate from cache
-func (c *CacheService) GetServicePrice(ctx context.Context, serviceType core.ServiceType) (*core.ServiceEstimate, error) {
+func (c *CacheService) GetServicePrice(ctx context.Context, serviceType orderDTO.ServiceType) (*model.ServiceEstimate, error) {
 	if database.Redis == nil {
 		return nil, fmt.Errorf("redis not initialized")
 	}
@@ -143,7 +145,7 @@ func (c *CacheService) GetServicePrice(ctx context.Context, serviceType core.Ser
 		return nil, err
 	}
 
-	var estimate core.ServiceEstimate
+	var estimate model.ServiceEstimate
 	if err := json.Unmarshal([]byte(data), &estimate); err != nil {
 		return nil, err
 	}
@@ -152,7 +154,7 @@ func (c *CacheService) GetServicePrice(ctx context.Context, serviceType core.Ser
 }
 
 // SetServicePrice caches service price estimate
-func (c *CacheService) SetServicePrice(ctx context.Context, serviceType core.ServiceType, estimate *core.ServiceEstimate) error {
+func (c *CacheService) SetServicePrice(ctx context.Context, serviceType orderDTO.ServiceType, estimate *model.ServiceEstimate) error {
 	if database.Redis == nil {
 		return fmt.Errorf("redis not initialized")
 	}

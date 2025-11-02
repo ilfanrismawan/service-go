@@ -315,7 +315,7 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentID uuid.UUID
 			CallbackURL:    fmt.Sprintf("%s/api/v1/payments/midtrans/callback", config.Config.BaseURL),
 		}
 		midtransReq.PaymentType = "shopeepay"
-	case core.PaymentMethodQris, core.PaymentMethodQRIS:
+	case core.PaymentMethodQRIS:
 		midtransReq.Qris = &Qris{
 			Acquirer: "gopay",
 		}

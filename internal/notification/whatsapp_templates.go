@@ -2,7 +2,6 @@ package notification
 
 import (
 	"fmt"
-	"service/internal/core"
 	"service/internal/utils"
 	"time"
 )
