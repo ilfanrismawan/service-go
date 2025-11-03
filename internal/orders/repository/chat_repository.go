@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"service/internal/core"
-	"service/internal/database"
+	"service/internal/shared/database"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

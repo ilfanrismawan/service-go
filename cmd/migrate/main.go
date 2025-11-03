@@ -2,9 +2,9 @@ package main
 
 import (
 	"log"
-	"service/internal/config"
 	"service/internal/core"
-	"service/internal/database"
+	"service/internal/shared/config/config"
+	"service/internal/shared/database/database"
 
 	"gorm.io/gorm"
 )

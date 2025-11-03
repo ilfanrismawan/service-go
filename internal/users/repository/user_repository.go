@@ -2,13 +2,8 @@ package repository
 
 import (
 	"context"
-<<<<<<< HEAD
-	"service/internal/core"
-	"service/internal/database"
-=======
 	"service/internal/shared/database"
 	"service/internal/users/dto"
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	"sort"
 	"sync"
 	"time"
@@ -25,11 +20,7 @@ type UserRepository struct {
 }
 
 var (
-<<<<<<< HEAD
-	sharedUsers   = make(map[uuid.UUID]*core.User)
-=======
 	sharedUsers   = make(map[uuid.UUID]*dto.User)
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	sharedUsersMu sync.RWMutex
 )
 
@@ -49,11 +40,7 @@ func NewUserRepository() *UserRepository {
 }
 
 // Create creates a new user
-<<<<<<< HEAD
-func (r *UserRepository) Create(ctx context.Context, user *core.User) error {
-=======
 func (r *UserRepository) Create(ctx context.Context, user *dto.User) error {
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	if r.inMemory {
 		sharedUsersMu.Lock()
 		defer sharedUsersMu.Unlock()
@@ -70,11 +57,7 @@ func (r *UserRepository) Create(ctx context.Context, user *dto.User) error {
 }
 
 // GetByID retrieves a user by ID
-<<<<<<< HEAD
-func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.User, error) {
-=======
 func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*dto.User, error) {
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	if r.inMemory {
 		sharedUsersMu.RLock()
 		defer sharedUsersMu.RUnlock()
@@ -84,11 +67,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*dto.User, 
 		}
 		return u, nil
 	}
-<<<<<<< HEAD
-	var user core.User
-=======
 	var user dto.User
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	err := r.db.WithContext(ctx).Preload("Branch").First(&user, "id = ?", id).Error
 	if err != nil {
 		return nil, err
@@ -97,11 +76,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*dto.User, 
 }
 
 // GetByEmail retrieves a user by email
-<<<<<<< HEAD
-func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*core.User, error) {
-=======
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*dto.User, error) {
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	if r.inMemory {
 		sharedUsersMu.RLock()
 		defer sharedUsersMu.RUnlock()
@@ -112,11 +87,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*dto.Use
 		}
 		return nil, gorm.ErrRecordNotFound
 	}
-<<<<<<< HEAD
-	var user core.User
-=======
 	var user dto.User
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	err := r.db.WithContext(ctx).Preload("Branch").First(&user, "email = ?", email).Error
 	if err != nil {
 		return nil, err
@@ -125,11 +96,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*dto.Use
 }
 
 // Update updates a user
-<<<<<<< HEAD
-func (r *UserRepository) Update(ctx context.Context, user *core.User) error {
-=======
 func (r *UserRepository) Update(ctx context.Context, user *dto.User) error {
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	if r.inMemory {
 		sharedUsersMu.Lock()
 		defer sharedUsersMu.Unlock()
@@ -154,17 +121,6 @@ func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		delete(sharedUsers, id)
 		return nil
 	}
-<<<<<<< HEAD
-	return r.db.WithContext(ctx).Delete(&core.User{}, "id = ?", id).Error
-}
-
-// List retrieves users with pagination
-func (r *UserRepository) List(ctx context.Context, offset, limit int, role *core.UserRole, branchID *uuid.UUID) ([]*core.User, int64, error) {
-	if r.inMemory {
-		sharedUsersMu.RLock()
-		defer sharedUsersMu.RUnlock()
-		var list []*core.User
-=======
 	return r.db.WithContext(ctx).Delete(&dto.User{}, "id = ?", id).Error
 }
 
@@ -174,7 +130,6 @@ func (r *UserRepository) List(ctx context.Context, offset, limit int, role *dto.
 		sharedUsersMu.RLock()
 		defer sharedUsersMu.RUnlock()
 		var list []*dto.User
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		for _, u := range sharedUsers {
 			if role != nil && u.Role != *role {
 				continue
@@ -190,11 +145,7 @@ func (r *UserRepository) List(ctx context.Context, offset, limit int, role *dto.
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		total := int64(len(list))
 		if offset > len(list) {
-<<<<<<< HEAD
-			return []*core.User{}, total, nil
-=======
 			return []*dto.User{}, total, nil
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		}
 		end := offset + limit
 		if end > len(list) {
@@ -203,17 +154,10 @@ func (r *UserRepository) List(ctx context.Context, offset, limit int, role *dto.
 		return list[offset:end], total, nil
 	}
 
-<<<<<<< HEAD
-	var users []*core.User
-	var total int64
-
-	query := r.db.WithContext(ctx).Model(&core.User{})
-=======
 	var users []*dto.User
 	var total int64
 
 	query := r.db.WithContext(ctx).Model(&dto.User{})
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 
 	if role != nil {
 		query = query.Where("role = ?", *role)
@@ -234,19 +178,11 @@ func (r *UserRepository) List(ctx context.Context, offset, limit int, role *dto.
 }
 
 // GetByBranchID retrieves users by branch ID
-<<<<<<< HEAD
-func (r *UserRepository) GetByBranchID(ctx context.Context, branchID uuid.UUID) ([]*core.User, error) {
-	if r.inMemory {
-		sharedUsersMu.RLock()
-		defer sharedUsersMu.RUnlock()
-		var users []*core.User
-=======
 func (r *UserRepository) GetByBranchID(ctx context.Context, branchID uuid.UUID) ([]*dto.User, error) {
 	if r.inMemory {
 		sharedUsersMu.RLock()
 		defer sharedUsersMu.RUnlock()
 		var users []*dto.User
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		for _, u := range sharedUsers {
 			if u.BranchID != nil && *u.BranchID == branchID {
 				users = append(users, u)
@@ -254,11 +190,7 @@ func (r *UserRepository) GetByBranchID(ctx context.Context, branchID uuid.UUID) 
 		}
 		return users, nil
 	}
-<<<<<<< HEAD
-	var users []*core.User
-=======
 	var users []*dto.User
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	err := r.db.WithContext(ctx).Preload("Branch").Where("branch_id = ?", branchID).Find(&users).Error
 	return users, err
 }
@@ -279,11 +211,7 @@ func (r *UserRepository) CheckEmailExists(ctx context.Context, email string, exc
 		return false, nil
 	}
 	var count int64
-<<<<<<< HEAD
-	query := r.db.WithContext(ctx).Model(&core.User{}).Where("email = ?", email)
-=======
 	query := r.db.WithContext(ctx).Model(&dto.User{}).Where("email = ?", email)
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 
 	if excludeID != nil {
 		query = query.Where("id != ?", *excludeID)
@@ -309,11 +237,7 @@ func (r *UserRepository) CheckPhoneExists(ctx context.Context, phone string, exc
 		return false, nil
 	}
 	var count int64
-<<<<<<< HEAD
-	query := r.db.WithContext(ctx).Model(&core.User{}).Where("phone = ?", phone)
-=======
 	query := r.db.WithContext(ctx).Model(&dto.User{}).Where("phone = ?", phone)
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 
 	if excludeID != nil {
 		query = query.Where("id != ?", *excludeID)
@@ -330,24 +254,15 @@ func (r *UserRepository) CountCustomersByDateRange(ctx context.Context, startDat
 		defer sharedUsersMu.RUnlock()
 		var count int64
 		for _, u := range sharedUsers {
-<<<<<<< HEAD
-			if u.Role == core.RolePelanggan && !u.CreatedAt.Before(startDate) && !u.CreatedAt.After(endDate) {
-=======
 			if u.Role == dto.RolePelanggan && !u.CreatedAt.Before(startDate) && !u.CreatedAt.After(endDate) {
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 				count++
 			}
 		}
 		return count, nil
 	}
 	var count int64
-<<<<<<< HEAD
-	err := r.db.WithContext(ctx).Model(&core.User{}).
-		Where("role = ? AND created_at >= ? AND created_at <= ?", core.RolePelanggan, startDate, endDate).
-=======
 	err := r.db.WithContext(ctx).Model(&dto.User{}).
 		Where("role = ? AND created_at >= ? AND created_at <= ?", dto.RolePelanggan, startDate, endDate).
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		Count(&count).Error
 	return count, err
 }
@@ -359,24 +274,15 @@ func (r *UserRepository) CountNewCustomersByDateRange(ctx context.Context, start
 		defer sharedUsersMu.RUnlock()
 		var count int64
 		for _, u := range sharedUsers {
-<<<<<<< HEAD
-			if u.Role == core.RolePelanggan && !u.CreatedAt.Before(startDate) && !u.CreatedAt.After(endDate) {
-=======
 			if u.Role == dto.RolePelanggan && !u.CreatedAt.Before(startDate) && !u.CreatedAt.After(endDate) {
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 				count++
 			}
 		}
 		return count, nil
 	}
 	var count int64
-<<<<<<< HEAD
-	err := r.db.WithContext(ctx).Model(&core.User{}).
-		Where("role = ? AND created_at >= ? AND created_at <= ?", core.RolePelanggan, startDate, endDate).
-=======
 	err := r.db.WithContext(ctx).Model(&dto.User{}).
 		Where("role = ? AND created_at >= ? AND created_at <= ?", dto.RolePelanggan, startDate, endDate).
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		Count(&count).Error
 	return count, err
 }

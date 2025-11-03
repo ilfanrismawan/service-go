@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"service/internal/core"
-    pay "service/internal/payments"
+    pay "service/internal/payments/legacy_payment"
 	"service/internal/orders/repository"
-	"service/internal/utils"
+	"service/internal/shared/utils"
     "time"
 
 	"github.com/google/uuid"

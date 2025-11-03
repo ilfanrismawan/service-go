@@ -24,17 +24,11 @@ package main
 import (
 	"context"
 	"log"
-	_ "service/docs" // Import docs for Swagger
-<<<<<<< HEAD
-	"service/internal/config"
-	"service/internal/database"
-	"service/internal/orders/handler"
-	"service/internal/middleware"
-    "service/internal/monitoring"
-    svc "service/internal/orders/service"
-	"service/internal/utils"
-    "time"
-=======
+	"time"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	docs "service/docs" // Swagger docs
 	svc "service/internal/payments/service"
 	"service/internal/router"
 	"service/internal/shared/config"
@@ -42,8 +36,6 @@ import (
 	"service/internal/shared/middleware"
 	"service/internal/shared/monitoring"
 	"service/internal/shared/utils"
-	"time"
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 
 	"github.com/gin-gonic/gin"
 )
@@ -66,8 +58,14 @@ func main() {
 	// Initialize validator
 	utils.InitValidator()
 
+	// Initialize Swagger
+	docs.SwaggerInfo.BasePath = "/"
+
 	// Setup Gin router
 	r := setupRouter()
+
+	// Register Swagger endpoint
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Start background reconciliation job
 	go func() {

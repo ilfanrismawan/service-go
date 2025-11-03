@@ -40,7 +40,7 @@ func NewUserRepository() *UserRepository {
 }
 
 // Create creates a new user
-func (r *UserRepository) Create(ctx context.Context, user *core.User) error {
+func (r *UserRepository) Register(ctx context.Context, user *core.User) error {
 	if r.inMemory {
 		sharedUsersMu.Lock()
 		defer sharedUsersMu.Unlock()

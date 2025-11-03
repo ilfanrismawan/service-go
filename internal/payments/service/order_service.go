@@ -5,7 +5,7 @@ import (
 	"errors"
 	"service/internal/core"
 	"service/internal/orders/repository"
-	"service/internal/utils"
+	"service/internal/shared/utils"
 
 	"github.com/google/uuid"
 )

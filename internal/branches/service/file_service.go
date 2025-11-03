@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"path/filepath"
-	"service/internal/config"
+	"service/internal/shared/config"
 	"service/internal/core"
 	"strings"
 	"time"

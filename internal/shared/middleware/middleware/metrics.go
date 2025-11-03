@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"service/internal/monitoring"
+	"service/internal/shared/monitoring"
 	"time"
 
 	"github.com/gin-gonic/gin"
