@@ -2,13 +2,9 @@ package delivery
 
 import (
 	"net/http"
-	"service/internal/core"
-<<<<<<< HEAD
-	"service/internal/orders/service"
-=======
 	branchService "service/internal/branches/service"
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
-	"service/internal/utils"
+	"service/internal/shared/model"
+	"service/internal/shared/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -34,16 +30,16 @@ func NewBranchHandler() *BranchHandler {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body core.BranchRequest true "Branch data"
-// @Success 201 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.BranchRequest true "Branch data"
+// @Success 201 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches [post]
 func (h *BranchHandler) CreateBranch(c *gin.Context) {
-	var req core.BranchRequest
+	var req model.BranchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -53,7 +49,7 @@ func (h *BranchHandler) CreateBranch(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -63,7 +59,7 @@ func (h *BranchHandler) CreateBranch(c *gin.Context) {
 
 	branch, err := h.branchService.CreateBranch(c.Request.Context(), &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"branch_creation_failed",
 			err.Error(),
 			nil,
@@ -71,7 +67,7 @@ func (h *BranchHandler) CreateBranch(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, core.SuccessResponse(branch, "Branch created successfully"))
+	c.JSON(http.StatusCreated, model.SuccessResponse(branch, "Branch created successfully"))
 }
 
 // GetBranch godoc
@@ -81,16 +77,16 @@ func (h *BranchHandler) CreateBranch(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Branch ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches/{id} [get]
 func (h *BranchHandler) GetBranch(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid branch ID format",
 			nil,
@@ -101,10 +97,10 @@ func (h *BranchHandler) GetBranch(c *gin.Context) {
 	branch, err := h.branchService.GetBranch(c.Request.Context(), id)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrBranchNotFound {
+		if err == model.ErrBranchNotFound {
 			statusCode = http.StatusNotFound
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"branch_not_found",
 			err.Error(),
 			nil,
@@ -112,7 +108,7 @@ func (h *BranchHandler) GetBranch(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(branch, "Branch retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(branch, "Branch retrieved successfully"))
 }
 
 // UpdateBranch godoc
@@ -123,18 +119,18 @@ func (h *BranchHandler) GetBranch(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Branch ID"
-// @Param request body core.BranchRequest true "Branch update data"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.BranchRequest true "Branch update data"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches/{id} [put]
 func (h *BranchHandler) UpdateBranch(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid branch ID format",
 			nil,
@@ -142,9 +138,9 @@ func (h *BranchHandler) UpdateBranch(c *gin.Context) {
 		return
 	}
 
-	var req core.BranchRequest
+	var req model.BranchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -154,7 +150,7 @@ func (h *BranchHandler) UpdateBranch(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -165,10 +161,10 @@ func (h *BranchHandler) UpdateBranch(c *gin.Context) {
 	branch, err := h.branchService.UpdateBranch(c.Request.Context(), id, &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrBranchNotFound {
+		if err == model.ErrBranchNotFound {
 			statusCode = http.StatusNotFound
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"branch_update_failed",
 			err.Error(),
 			nil,
@@ -176,7 +172,7 @@ func (h *BranchHandler) UpdateBranch(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(branch, "Branch updated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(branch, "Branch updated successfully"))
 }
 
 // DeleteBranch godoc
@@ -187,17 +183,17 @@ func (h *BranchHandler) UpdateBranch(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Branch ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches/{id} [delete]
 func (h *BranchHandler) DeleteBranch(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid branch ID format",
 			nil,
@@ -208,10 +204,10 @@ func (h *BranchHandler) DeleteBranch(c *gin.Context) {
 	err = h.branchService.DeleteBranch(c.Request.Context(), id)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrBranchNotFound {
+		if err == model.ErrBranchNotFound {
 			statusCode = http.StatusNotFound
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"branch_deletion_failed",
 			err.Error(),
 			nil,
@@ -219,7 +215,7 @@ func (h *BranchHandler) DeleteBranch(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "Branch deleted successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(nil, "Branch deleted successfully"))
 }
 
 // ListBranches godoc
@@ -232,9 +228,9 @@ func (h *BranchHandler) DeleteBranch(c *gin.Context) {
 // @Param limit query int false "Items per page" default(10)
 // @Param city query string false "Filter by city"
 // @Param province query string false "Filter by province"
-// @Success 200 {object} core.PaginatedResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.PaginatedResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches [get]
 func (h *BranchHandler) ListBranches(c *gin.Context) {
 	// Parse query parameters
@@ -264,7 +260,7 @@ func (h *BranchHandler) ListBranches(c *gin.Context) {
 
 	result, err := h.branchService.ListBranches(c.Request.Context(), page, limit, cityPtr, provincePtr)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"branch_list_failed",
 			err.Error(),
 			nil,
@@ -284,9 +280,9 @@ func (h *BranchHandler) ListBranches(c *gin.Context) {
 // @Param latitude query number true "Latitude"
 // @Param longitude query number true "Longitude"
 // @Param radius query number false "Radius in kilometers" default(10)
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches/nearby [get]
 func (h *BranchHandler) GetNearbyBranches(c *gin.Context) {
 	// Parse query parameters
@@ -296,7 +292,7 @@ func (h *BranchHandler) GetNearbyBranches(c *gin.Context) {
 
 	latitude, err := strconv.ParseFloat(latStr, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_latitude",
 			"Invalid latitude value",
 			nil,
@@ -306,7 +302,7 @@ func (h *BranchHandler) GetNearbyBranches(c *gin.Context) {
 
 	longitude, err := strconv.ParseFloat(lonStr, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_longitude",
 			"Invalid longitude value",
 			nil,
@@ -321,7 +317,7 @@ func (h *BranchHandler) GetNearbyBranches(c *gin.Context) {
 
 	branches, err := h.branchService.GetNearbyBranches(c.Request.Context(), latitude, longitude, radius)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"nearby_branches_failed",
 			err.Error(),
 			nil,
@@ -329,7 +325,7 @@ func (h *BranchHandler) GetNearbyBranches(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(branches, "Nearby branches retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(branches, "Nearby branches retrieved successfully"))
 }
 
 // GetActiveBranches godoc
@@ -338,13 +334,13 @@ func (h *BranchHandler) GetNearbyBranches(c *gin.Context) {
 // @Tags branches
 // @Accept json
 // @Produce json
-// @Success 200 {object} core.APIResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches/active [get]
 func (h *BranchHandler) GetActiveBranches(c *gin.Context) {
 	branches, err := h.branchService.GetActiveBranches(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"active_branches_failed",
 			err.Error(),
 			nil,
@@ -352,7 +348,7 @@ func (h *BranchHandler) GetActiveBranches(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(branches, "Active branches retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(branches, "Active branches retrieved successfully"))
 }
 
 // GetBranches godoc
@@ -363,8 +359,8 @@ func (h *BranchHandler) GetActiveBranches(c *gin.Context) {
 // @Produce json
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(10)
-// @Success 200 {object} core.APIResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches [get]
 func (h *BranchHandler) GetBranches(c *gin.Context) {
 	// Get pagination parameters
@@ -381,7 +377,7 @@ func (h *BranchHandler) GetBranches(c *gin.Context) {
 
 	branches, total, err := h.branchService.GetBranches(c.Request.Context(), page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"branches_failed",
 			err.Error(),
 			nil,
@@ -390,14 +386,14 @@ func (h *BranchHandler) GetBranches(c *gin.Context) {
 	}
 
 	// Create paginated response
-	pagination := core.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
 		TotalPages: int((total + int64(limit) - 1) / int64(limit)),
 	}
 
-	c.JSON(http.StatusOK, core.PaginatedSuccessResponse(branches, pagination, "Branches retrieved successfully"))
+	c.JSON(http.StatusOK, model.PaginatedSuccessResponse(branches, pagination, "Branches retrieved successfully"))
 }
 
 // GetNearestBranches godoc
@@ -409,9 +405,9 @@ func (h *BranchHandler) GetBranches(c *gin.Context) {
 // @Param lat query float64 true "Latitude"
 // @Param lon query float64 true "Longitude"
 // @Param radius query float64 false "Search radius in km" default(10)
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches/nearest [get]
 func (h *BranchHandler) GetNearestBranches(c *gin.Context) {
 	latStr := c.Query("lat")
@@ -419,7 +415,7 @@ func (h *BranchHandler) GetNearestBranches(c *gin.Context) {
 	radiusStr := c.DefaultQuery("radius", "10")
 
 	if latStr == "" || lonStr == "" {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"missing_coordinates",
 			"Latitude and longitude are required",
 			nil,
@@ -429,7 +425,7 @@ func (h *BranchHandler) GetNearestBranches(c *gin.Context) {
 
 	latitude, err := strconv.ParseFloat(latStr, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_latitude",
 			"Invalid latitude value",
 			nil,
@@ -439,7 +435,7 @@ func (h *BranchHandler) GetNearestBranches(c *gin.Context) {
 
 	longitude, err := strconv.ParseFloat(lonStr, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_longitude",
 			"Invalid longitude value",
 			nil,
@@ -454,7 +450,7 @@ func (h *BranchHandler) GetNearestBranches(c *gin.Context) {
 
 	branches, err := h.branchService.GetNearbyBranches(c.Request.Context(), latitude, longitude, radius)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"nearest_branches_failed",
 			err.Error(),
 			nil,
@@ -462,5 +458,5 @@ func (h *BranchHandler) GetNearestBranches(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(branches, "Nearest branches retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(branches, "Nearest branches retrieved successfully"))
 }

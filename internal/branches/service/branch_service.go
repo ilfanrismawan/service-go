@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"service/internal/branches/dto"
 	"service/internal/branches/repository"
 	"service/internal/cache"
 	"service/internal/shared/model"
@@ -25,9 +24,9 @@ func NewBranchService() *BranchService {
 }
 
 // CreateBranch creates a new branch
-func (s *BranchService) CreateBranch(ctx context.Context, req *dto.BranchRequest) (*dto.BranchResponse, error) {
+func (s *BranchService) CreateBranch(ctx context.Context, req *model.BranchRequest) (*model.BranchResponse, error) {
 	// Create branch entity
-	branch := &dto.Branch{
+	branch := &model.Branch{
 		Name:      req.Name,
 		Address:   req.Address,
 		City:      req.City,
@@ -49,7 +48,7 @@ func (s *BranchService) CreateBranch(ctx context.Context, req *dto.BranchRequest
 }
 
 // GetBranch retrieves a branch by ID (with cache)
-func (s *BranchService) GetBranch(ctx context.Context, id uuid.UUID) (*dto.BranchResponse, error) {
+func (s *BranchService) GetBranch(ctx context.Context, id uuid.UUID) (*model.BranchResponse, error) {
 	// Try cache first
 	if cachedBranch, err := s.cache.GetBranch(ctx, id); err == nil {
 		response := cachedBranch.ToResponse()
@@ -70,7 +69,7 @@ func (s *BranchService) GetBranch(ctx context.Context, id uuid.UUID) (*dto.Branc
 }
 
 // UpdateBranch updates a branch
-func (s *BranchService) UpdateBranch(ctx context.Context, id uuid.UUID, req *dto.BranchRequest) (*dto.BranchResponse, error) {
+func (s *BranchService) UpdateBranch(ctx context.Context, id uuid.UUID, req *model.BranchRequest) (*model.BranchResponse, error) {
 	// Get existing branch
 	branch, err := s.branchRepo.GetByID(ctx, id)
 	if err != nil {
@@ -121,7 +120,7 @@ func (s *BranchService) ListBranches(ctx context.Context, page, limit int, city,
 	}
 
 	// Convert to response format
-	var responses []dto.BranchResponse
+	var responses []model.BranchResponse
 	for _, branch := range branches {
 		responses = append(responses, branch.ToResponse())
 	}
@@ -145,16 +144,16 @@ func (s *BranchService) ListBranches(ctx context.Context, page, limit int, city,
 }
 
 // GetNearbyBranches retrieves branches within a certain radius
-func (s *BranchService) GetNearbyBranches(ctx context.Context, latitude, longitude, radiusKm float64) ([]dto.BranchDistance, error) {
+func (s *BranchService) GetNearbyBranches(ctx context.Context, latitude, longitude, radiusKm float64) ([]model.BranchDistance, error) {
 	branches, err := s.branchRepo.GetNearbyBranches(ctx, latitude, longitude, radiusKm)
 	if err != nil {
 		return nil, err
 	}
 
-	var results []dto.BranchDistance
+	var results []model.BranchDistance
 	for _, branch := range branches {
 		distance := model.CalculateDistance(latitude, longitude, branch.Latitude, branch.Longitude)
-		results = append(results, dto.BranchDistance{
+		results = append(results, model.BranchDistance{
 			Branch:   branch.ToResponse(),
 			Distance: distance,
 		})
@@ -164,13 +163,13 @@ func (s *BranchService) GetNearbyBranches(ctx context.Context, latitude, longitu
 }
 
 // GetActiveBranches retrieves all active branches
-func (s *BranchService) GetActiveBranches(ctx context.Context) ([]dto.BranchResponse, error) {
+func (s *BranchService) GetActiveBranches(ctx context.Context) ([]model.BranchResponse, error) {
 	branches, err := s.branchRepo.GetActiveBranches(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var responses []dto.BranchResponse
+	var responses []model.BranchResponse
 	for _, branch := range branches {
 		responses = append(responses, branch.ToResponse())
 	}
@@ -179,13 +178,13 @@ func (s *BranchService) GetActiveBranches(ctx context.Context) ([]dto.BranchResp
 }
 
 // GetBranchesByCity retrieves branches by city
-func (s *BranchService) GetBranchesByCity(ctx context.Context, city string) ([]dto.BranchResponse, error) {
+func (s *BranchService) GetBranchesByCity(ctx context.Context, city string) ([]model.BranchResponse, error) {
 	branches, err := s.branchRepo.GetByCity(ctx, city)
 	if err != nil {
 		return nil, err
 	}
 
-	var responses []dto.BranchResponse
+	var responses []model.BranchResponse
 	for _, branch := range branches {
 		responses = append(responses, branch.ToResponse())
 	}
@@ -194,13 +193,13 @@ func (s *BranchService) GetBranchesByCity(ctx context.Context, city string) ([]d
 }
 
 // GetBranchesByProvince retrieves branches by province
-func (s *BranchService) GetBranchesByProvince(ctx context.Context, province string) ([]dto.BranchResponse, error) {
+func (s *BranchService) GetBranchesByProvince(ctx context.Context, province string) ([]model.BranchResponse, error) {
 	branches, err := s.branchRepo.GetByProvince(ctx, province)
 	if err != nil {
 		return nil, err
 	}
 
-	var responses []dto.BranchResponse
+	var responses []model.BranchResponse
 	for _, branch := range branches {
 		responses = append(responses, branch.ToResponse())
 	}
@@ -209,13 +208,13 @@ func (s *BranchService) GetBranchesByProvince(ctx context.Context, province stri
 }
 
 // GetBranches retrieves branches with pagination
-func (s *BranchService) GetBranches(ctx context.Context, page, limit int) ([]dto.BranchResponse, int64, error) {
+func (s *BranchService) GetBranches(ctx context.Context, page, limit int) ([]model.BranchResponse, int64, error) {
 	branches, total, err := s.branchRepo.GetBranches(ctx, page, limit)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	var responses []dto.BranchResponse
+	var responses []model.BranchResponse
 	for _, branch := range branches {
 		responses = append(responses, branch.ToResponse())
 	}
