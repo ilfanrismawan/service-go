@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"service/internal/branches/dto"
 	"service/internal/branches/service"
 	"service/internal/shared/model"
 	"service/internal/shared/utils"
@@ -31,14 +30,14 @@ func NewBranchHandler() *BranchHandler {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body dto.BranchRequest true "Branch data"
-// @Success 201 {object} dto.APIResponse
-// @Failure 400 {object} dto.ErrorResponse
-// @Failure 401 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
+// @Param request body model.BranchRequest true "Branch data"
+// @Success 201 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches [post]
 func (h *BranchHandler) CreateBranch(c *gin.Context) {
-	var req dto.BranchRequest
+	var req model.BranchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -78,10 +77,10 @@ func (h *BranchHandler) CreateBranch(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Branch ID"
-// @Success 200 {object} dto.APIResponse
-// @Failure 400 {object} dto.ErrorResponse
-// @Failure 404 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches/{id} [get]
 func (h *BranchHandler) GetBranch(c *gin.Context) {
 	idStr := c.Param("id")
@@ -120,12 +119,12 @@ func (h *BranchHandler) GetBranch(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Branch ID"
-// @Param request body dto.BranchRequest true "Branch update data"
-// @Success 200 {object} dto.APIResponse
-// @Failure 400 {object} dto.ErrorResponse
-// @Failure 401 {object} dto.ErrorResponse
-// @Failure 404 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
+// @Param request body model.BranchRequest true "Branch update data"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches/{id} [put]
 func (h *BranchHandler) UpdateBranch(c *gin.Context) {
 	idStr := c.Param("id")
@@ -139,7 +138,7 @@ func (h *BranchHandler) UpdateBranch(c *gin.Context) {
 		return
 	}
 
-	var req dto.BranchRequest
+	var req model.BranchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -184,11 +183,11 @@ func (h *BranchHandler) UpdateBranch(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Branch ID"
-// @Success 200 {object} dto.APIResponse
-// @Failure 400 {object} dto.ErrorResponse
-// @Failure 401 {object} dto.ErrorResponse
-// @Failure 404 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches/{id} [delete]
 func (h *BranchHandler) DeleteBranch(c *gin.Context) {
 	idStr := c.Param("id")
@@ -229,9 +228,9 @@ func (h *BranchHandler) DeleteBranch(c *gin.Context) {
 // @Param limit query int false "Items per page" default(10)
 // @Param city query string false "Filter by city"
 // @Param province query string false "Filter by province"
-// @Success 200 {object} dto.PaginatedResponse
-// @Failure 400 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
+// @Success 200 {object} model.PaginatedResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches [get]
 func (h *BranchHandler) ListBranches(c *gin.Context) {
 	// Parse query parameters
@@ -281,9 +280,9 @@ func (h *BranchHandler) ListBranches(c *gin.Context) {
 // @Param latitude query number true "Latitude"
 // @Param longitude query number true "Longitude"
 // @Param radius query number false "Radius in kilometers" default(10)
-// @Success 200 {object} dto.APIResponse
-// @Failure 400 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches/nearby [get]
 func (h *BranchHandler) GetNearbyBranches(c *gin.Context) {
 	// Parse query parameters
@@ -335,8 +334,8 @@ func (h *BranchHandler) GetNearbyBranches(c *gin.Context) {
 // @Tags branches
 // @Accept json
 // @Produce json
-// @Success 200 {object} dto.APIResponse
-// @Failure 500 {object} dto.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches/active [get]
 func (h *BranchHandler) GetActiveBranches(c *gin.Context) {
 	branches, err := h.branchService.GetActiveBranches(c.Request.Context())
@@ -360,8 +359,8 @@ func (h *BranchHandler) GetActiveBranches(c *gin.Context) {
 // @Produce json
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(10)
-// @Success 200 {object} dto.APIResponse
-// @Failure 500 {object} dto.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches [get]
 func (h *BranchHandler) GetBranches(c *gin.Context) {
 	// Get pagination parameters
@@ -406,9 +405,9 @@ func (h *BranchHandler) GetBranches(c *gin.Context) {
 // @Param lat query float64 true "Latitude"
 // @Param lon query float64 true "Longitude"
 // @Param radius query float64 false "Search radius in km" default(10)
-// @Success 200 {object} dto.APIResponse
-// @Failure 400 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches/nearest [get]
 func (h *BranchHandler) GetNearestBranches(c *gin.Context) {
 	latStr := c.Query("lat")

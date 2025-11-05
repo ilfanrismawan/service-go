@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"service/internal/shared/model"
 	"service/internal/shared/utils"
-	"service/internal/users/dto"
 	"service/internal/users/repository"
 	"time"
 
@@ -27,7 +26,7 @@ func NewAuthService() *AuthService {
 }
 
 // Register registers a new user
-func (s *AuthService) Register(ctx context.Context, req *dto.UserRequest) (*dto.UserResponse, error) {
+func (s *AuthService) Register(ctx context.Context, req *model.UserRequest) (*model.UserResponse, error) {
 	// Check if email already exists
 	emailExists, err := s.userRepo.CheckEmailExists(ctx, req.Email, nil)
 	if err != nil {
@@ -53,7 +52,7 @@ func (s *AuthService) Register(ctx context.Context, req *dto.UserRequest) (*dto.
 	}
 
 	// Create user
-	user := &dto.User{
+	user := &model.User{
 		Email:    req.Email,
 		Password: string(hashedPassword),
 		FullName: req.FullName,
@@ -262,7 +261,7 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *model.ResetPasswor
 }
 
 // GetProfile retrieves user profile
-func (s *AuthService) GetProfile(ctx context.Context, userID uuid.UUID) (*dto.UserResponse, error) {
+func (s *AuthService) GetProfile(ctx context.Context, userID uuid.UUID) (*model.UserResponse, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, model.ErrUserNotFound
@@ -273,7 +272,7 @@ func (s *AuthService) GetProfile(ctx context.Context, userID uuid.UUID) (*dto.Us
 }
 
 // UpdateProfile updates user profile
-func (s *AuthService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *dto.UserRequest) (*dto.UserResponse, error) {
+func (s *AuthService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *model.UserRequest) (*model.UserResponse, error) {
 	// Get user by ID
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -324,17 +323,17 @@ func (s *AuthService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 }
 
 // ListUsers lists users with pagination and optional filters (admin)
-func (s *AuthService) ListUsers(ctx context.Context, page, limit int, role *model.UserRole, branchID *uuid.UUID) ([]*dto.User, int64, error) {
-	var dtoRole *dto.UserRole
+func (s *AuthService) ListUsers(ctx context.Context, page, limit int, role *model.UserRole, branchID *uuid.UUID) ([]*model.User, int64, error) {
+	var dtoRole *model.UserRole
 	if role != nil {
-		r := dto.UserRole(*role)
+		r := model.UserRole(*role)
 		dtoRole = &r
 	}
 	return s.userRepo.List(ctx, (page-1)*limit, limit, dtoRole, branchID)
 }
 
 // GetUser retrieves user by ID (admin)
-func (s *AuthService) GetUser(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error) {
+func (s *AuthService) GetUser(ctx context.Context, id uuid.UUID) (*model.UserResponse, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, model.ErrUserNotFound
@@ -344,7 +343,7 @@ func (s *AuthService) GetUser(ctx context.Context, id uuid.UUID) (*dto.UserRespo
 }
 
 // UpdateUser updates a user by ID (admin)
-func (s *AuthService) UpdateUser(ctx context.Context, id uuid.UUID, req *dto.UserRequest) (*dto.UserResponse, error) {
+func (s *AuthService) UpdateUser(ctx context.Context, id uuid.UUID, req *model.UserRequest) (*model.UserResponse, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, model.ErrUserNotFound

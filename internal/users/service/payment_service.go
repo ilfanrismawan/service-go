@@ -7,7 +7,6 @@ import (
 	pay "service/internal/payments"
 	"service/internal/shared/model"
 	"service/internal/shared/utils"
-	"time"
 
 	"github.com/google/uuid"
 )
