@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"net/http"
-	"service/internal/config"
+	"service/internal/shared/config"
 
 	"github.com/gin-gonic/gin"
 )

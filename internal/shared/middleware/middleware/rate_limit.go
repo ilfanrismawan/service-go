@@ -3,8 +3,8 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"service/internal/core"
-	"service/internal/database"
+	"service/internal/shared/database"
+	"service/internal/shared/model"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -38,7 +38,7 @@ func RateLimitMiddleware() gin.HandlerFunc {
 		// Check rate limit
 		allowed, err := limiter.IsAllowed(clientIP, requests, window)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+			c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 				"rate_limit_error",
 				"Rate limit check failed",
 				nil,
@@ -48,7 +48,7 @@ func RateLimitMiddleware() gin.HandlerFunc {
 		}
 
 		if !allowed {
-			c.JSON(http.StatusTooManyRequests, core.CreateErrorResponse(
+			c.JSON(http.StatusTooManyRequests, model.CreateErrorResponse(
 				"rate_limit_exceeded",
 				"Too many requests",
 				nil,
@@ -132,7 +132,7 @@ func UserRateLimitMiddleware() gin.HandlerFunc {
 			clientIP := c.ClientIP()
 			allowed, err := limiter.IsAllowed(clientIP, 100, time.Minute)
 			if err != nil || !allowed {
-				c.JSON(http.StatusTooManyRequests, core.CreateErrorResponse(
+				c.JSON(http.StatusTooManyRequests, model.CreateErrorResponse(
 					"rate_limit_exceeded",
 					"Too many requests",
 					nil,
@@ -148,7 +148,7 @@ func UserRateLimitMiddleware() gin.HandlerFunc {
 		userKey := "user_rate_limit:" + userID.(uuid.UUID).String()
 		allowed, err := limiter.IsAllowed(userKey, 200, time.Minute)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+			c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 				"rate_limit_error",
 				"Rate limit check failed",
 				nil,
@@ -158,7 +158,7 @@ func UserRateLimitMiddleware() gin.HandlerFunc {
 		}
 
 		if !allowed {
-			c.JSON(http.StatusTooManyRequests, core.CreateErrorResponse(
+			c.JSON(http.StatusTooManyRequests, model.CreateErrorResponse(
 				"rate_limit_exceeded",
 				"Too many requests",
 				nil,
@@ -178,7 +178,7 @@ func APIKeyRateLimitMiddleware() gin.HandlerFunc {
 		// Get API key from header
 		apiKey := c.GetHeader("X-API-Key")
 		if apiKey == "" {
-			c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+			c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 				"api_key_required",
 				"API key is required",
 				nil,
@@ -191,7 +191,7 @@ func APIKeyRateLimitMiddleware() gin.HandlerFunc {
 		key := "api_rate_limit:" + apiKey
 		allowed, err := limiter.IsAllowed(key, 1000, time.Hour)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+			c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 				"rate_limit_error",
 				"Rate limit check failed",
 				nil,
@@ -201,7 +201,7 @@ func APIKeyRateLimitMiddleware() gin.HandlerFunc {
 		}
 
 		if !allowed {
-			c.JSON(http.StatusTooManyRequests, core.CreateErrorResponse(
+			c.JSON(http.StatusTooManyRequests, model.CreateErrorResponse(
 				"rate_limit_exceeded",
 				"Too many requests",
 				nil,

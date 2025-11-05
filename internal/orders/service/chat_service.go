@@ -2,30 +2,30 @@ package service
 
 import (
 	"context"
-	"service/internal/core"
 	"service/internal/orders/repository"
+	"service/internal/shared/model"
 
 	"github.com/google/uuid"
 )
 
 // ChatService handles chat business logic
 type ChatService struct {
-	chatRepo *repository.ChatRepository
-	userRepo *repository.UserRepository
+	chatRepo  *repository.ChatRepository
+	userRepo  *repository.UserRepository
 	orderRepo *repository.ServiceOrderRepository
 }
 
 // NewChatService creates a new chat service
 func NewChatService() *ChatService {
 	return &ChatService{
-		chatRepo: repository.NewChatRepository(),
-		userRepo: repository.NewUserRepository(),
+		chatRepo:  repository.NewChatRepository(),
+		userRepo:  repository.NewUserRepository(),
 		orderRepo: repository.NewServiceOrderRepository(),
 	}
 }
 
 // SendMessage sends a chat message
-func (s *ChatService) SendMessage(ctx context.Context, senderID uuid.UUID, req *core.ChatMessageRequest) (*core.ChatMessageResponse, error) {
+func (s *ChatService) SendMessage(ctx context.Context, senderID uuid.UUID, req *model.ChatMessageRequest) (*model.ChatMessageResponse, error) {
 	// Validate order exists
 	orderID, err := uuid.Parse(req.OrderID)
 	if err != nil {
@@ -34,7 +34,7 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID uuid.UUID, req *
 
 	_, err = s.orderRepo.GetByID(ctx, orderID)
 	if err != nil {
-		return nil, core.ErrOrderNotFound
+		return nil, model.ErrOrderNotFound
 	}
 
 	// Validate receiver exists
@@ -45,11 +45,11 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID uuid.UUID, req *
 
 	_, err = s.userRepo.GetByID(ctx, receiverID)
 	if err != nil {
-		return nil, core.ErrUserNotFound
+		return nil, model.ErrUserNotFound
 	}
 
 	// Create chat message entity
-	message := &core.ChatMessage{
+	message := &model.ChatMessage{
 		OrderID:    orderID,
 		SenderID:   senderID,
 		ReceiverID: receiverID,
@@ -67,7 +67,7 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID uuid.UUID, req *
 }
 
 // GetChatMessages retrieves chat messages for an order
-func (s *ChatService) GetChatMessages(ctx context.Context, orderID uuid.UUID, page, limit int) (*core.PaginatedResponse, error) {
+func (s *ChatService) GetChatMessages(ctx context.Context, orderID uuid.UUID, page, limit int) (*model.PaginatedResponse, error) {
 	offset := (page - 1) * limit
 
 	messages, total, err := s.chatRepo.ListByOrderID(ctx, orderID, offset, limit)
@@ -76,37 +76,37 @@ func (s *ChatService) GetChatMessages(ctx context.Context, orderID uuid.UUID, pa
 	}
 
 	// Convert to response format
-	var responses []core.ChatMessageResponse
+	var responses []model.ChatMessageResponse
 	for _, message := range messages {
 		responses = append(responses, message.ToResponse())
 	}
 
 	// Calculate pagination
 	totalPages := int((total + int64(limit) - 1) / int64(limit))
-	pagination := core.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
 		TotalPages: totalPages,
 	}
 
-	return &core.PaginatedResponse{
+	return &model.PaginatedResponse{
 		Status:     "success",
 		Data:       responses,
 		Pagination: pagination,
 		Message:    "Chat messages retrieved successfully",
-		Timestamp:  core.GetCurrentTimestamp(),
+		Timestamp:  model.GetCurrentTimestamp(),
 	}, nil
 }
 
 // GetUserChats retrieves all chat conversations for a user
-func (s *ChatService) GetUserChats(ctx context.Context, userID uuid.UUID) ([]core.ChatMessageResponse, error) {
+func (s *ChatService) GetUserChats(ctx context.Context, userID uuid.UUID) ([]model.ChatMessageResponse, error) {
 	messages, err := s.chatRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	var responses []core.ChatMessageResponse
+	var responses []model.ChatMessageResponse
 	for _, message := range messages {
 		responses = append(responses, message.ToResponse())
 	}

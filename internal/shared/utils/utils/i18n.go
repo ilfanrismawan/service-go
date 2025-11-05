@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"service/internal/config"
+	"service/internal/shared/config"
 )
 
 // GetErrorMessage returns error message in configured language

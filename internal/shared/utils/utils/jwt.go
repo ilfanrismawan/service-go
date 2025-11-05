@@ -2,8 +2,8 @@ package utils
 
 import (
 	"errors"
-	"service/internal/config"
-	"service/internal/core"
+	"service/internal/shared/config"
+	"service/internal/shared/model"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -12,8 +12,8 @@ import (
 
 // JWTClaims represents JWT claims
 type JWTClaims struct {
-	UserID uuid.UUID     `json:"user_id"`
-	Role   core.UserRole `json:"role"`
+	UserID uuid.UUID      `json:"user_id"`
+	Role   model.UserRole `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -30,7 +30,7 @@ type PasswordResetClaims struct {
 }
 
 // GenerateAccessToken generates a new access token
-func GenerateAccessToken(userID uuid.UUID, role core.UserRole) (string, error) {
+func GenerateAccessToken(userID uuid.UUID, role model.UserRole) (string, error) {
 	// safe defaults if config not loaded (e.g., during tests)
 	jwtSecret := "test-secret"
 	expiry := 24 * time.Hour

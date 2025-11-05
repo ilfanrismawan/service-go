@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"net/http"
-	"service/internal/core"
+	"service/internal/shared/model"
 	"service/internal/shared/utils"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +14,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Get Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+			c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 				"unauthorized",
 				"Authorization header is required",
 				nil,
@@ -26,7 +26,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Extract token from header
 		token, err := utils.ExtractTokenFromHeader(authHeader)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+			c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 				"unauthorized",
 				err.Error(),
 				nil,
@@ -38,7 +38,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Validate token
 		claims, err := utils.ValidateAccessToken(token)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+			c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 				"unauthorized",
 				"Invalid or expired token",
 				nil,
@@ -55,12 +55,12 @@ func AuthMiddleware() gin.HandlerFunc {
 }
 
 // RoleMiddleware checks if user has required role
-func RoleMiddleware(allowedRoles ...core.UserRole) gin.HandlerFunc {
+func RoleMiddleware(allowedRoles ...model.UserRole) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get user role from context
 		userRole, exists := c.Get("user_role")
 		if !exists {
-			c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+			c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 				"unauthorized",
 				"User role not found in context",
 				nil,
@@ -69,9 +69,9 @@ func RoleMiddleware(allowedRoles ...core.UserRole) gin.HandlerFunc {
 			return
 		}
 
-		role, ok := userRole.(core.UserRole)
+		role, ok := userRole.(model.UserRole)
 		if !ok {
-			c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+			c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 				"internal_error",
 				"Invalid user role type",
 				nil,
@@ -90,7 +90,7 @@ func RoleMiddleware(allowedRoles ...core.UserRole) gin.HandlerFunc {
 		}
 
 		if !allowed {
-			c.JSON(http.StatusForbidden, core.CreateErrorResponse(
+			c.JSON(http.StatusForbidden, model.CreateErrorResponse(
 				"forbidden",
 				"Insufficient permissions",
 				nil,
@@ -105,23 +105,23 @@ func RoleMiddleware(allowedRoles ...core.UserRole) gin.HandlerFunc {
 
 // AdminMiddleware checks if user is admin (admin_pusat or admin_cabang)
 func AdminMiddleware() gin.HandlerFunc {
-	return RoleMiddleware(core.RoleAdminPusat, core.RoleAdminCabang)
+	return RoleMiddleware(model.RoleAdminPusat, model.RoleAdminCabang)
 }
 
 // StaffMiddleware checks if user is staff (admin, kasir, teknisi, kurir)
 func StaffMiddleware() gin.HandlerFunc {
 	return RoleMiddleware(
-		core.RoleAdminPusat,
-		core.RoleAdminCabang,
-		core.RoleKasir,
-		core.RoleTeknisi,
-		core.RoleKurir,
+		model.RoleAdminPusat,
+		model.RoleAdminCabang,
+		model.RoleKasir,
+		model.RoleTeknisi,
+		model.RoleKurir,
 	)
 }
 
 // CustomerMiddleware checks if user is customer
 func CustomerMiddleware() gin.HandlerFunc {
-	return RoleMiddleware(core.RolePelanggan)
+	return RoleMiddleware(model.RolePelanggan)
 }
 
 // OptionalAuthMiddleware validates JWT token if present but doesn't require it

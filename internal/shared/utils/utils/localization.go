@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"service/internal/config"
+	"service/internal/shared/config"
 )
 
 // FormatCurrency formats amount as Indonesian Rupiah

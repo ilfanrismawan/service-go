@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"mime/multipart"
 	"path/filepath"
-	"service/internal/config"
-	"service/internal/core"
+	"service/internal/shared/config"
+	"service/internal/shared/model"
 	"strings"
 	"time"
 
@@ -61,7 +61,7 @@ func NewFileService() (*FileService, error) {
 }
 
 // UploadFile uploads a file to S3-compatible storage
-func (s *FileService) UploadFile(ctx context.Context, file *multipart.FileHeader, folder string) (*core.FileUploadResponse, error) {
+func (s *FileService) UploadFile(ctx context.Context, file *multipart.FileHeader, folder string) (*model.FileUploadResponse, error) {
 	// Open file
 	src, err := file.Open()
 	if err != nil {
@@ -85,7 +85,7 @@ func (s *FileService) UploadFile(ctx context.Context, file *multipart.FileHeader
 	// Generate file URL
 	fileURL := fmt.Sprintf("%s/%s/%s", config.Config.S3Endpoint, s.bucketName, objectName)
 
-	response := &core.FileUploadResponse{
+	response := &model.FileUploadResponse{
 		Filename:     filename,
 		OriginalName: file.Filename,
 		Size:         file.Size,
@@ -98,7 +98,7 @@ func (s *FileService) UploadFile(ctx context.Context, file *multipart.FileHeader
 }
 
 // UploadOrderPhoto uploads a photo for an order
-func (s *FileService) UploadOrderPhoto(ctx context.Context, file *multipart.FileHeader, orderID uuid.UUID, photoType string) (*core.FileUploadResponse, error) {
+func (s *FileService) UploadOrderPhoto(ctx context.Context, file *multipart.FileHeader, orderID uuid.UUID, photoType string) (*model.FileUploadResponse, error) {
 	// Validate photo type
 	validTypes := []string{"pickup", "service", "delivery"}
 	if !contains(validTypes, photoType) {
@@ -116,7 +116,7 @@ func (s *FileService) UploadOrderPhoto(ctx context.Context, file *multipart.File
 }
 
 // UploadUserAvatar uploads a user avatar
-func (s *FileService) UploadUserAvatar(ctx context.Context, file *multipart.FileHeader, userID uuid.UUID) (*core.FileUploadResponse, error) {
+func (s *FileService) UploadUserAvatar(ctx context.Context, file *multipart.FileHeader, userID uuid.UUID) (*model.FileUploadResponse, error) {
 	// Validate file type
 	if !isImageFile(file.Filename) {
 		return nil, fmt.Errorf("file must be an image")
@@ -142,19 +142,19 @@ func (s *FileService) GetFileURL(ctx context.Context, objectName string, expiry 
 }
 
 // ListFiles lists files in a folder
-func (s *FileService) ListFiles(ctx context.Context, folder string) ([]core.FileInfo, error) {
+func (s *FileService) ListFiles(ctx context.Context, folder string) ([]model.FileInfo, error) {
 	objectCh := s.minioClient.ListObjects(ctx, s.bucketName, minio.ListObjectsOptions{
 		Prefix:    folder + "/",
 		Recursive: true,
 	})
 
-	var files []core.FileInfo
+	var files []model.FileInfo
 	for object := range objectCh {
 		if object.Err != nil {
 			return nil, object.Err
 		}
 
-		files = append(files, core.FileInfo{
+		files = append(files, model.FileInfo{
 			Name:         object.Key,
 			Size:         object.Size,
 			LastModified: object.LastModified,

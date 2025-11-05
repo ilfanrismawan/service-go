@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"service/internal/core"
 	"service/internal/shared/model"
 	service "service/internal/shared/service"
 	"service/internal/shared/utils"
@@ -31,14 +30,14 @@ func NewMembershipHandler() *MembershipHandler {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body core.MembershipRequest true "Membership data"
-// @Success 201 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.MembershipRequest true "Membership data"
+// @Success 201 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /membership [post]
 func (h *MembershipHandler) CreateMembership(c *gin.Context) {
-	var req core.MembershipRequest
+	var req model.MembershipRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -89,10 +88,10 @@ func (h *MembershipHandler) CreateMembership(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /membership [get]
 func (h *MembershipHandler) GetMembership(c *gin.Context) {
 	// Get user ID from context
@@ -126,15 +125,15 @@ func (h *MembershipHandler) GetMembership(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body core.MembershipRequest true "Membership update data"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.MembershipRequest true "Membership update data"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /membership [put]
 func (h *MembershipHandler) UpdateMembership(c *gin.Context) {
-	var req core.MembershipRequest
+	var req model.MembershipRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -189,10 +188,10 @@ func (h *MembershipHandler) UpdateMembership(c *gin.Context) {
 // @Param limit query int false "Items per page" default(10)
 // @Param tier query string false "Filter by tier"
 // @Param status query string false "Filter by status"
-// @Success 200 {object} core.PaginatedResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.PaginatedResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /membership/list [get]
 func (h *MembershipHandler) ListMemberships(c *gin.Context) {
 	// Parse query parameters
@@ -212,14 +211,14 @@ func (h *MembershipHandler) ListMemberships(c *gin.Context) {
 	}
 
 	// Set filter pointers
-	var tierPtr *core.MembershipTier
-	var statusPtr *core.MembershipStatus
+	var tierPtr *model.MembershipTier
+	var statusPtr *model.MembershipStatus
 	if tierStr != "" {
-		tier := core.MembershipTier(tierStr)
+		tier := model.MembershipTier(tierStr)
 		tierPtr = &tier
 	}
 	if statusStr != "" {
-		status := core.MembershipStatus(statusStr)
+		status := model.MembershipStatus(statusStr)
 		statusPtr = &status
 	}
 
@@ -234,16 +233,16 @@ func (h *MembershipHandler) ListMemberships(c *gin.Context) {
 	}
 
 	// Convert to response format
-	var responses []core.MembershipResponse
+	var responses []model.MembershipResponse
 	for _, membership := range memberships {
 		responses = append(responses, membership.ToResponse())
 	}
 
 	// Create paginated response
-	paginatedResponse := core.PaginatedResponse{
+	paginatedResponse := model.PaginatedResponse{
 		Status: "success",
 		Data:   responses,
-		Pagination: core.PaginationResponse{
+		Pagination: model.PaginationResponse{
 			Page:       page,
 			Limit:      limit,
 			Total:      total,
@@ -263,9 +262,9 @@ func (h *MembershipHandler) ListMemberships(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /membership/stats [get]
 func (h *MembershipHandler) GetMembershipStats(c *gin.Context) {
 	stats, err := h.membershipService.GetMembershipStats(c.Request.Context())
@@ -289,10 +288,10 @@ func (h *MembershipHandler) GetMembershipStats(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param limit query int false "Number of top spenders" default(10)
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /membership/top-spenders [get]
 func (h *MembershipHandler) GetTopSpenders(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "10")
@@ -312,7 +311,7 @@ func (h *MembershipHandler) GetTopSpenders(c *gin.Context) {
 	}
 
 	// Convert to response format
-	var responses []core.MembershipResponse
+	var responses []model.MembershipResponse
 	for _, membership := range memberships {
 		responses = append(responses, membership.ToResponse())
 	}
@@ -328,10 +327,10 @@ func (h *MembershipHandler) GetTopSpenders(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param points query int true "Points to redeem"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /membership/redeem-points [post]
 func (h *MembershipHandler) RedeemPoints(c *gin.Context) {
 	pointsStr := c.Query("points")
@@ -385,14 +384,14 @@ func (h *MembershipHandler) RedeemPoints(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body core.SubscriptionRequest true "Subscription data"
-// @Success 201 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.SubscriptionRequest true "Subscription data"
+// @Success 201 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /membership/subscribe [post]
 func (h *MembershipHandler) SubscribeToMembership(c *gin.Context) {
-	var req core.SubscriptionRequest
+	var req model.SubscriptionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -443,14 +442,14 @@ func (h *MembershipHandler) SubscribeToMembership(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body core.CancelSubscriptionRequest true "Cancel subscription data"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.CancelSubscriptionRequest true "Cancel subscription data"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /membership/cancel [post]
 func (h *MembershipHandler) CancelSubscription(c *gin.Context) {
-	var req core.CancelSubscriptionRequest
+	var req model.CancelSubscriptionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -492,10 +491,10 @@ func (h *MembershipHandler) CancelSubscription(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param tier query string true "Membership tier" Enums(basic, premium, vip, elite)
-// @Success 201 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 201 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /membership/trial [post]
 func (h *MembershipHandler) StartTrial(c *gin.Context) {
 	tierStr := c.Query("tier")
@@ -508,9 +507,9 @@ func (h *MembershipHandler) StartTrial(c *gin.Context) {
 		return
 	}
 
-	tier := core.MembershipTier(tierStr)
-	if tier != core.MembershipTierBasic && tier != core.MembershipTierPremium &&
-		tier != core.MembershipTierVIP && tier != core.MembershipTierElite {
+	tier := model.MembershipTier(tierStr)
+	if tier != model.MembershipTierBasic && tier != model.MembershipTierPremium &&
+		tier != model.MembershipTierVIP && tier != model.MembershipTierElite {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid tier. Must be one of: basic, premium, vip, elite",
@@ -549,7 +548,7 @@ func (h *MembershipHandler) StartTrial(c *gin.Context) {
 // @Tags membership
 // @Accept json
 // @Produce json
-// @Success 200 {object} core.APIResponse
+// @Success 200 {object} model.APIResponse
 // @Router /membership/tiers [get]
 func (h *MembershipHandler) GetMembershipTiers(c *gin.Context) {
 	tiers := h.membershipService.GetMembershipTiers(c.Request.Context())
@@ -565,10 +564,10 @@ func (h *MembershipHandler) GetMembershipTiers(c *gin.Context) {
 // @Security BearerAuth
 // @Param tier query string true "New membership tier" Enums(basic, premium, vip, elite)
 // @Param subscription_type query string true "Subscription type" Enums(monthly, yearly)
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /membership/upgrade [post]
 func (h *MembershipHandler) UpgradeMembership(c *gin.Context) {
 	tierStr := c.Query("tier")
@@ -583,11 +582,11 @@ func (h *MembershipHandler) UpgradeMembership(c *gin.Context) {
 		return
 	}
 
-	tier := core.MembershipTier(tierStr)
-	subscriptionType := core.SubscriptionType(subscriptionTypeStr)
+	tier := model.MembershipTier(tierStr)
+	subscriptionType := model.SubscriptionType(subscriptionTypeStr)
 
-	if tier != core.MembershipTierBasic && tier != core.MembershipTierPremium &&
-		tier != core.MembershipTierVIP && tier != core.MembershipTierElite {
+	if tier != model.MembershipTierBasic && tier != model.MembershipTierPremium &&
+		tier != model.MembershipTierVIP && tier != model.MembershipTierElite {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid tier. Must be one of: basic, premium, vip, elite",
@@ -596,7 +595,7 @@ func (h *MembershipHandler) UpgradeMembership(c *gin.Context) {
 		return
 	}
 
-	if subscriptionType != core.SubscriptionTypeMonthly && subscriptionType != core.SubscriptionTypeYearly {
+	if subscriptionType != model.SubscriptionTypeMonthly && subscriptionType != model.SubscriptionTypeYearly {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid subscription type. Must be one of: monthly, yearly",
@@ -636,9 +635,9 @@ func (h *MembershipHandler) UpgradeMembership(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /membership/usage [get]
 func (h *MembershipHandler) GetMembershipUsage(c *gin.Context) {
 	// Get user ID from context

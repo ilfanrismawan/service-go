@@ -2,7 +2,7 @@ package utils
 
 import (
 	"context"
-	"service/internal/database"
+	"service/internal/shared/database"
 	"time"
 )
 

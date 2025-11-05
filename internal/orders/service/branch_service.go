@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"service/internal/core"
 	"service/internal/orders/repository"
+	"service/internal/shared/model"
 
 	"github.com/google/uuid"
 )
@@ -21,9 +21,9 @@ func NewBranchService() *BranchService {
 }
 
 // CreateBranch creates a new branch
-func (s *BranchService) CreateBranch(ctx context.Context, req *core.BranchRequest) (*core.BranchResponse, error) {
+func (s *BranchService) CreateBranch(ctx context.Context, req *model.BranchRequest) (*model.BranchResponse, error) {
 	// Create branch entity
-	branch := &core.Branch{
+	branch := &model.Branch{
 		Name:      req.Name,
 		Address:   req.Address,
 		City:      req.City,
@@ -45,10 +45,10 @@ func (s *BranchService) CreateBranch(ctx context.Context, req *core.BranchReques
 }
 
 // GetBranch retrieves a branch by ID
-func (s *BranchService) GetBranch(ctx context.Context, id uuid.UUID) (*core.BranchResponse, error) {
+func (s *BranchService) GetBranch(ctx context.Context, id uuid.UUID) (*model.BranchResponse, error) {
 	branch, err := s.branchRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, core.ErrBranchNotFound
+		return nil, model.ErrBranchNotFound
 	}
 
 	response := branch.ToResponse()
@@ -56,11 +56,11 @@ func (s *BranchService) GetBranch(ctx context.Context, id uuid.UUID) (*core.Bran
 }
 
 // UpdateBranch updates a branch
-func (s *BranchService) UpdateBranch(ctx context.Context, id uuid.UUID, req *core.BranchRequest) (*core.BranchResponse, error) {
+func (s *BranchService) UpdateBranch(ctx context.Context, id uuid.UUID, req *model.BranchRequest) (*model.BranchResponse, error) {
 	// Get existing branch
 	branch, err := s.branchRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, core.ErrBranchNotFound
+		return nil, model.ErrBranchNotFound
 	}
 
 	// Update fields
@@ -86,7 +86,7 @@ func (s *BranchService) DeleteBranch(ctx context.Context, id uuid.UUID) error {
 	// Check if branch exists
 	_, err := s.branchRepo.GetByID(ctx, id)
 	if err != nil {
-		return core.ErrBranchNotFound
+		return model.ErrBranchNotFound
 	}
 
 	// Soft delete
@@ -94,7 +94,7 @@ func (s *BranchService) DeleteBranch(ctx context.Context, id uuid.UUID) error {
 }
 
 // ListBranches retrieves branches with pagination and filters
-func (s *BranchService) ListBranches(ctx context.Context, page, limit int, city, province *string) (*core.PaginatedResponse, error) {
+func (s *BranchService) ListBranches(ctx context.Context, page, limit int, city, province *string) (*model.PaginatedResponse, error) {
 	offset := (page - 1) * limit
 
 	branches, total, err := s.branchRepo.List(ctx, offset, limit, city, province)
@@ -103,40 +103,40 @@ func (s *BranchService) ListBranches(ctx context.Context, page, limit int, city,
 	}
 
 	// Convert to response format
-	var responses []core.BranchResponse
+	var responses []model.BranchResponse
 	for _, branch := range branches {
 		responses = append(responses, branch.ToResponse())
 	}
 
 	// Calculate pagination
 	totalPages := int((total + int64(limit) - 1) / int64(limit))
-	pagination := core.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
 		TotalPages: totalPages,
 	}
 
-	return &core.PaginatedResponse{
+	return &model.PaginatedResponse{
 		Status:     "success",
 		Data:       responses,
 		Pagination: pagination,
 		Message:    "Branches retrieved successfully",
-		Timestamp:  core.GetCurrentTimestamp(),
+		Timestamp:  model.GetCurrentTimestamp(),
 	}, nil
 }
 
 // GetNearbyBranches retrieves branches within a certain radius
-func (s *BranchService) GetNearbyBranches(ctx context.Context, latitude, longitude, radiusKm float64) ([]core.BranchDistance, error) {
+func (s *BranchService) GetNearbyBranches(ctx context.Context, latitude, longitude, radiusKm float64) ([]model.BranchDistance, error) {
 	branches, err := s.branchRepo.GetNearbyBranches(ctx, latitude, longitude, radiusKm)
 	if err != nil {
 		return nil, err
 	}
 
-	var results []core.BranchDistance
+	var results []model.BranchDistance
 	for _, branch := range branches {
-		distance := core.CalculateDistance(latitude, longitude, branch.Latitude, branch.Longitude)
-		results = append(results, core.BranchDistance{
+		distance := model.CalculateDistance(latitude, longitude, branch.Latitude, branch.Longitude)
+		results = append(results, model.BranchDistance{
 			Branch:   branch.ToResponse(),
 			Distance: distance,
 		})
@@ -146,13 +146,13 @@ func (s *BranchService) GetNearbyBranches(ctx context.Context, latitude, longitu
 }
 
 // GetActiveBranches retrieves all active branches
-func (s *BranchService) GetActiveBranches(ctx context.Context) ([]core.BranchResponse, error) {
+func (s *BranchService) GetActiveBranches(ctx context.Context) ([]model.BranchResponse, error) {
 	branches, err := s.branchRepo.GetActiveBranches(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var responses []core.BranchResponse
+	var responses []model.BranchResponse
 	for _, branch := range branches {
 		responses = append(responses, branch.ToResponse())
 	}
@@ -161,13 +161,13 @@ func (s *BranchService) GetActiveBranches(ctx context.Context) ([]core.BranchRes
 }
 
 // GetBranchesByCity retrieves branches by city
-func (s *BranchService) GetBranchesByCity(ctx context.Context, city string) ([]core.BranchResponse, error) {
+func (s *BranchService) GetBranchesByCity(ctx context.Context, city string) ([]model.BranchResponse, error) {
 	branches, err := s.branchRepo.GetByCity(ctx, city)
 	if err != nil {
 		return nil, err
 	}
 
-	var responses []core.BranchResponse
+	var responses []model.BranchResponse
 	for _, branch := range branches {
 		responses = append(responses, branch.ToResponse())
 	}
@@ -176,13 +176,13 @@ func (s *BranchService) GetBranchesByCity(ctx context.Context, city string) ([]c
 }
 
 // GetBranchesByProvince retrieves branches by province
-func (s *BranchService) GetBranchesByProvince(ctx context.Context, province string) ([]core.BranchResponse, error) {
+func (s *BranchService) GetBranchesByProvince(ctx context.Context, province string) ([]model.BranchResponse, error) {
 	branches, err := s.branchRepo.GetByProvince(ctx, province)
 	if err != nil {
 		return nil, err
 	}
 
-	var responses []core.BranchResponse
+	var responses []model.BranchResponse
 	for _, branch := range branches {
 		responses = append(responses, branch.ToResponse())
 	}
@@ -191,13 +191,13 @@ func (s *BranchService) GetBranchesByProvince(ctx context.Context, province stri
 }
 
 // GetBranches retrieves branches with pagination
-func (s *BranchService) GetBranches(ctx context.Context, page, limit int) ([]core.BranchResponse, int64, error) {
+func (s *BranchService) GetBranches(ctx context.Context, page, limit int) ([]model.BranchResponse, int64, error) {
 	branches, total, err := s.branchRepo.GetBranches(ctx, page, limit)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	var responses []core.BranchResponse
+	var responses []model.BranchResponse
 	for _, branch := range branches {
 		responses = append(responses, branch.ToResponse())
 	}
