@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"service/internal/database"
+	"service/internal/shared/database"
 	"service/internal/shared/model"
 
 	"github.com/google/uuid"

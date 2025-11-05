@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"service/internal/core"
-	"service/internal/database"
+	"service/internal/shared/database"
+	"service/internal/shared/model"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,13 +23,13 @@ func NewAuditRepository() *AuditRepository {
 }
 
 // Create creates a new audit trail entry
-func (r *AuditRepository) Create(ctx context.Context, audit *core.AuditTrail) error {
+func (r *AuditRepository) Create(ctx context.Context, audit *model.AuditTrail) error {
 	return r.db.WithContext(ctx).Create(audit).Error
 }
 
 // GetByID retrieves an audit trail entry by ID
-func (r *AuditRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.AuditTrail, error) {
-	var audit core.AuditTrail
+func (r *AuditRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.AuditTrail, error) {
+	var audit model.AuditTrail
 	err := r.db.WithContext(ctx).
 		Preload("User").
 		First(&audit, "id = ?", id).Error
@@ -40,11 +40,11 @@ func (r *AuditRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.Audi
 }
 
 // List retrieves audit trails with filters
-func (r *AuditRepository) List(ctx context.Context, offset, limit int, filters *AuditFilters) ([]core.AuditTrail, int64, error) {
-	var audits []core.AuditTrail
+func (r *AuditRepository) List(ctx context.Context, offset, limit int, filters *AuditFilters) ([]model.AuditTrail, int64, error) {
+	var audits []model.AuditTrail
 	var total int64
 
-	query := r.db.WithContext(ctx).Model(&core.AuditTrail{}).Preload("User")
+	query := r.db.WithContext(ctx).Model(&model.AuditTrail{}).Preload("User")
 
 	// Apply filters
 	if filters != nil {
@@ -90,8 +90,8 @@ func (r *AuditRepository) List(ctx context.Context, offset, limit int, filters *
 }
 
 // GetByResource retrieves audit trails for a specific resource
-func (r *AuditRepository) GetByResource(ctx context.Context, resource string, resourceID uuid.UUID, limit int) ([]core.AuditTrail, error) {
-	var audits []core.AuditTrail
+func (r *AuditRepository) GetByResource(ctx context.Context, resource string, resourceID uuid.UUID, limit int) ([]model.AuditTrail, error) {
+	var audits []model.AuditTrail
 	err := r.db.WithContext(ctx).
 		Preload("User").
 		Where("resource = ? AND resource_id = ?", resource, resourceID).
@@ -102,8 +102,8 @@ func (r *AuditRepository) GetByResource(ctx context.Context, resource string, re
 }
 
 // GetByUser retrieves audit trails for a specific user
-func (r *AuditRepository) GetByUser(ctx context.Context, userID uuid.UUID, limit int) ([]core.AuditTrail, error) {
-	var audits []core.AuditTrail
+func (r *AuditRepository) GetByUser(ctx context.Context, userID uuid.UUID, limit int) ([]model.AuditTrail, error) {
+	var audits []model.AuditTrail
 	err := r.db.WithContext(ctx).
 		Preload("User").
 		Where("user_id = ?", userID).
@@ -116,7 +116,7 @@ func (r *AuditRepository) GetByUser(ctx context.Context, userID uuid.UUID, limit
 // AuditFilters represents filters for audit trail queries
 type AuditFilters struct {
 	UserID     *uuid.UUID
-	Action     core.AuditAction
+	Action     model.AuditAction
 	Resource   string
 	ResourceID *uuid.UUID
 	Status     string

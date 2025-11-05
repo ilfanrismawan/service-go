@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"service/internal/core"
-	"service/internal/database"
+	"service/internal/shared/database"
+	"service/internal/shared/model"
 	"sort"
 	"sync"
 	"time"
@@ -20,7 +20,7 @@ type UserRepository struct {
 }
 
 var (
-	sharedUsers   = make(map[uuid.UUID]*core.User)
+	sharedUsers   = make(map[uuid.UUID]*model.User)
 	sharedUsersMu sync.RWMutex
 )
 
@@ -40,7 +40,7 @@ func NewUserRepository() *UserRepository {
 }
 
 // Create creates a new user
-func (r *UserRepository) Register(ctx context.Context, user *core.User) error {
+func (r *UserRepository) Register(ctx context.Context, user *model.User) error {
 	if r.inMemory {
 		sharedUsersMu.Lock()
 		defer sharedUsersMu.Unlock()
@@ -57,7 +57,7 @@ func (r *UserRepository) Register(ctx context.Context, user *core.User) error {
 }
 
 // GetByID retrieves a user by ID
-func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.User, error) {
+func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
 	if r.inMemory {
 		sharedUsersMu.RLock()
 		defer sharedUsersMu.RUnlock()
@@ -67,7 +67,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.User,
 		}
 		return u, nil
 	}
-	var user core.User
+	var user model.User
 	err := r.db.WithContext(ctx).Preload("Branch").First(&user, "id = ?", id).Error
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.User,
 }
 
 // GetByEmail retrieves a user by email
-func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*core.User, error) {
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	if r.inMemory {
 		sharedUsersMu.RLock()
 		defer sharedUsersMu.RUnlock()
@@ -87,7 +87,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*core.Us
 		}
 		return nil, gorm.ErrRecordNotFound
 	}
-	var user core.User
+	var user model.User
 	err := r.db.WithContext(ctx).Preload("Branch").First(&user, "email = ?", email).Error
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*core.Us
 }
 
 // Update updates a user
-func (r *UserRepository) Update(ctx context.Context, user *core.User) error {
+func (r *UserRepository) Update(ctx context.Context, user *model.User) error {
 	if r.inMemory {
 		sharedUsersMu.Lock()
 		defer sharedUsersMu.Unlock()
@@ -121,15 +121,15 @@ func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		delete(sharedUsers, id)
 		return nil
 	}
-	return r.db.WithContext(ctx).Delete(&core.User{}, "id = ?", id).Error
+	return r.db.WithContext(ctx).Delete(&model.User{}, "id = ?", id).Error
 }
 
 // List retrieves users with pagination
-func (r *UserRepository) List(ctx context.Context, offset, limit int, role *core.UserRole, branchID *uuid.UUID) ([]*core.User, int64, error) {
+func (r *UserRepository) List(ctx context.Context, offset, limit int, role *model.UserRole, branchID *uuid.UUID) ([]*model.User, int64, error) {
 	if r.inMemory {
 		sharedUsersMu.RLock()
 		defer sharedUsersMu.RUnlock()
-		var list []*core.User
+		var list []*model.User
 		for _, u := range sharedUsers {
 			if role != nil && u.Role != *role {
 				continue
@@ -145,7 +145,7 @@ func (r *UserRepository) List(ctx context.Context, offset, limit int, role *core
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		total := int64(len(list))
 		if offset > len(list) {
-			return []*core.User{}, total, nil
+			return []*model.User{}, total, nil
 		}
 		end := offset + limit
 		if end > len(list) {
@@ -154,10 +154,10 @@ func (r *UserRepository) List(ctx context.Context, offset, limit int, role *core
 		return list[offset:end], total, nil
 	}
 
-	var users []*core.User
+	var users []*model.User
 	var total int64
 
-	query := r.db.WithContext(ctx).Model(&core.User{})
+	query := r.db.WithContext(ctx).Model(&model.User{})
 
 	if role != nil {
 		query = query.Where("role = ?", *role)
@@ -178,11 +178,11 @@ func (r *UserRepository) List(ctx context.Context, offset, limit int, role *core
 }
 
 // GetByBranchID retrieves users by branch ID
-func (r *UserRepository) GetByBranchID(ctx context.Context, branchID uuid.UUID) ([]*core.User, error) {
+func (r *UserRepository) GetByBranchID(ctx context.Context, branchID uuid.UUID) ([]*model.User, error) {
 	if r.inMemory {
 		sharedUsersMu.RLock()
 		defer sharedUsersMu.RUnlock()
-		var users []*core.User
+		var users []*model.User
 		for _, u := range sharedUsers {
 			if u.BranchID != nil && *u.BranchID == branchID {
 				users = append(users, u)
@@ -190,7 +190,7 @@ func (r *UserRepository) GetByBranchID(ctx context.Context, branchID uuid.UUID) 
 		}
 		return users, nil
 	}
-	var users []*core.User
+	var users []*model.User
 	err := r.db.WithContext(ctx).Preload("Branch").Where("branch_id = ?", branchID).Find(&users).Error
 	return users, err
 }
@@ -211,7 +211,7 @@ func (r *UserRepository) CheckEmailExists(ctx context.Context, email string, exc
 		return false, nil
 	}
 	var count int64
-	query := r.db.WithContext(ctx).Model(&core.User{}).Where("email = ?", email)
+	query := r.db.WithContext(ctx).Model(&model.User{}).Where("email = ?", email)
 
 	if excludeID != nil {
 		query = query.Where("id != ?", *excludeID)
@@ -237,7 +237,7 @@ func (r *UserRepository) CheckPhoneExists(ctx context.Context, phone string, exc
 		return false, nil
 	}
 	var count int64
-	query := r.db.WithContext(ctx).Model(&core.User{}).Where("phone = ?", phone)
+	query := r.db.WithContext(ctx).Model(&model.User{}).Where("phone = ?", phone)
 
 	if excludeID != nil {
 		query = query.Where("id != ?", *excludeID)
@@ -254,15 +254,15 @@ func (r *UserRepository) CountCustomersByDateRange(ctx context.Context, startDat
 		defer sharedUsersMu.RUnlock()
 		var count int64
 		for _, u := range sharedUsers {
-			if u.Role == core.RolePelanggan && !u.CreatedAt.Before(startDate) && !u.CreatedAt.After(endDate) {
+			if u.Role == model.RolePelanggan && !u.CreatedAt.Before(startDate) && !u.CreatedAt.After(endDate) {
 				count++
 			}
 		}
 		return count, nil
 	}
 	var count int64
-	err := r.db.WithContext(ctx).Model(&core.User{}).
-		Where("role = ? AND created_at >= ? AND created_at <= ?", core.RolePelanggan, startDate, endDate).
+	err := r.db.WithContext(ctx).Model(&model.User{}).
+		Where("role = ? AND created_at >= ? AND created_at <= ?", model.RolePelanggan, startDate, endDate).
 		Count(&count).Error
 	return count, err
 }
@@ -274,15 +274,15 @@ func (r *UserRepository) CountNewCustomersByDateRange(ctx context.Context, start
 		defer sharedUsersMu.RUnlock()
 		var count int64
 		for _, u := range sharedUsers {
-			if u.Role == core.RolePelanggan && !u.CreatedAt.Before(startDate) && !u.CreatedAt.After(endDate) {
+			if u.Role == model.RolePelanggan && !u.CreatedAt.Before(startDate) && !u.CreatedAt.After(endDate) {
 				count++
 			}
 		}
 		return count, nil
 	}
 	var count int64
-	err := r.db.WithContext(ctx).Model(&core.User{}).
-		Where("role = ? AND created_at >= ? AND created_at <= ?", core.RolePelanggan, startDate, endDate).
+	err := r.db.WithContext(ctx).Model(&model.User{}).
+		Where("role = ? AND created_at >= ? AND created_at <= ?", model.RolePelanggan, startDate, endDate).
 		Count(&count).Error
 	return count, err
 }

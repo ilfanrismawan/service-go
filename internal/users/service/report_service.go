@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
-	"service/internal/core"
 	"service/internal/orders/repository"
+	"service/internal/shared/model"
 	"time"
 )
 
@@ -30,21 +30,21 @@ func NewReportService() *ReportService {
 
 // MonthlyReport represents a monthly report
 type MonthlyReport struct {
-	Month           string                  `json:"month"`
-	Year            int                     `json:"year"`
-	TotalOrders     int64                   `json:"total_orders"`
-	TotalRevenue    float64                 `json:"total_revenue"`
-	TotalCustomers  int64                   `json:"total_customers"`
-	NewCustomers    int64                   `json:"new_customers"`
-	OrdersByStatus  map[string]int64        `json:"orders_by_status"`
-	RevenueByBranch map[string]float64      `json:"revenue_by_branch"`
-	OrdersByBranch  map[string]int64        `json:"orders_by_branch"`
-	PaymentMethods  map[string]float64      `json:"payment_methods"`
-	ServiceTypes    map[string]int64        `json:"service_types"`
-	MembershipStats map[string]interface{}  `json:"membership_stats"`
-	TopServices     []core.ServiceTypeStats `json:"top_services"`
-	TopBranches     []core.BranchStats      `json:"top_branches"`
-	GrowthMetrics   core.GrowthMetrics      `json:"growth_metrics"`
+	Month           string                   `json:"month"`
+	Year            int                      `json:"year"`
+	TotalOrders     int64                    `json:"total_orders"`
+	TotalRevenue    float64                  `json:"total_revenue"`
+	TotalCustomers  int64                    `json:"total_customers"`
+	NewCustomers    int64                    `json:"new_customers"`
+	OrdersByStatus  map[string]int64         `json:"orders_by_status"`
+	RevenueByBranch map[string]float64       `json:"revenue_by_branch"`
+	OrdersByBranch  map[string]int64         `json:"orders_by_branch"`
+	PaymentMethods  map[string]float64       `json:"payment_methods"`
+	ServiceTypes    map[string]int64         `json:"service_types"`
+	MembershipStats map[string]interface{}   `json:"membership_stats"`
+	TopServices     []model.ServiceTypeStats `json:"top_services"`
+	TopBranches     []model.BranchStats      `json:"top_branches"`
+	GrowthMetrics   model.GrowthMetrics      `json:"growth_metrics"`
 }
 
 // GenerateMonthlyReport generates a comprehensive monthly report
@@ -119,19 +119,19 @@ func (s *ReportService) GenerateMonthlyReport(ctx context.Context, year int, mon
 	// Get top services (with fallback to empty slice)
 	topServices, err := s.orderRepo.GetTopServiceTypesInDateRange(ctx, startDate, endDate, 10)
 	if err != nil {
-		topServices = []core.ServiceTypeStats{}
+		topServices = []model.ServiceTypeStats{}
 	}
 
 	// Get top branches (with fallback to empty slice)
 	topBranches, err := s.branchRepo.GetTopBranchesByRevenueInDateRange(ctx, startDate, endDate, 10)
 	if err != nil {
-		topBranches = []core.BranchStats{}
+		topBranches = []model.BranchStats{}
 	}
 
 	// Calculate growth metrics (with fallback to default)
 	growthMetrics, err := s.calculateGrowthMetrics(ctx, year, month)
 	if err != nil {
-		growthMetrics = core.GrowthMetrics{
+		growthMetrics = model.GrowthMetrics{
 			OrderGrowth:     0,
 			RevenueGrowth:   0,
 			PreviousOrders:  0,
@@ -161,19 +161,19 @@ func (s *ReportService) GenerateMonthlyReport(ctx context.Context, year int, mon
 }
 
 // calculateGrowthMetrics calculates growth metrics compared to previous month
-func (s *ReportService) calculateGrowthMetrics(ctx context.Context, year int, month int) (core.GrowthMetrics, error) {
+func (s *ReportService) calculateGrowthMetrics(ctx context.Context, year int, month int) (model.GrowthMetrics, error) {
 	// Get current month data
 	currentStart := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 	currentEnd := currentStart.AddDate(0, 1, 0).Add(-time.Second)
 
 	currentOrders, err := s.orderRepo.CountOrdersByDateRange(ctx, currentStart, currentEnd)
 	if err != nil {
-		return core.GrowthMetrics{}, err
+		return model.GrowthMetrics{}, err
 	}
 
 	currentRevenue, err := s.paymentRepo.GetTotalRevenueByDateRange(ctx, currentStart, currentEnd)
 	if err != nil {
-		return core.GrowthMetrics{}, err
+		return model.GrowthMetrics{}, err
 	}
 
 	// Get previous month data
@@ -182,12 +182,12 @@ func (s *ReportService) calculateGrowthMetrics(ctx context.Context, year int, mo
 
 	prevOrders, err := s.orderRepo.CountOrdersByDateRange(ctx, prevStart, prevEnd)
 	if err != nil {
-		return core.GrowthMetrics{}, err
+		return model.GrowthMetrics{}, err
 	}
 
 	prevRevenue, err := s.paymentRepo.GetTotalRevenueByDateRange(ctx, prevStart, prevEnd)
 	if err != nil {
-		return core.GrowthMetrics{}, err
+		return model.GrowthMetrics{}, err
 	}
 
 	// Calculate growth percentages
@@ -202,7 +202,7 @@ func (s *ReportService) calculateGrowthMetrics(ctx context.Context, year int, mo
 		revenueGrowth = (currentRevenue - prevRevenue) / prevRevenue * 100
 	}
 
-	return core.GrowthMetrics{
+	return model.GrowthMetrics{
 		OrderGrowth:     orderGrowth,
 		RevenueGrowth:   revenueGrowth,
 		PreviousOrders:  prevOrders,
@@ -211,9 +211,9 @@ func (s *ReportService) calculateGrowthMetrics(ctx context.Context, year int, mo
 }
 
 // GetYearlyReport generates a yearly report
-func (s *ReportService) GetYearlyReport(ctx context.Context, year int) (*core.YearlyReport, error) {
+func (s *ReportService) GetYearlyReport(ctx context.Context, year int) (*model.YearlyReport, error) {
 	// Get monthly data for the year
-	var monthlyData []core.MonthlyReportData
+	var monthlyData []model.MonthlyReportData
 
 	for month := 1; month <= 12; month++ {
 		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
@@ -229,7 +229,7 @@ func (s *ReportService) GetYearlyReport(ctx context.Context, year int) (*core.Ye
 			continue
 		}
 
-		monthlyData = append(monthlyData, core.MonthlyReportData{
+		monthlyData = append(monthlyData, model.MonthlyReportData{
 			Month:   startDate.Format("January"),
 			Orders:  orders,
 			Revenue: revenue,
@@ -244,7 +244,7 @@ func (s *ReportService) GetYearlyReport(ctx context.Context, year int) (*core.Ye
 		totalRevenue += data.Revenue
 	}
 
-	return &core.YearlyReport{
+	return &model.YearlyReport{
 		Year:         year,
 		TotalOrders:  totalOrders,
 		TotalRevenue: totalRevenue,

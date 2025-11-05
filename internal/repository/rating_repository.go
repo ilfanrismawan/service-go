@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"service/internal/core"
-	"service/internal/database"
+	"service/internal/shared/database"
+	"service/internal/shared/model"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -22,13 +22,13 @@ func NewRatingRepository() *RatingRepository {
 }
 
 // Create creates a new rating
-func (r *RatingRepository) Create(ctx context.Context, rating *core.Rating) error {
+func (r *RatingRepository) Create(ctx context.Context, rating *model.Rating) error {
 	return r.db.WithContext(ctx).Create(rating).Error
 }
 
 // GetByID retrieves a rating by ID
-func (r *RatingRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.Rating, error) {
-	var rating core.Rating
+func (r *RatingRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Rating, error) {
+	var rating model.Rating
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Customer").
@@ -42,8 +42,8 @@ func (r *RatingRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.Rat
 }
 
 // GetByOrderID retrieves a rating by order ID
-func (r *RatingRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID) (*core.Rating, error) {
-	var rating core.Rating
+func (r *RatingRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID) (*model.Rating, error) {
+	var rating model.Rating
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Customer").
@@ -57,8 +57,8 @@ func (r *RatingRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID) 
 }
 
 // List retrieves ratings with filters
-func (r *RatingRepository) List(ctx context.Context, offset, limit int, filters *RatingFilters) ([]core.Rating, int64, error) {
-	var ratings []core.Rating
+func (r *RatingRepository) List(ctx context.Context, offset, limit int, filters *RatingFilters) ([]model.Rating, int64, error) {
+	var ratings []model.Rating
 	var total int64
 
 	query := r.db.WithContext(ctx).
@@ -90,7 +90,7 @@ func (r *RatingRepository) List(ctx context.Context, offset, limit int, filters 
 	}
 
 	// Count total
-	if err := query.Model(&core.Rating{}).Count(&total).Error; err != nil {
+	if err := query.Model(&model.Rating{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -105,18 +105,18 @@ func (r *RatingRepository) List(ctx context.Context, offset, limit int, filters 
 }
 
 // Update updates a rating
-func (r *RatingRepository) Update(ctx context.Context, rating *core.Rating) error {
+func (r *RatingRepository) Update(ctx context.Context, rating *model.Rating) error {
 	return r.db.WithContext(ctx).Save(rating).Error
 }
 
 // Delete soft deletes a rating
 func (r *RatingRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Delete(&core.Rating{}, "id = ?", id).Error
+	return r.db.WithContext(ctx).Delete(&model.Rating{}, "id = ?", id).Error
 }
 
 // GetAverageRating calculates average rating
-func (r *RatingRepository) GetAverageRating(ctx context.Context, filters *RatingFilters) (*core.AverageRating, error) {
-	query := r.db.WithContext(ctx).Model(&core.Rating{})
+func (r *RatingRepository) GetAverageRating(ctx context.Context, filters *RatingFilters) (*model.AverageRating, error) {
+	query := r.db.WithContext(ctx).Model(&model.Rating{})
 
 	// Apply filters
 	if filters != nil {
@@ -156,7 +156,7 @@ func (r *RatingRepository) GetAverageRating(ctx context.Context, filters *Rating
 	_ = baseQuery.Where("rating = ?", 2).Count(&result.Rating2).Error
 	_ = baseQuery.Where("rating = ?", 1).Count(&result.Rating1).Error
 
-	return &core.AverageRating{
+	return &model.AverageRating{
 		AverageRating: result.AverageRating,
 		TotalRatings:  result.TotalRatings,
 		Rating5:       result.Rating5,
