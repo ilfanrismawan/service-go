@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"service/internal/core"
-	"service/internal/database"
+	"service/internal/shared/database"
+	"service/internal/shared/model"
 	"sort"
 	"strings"
 	"sync"
@@ -18,18 +18,18 @@ type BranchRepository struct {
 	db       *gorm.DB
 	inMemory bool
 	mu       sync.RWMutex
-	branches map[uuid.UUID]*core.Branch
+	branches map[uuid.UUID]*model.Branch
 }
 
 // NewBranchRepository creates a new branch repository
 func NewBranchRepository() *BranchRepository {
 	if database.DB == nil {
 		// use shared in-memory store
-		m := make(map[uuid.UUID]*core.Branch)
+		m := make(map[uuid.UUID]*model.Branch)
 		// seed a default test branch so tests that reference a static UUID can work
 		if id, err := uuid.Parse("550e8400-e29b-41d4-a716-446655440000"); err == nil {
 			now := time.Now()
-			m[id] = &core.Branch{
+			m[id] = &model.Branch{
 				ID:        id,
 				Name:      "Test Branch",
 				City:      "Test City",
@@ -51,7 +51,7 @@ func NewBranchRepository() *BranchRepository {
 }
 
 // Create creates a new branch
-func (r *BranchRepository) Create(ctx context.Context, branch *core.Branch) error {
+func (r *BranchRepository) Create(ctx context.Context, branch *model.Branch) error {
 	if r.inMemory {
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -68,7 +68,7 @@ func (r *BranchRepository) Create(ctx context.Context, branch *core.Branch) erro
 }
 
 // GetByID retrieves a branch by ID
-func (r *BranchRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.Branch, error) {
+func (r *BranchRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Branch, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
@@ -78,7 +78,7 @@ func (r *BranchRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.Bra
 		}
 		return b, nil
 	}
-	var branch core.Branch
+	var branch model.Branch
 	err := r.db.WithContext(ctx).First(&branch, "id = ?", id).Error
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (r *BranchRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.Bra
 }
 
 // Update updates a branch
-func (r *BranchRepository) Update(ctx context.Context, branch *core.Branch) error {
+func (r *BranchRepository) Update(ctx context.Context, branch *model.Branch) error {
 	if r.inMemory {
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -112,15 +112,15 @@ func (r *BranchRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		delete(r.branches, id)
 		return nil
 	}
-	return r.db.WithContext(ctx).Delete(&core.Branch{}, "id = ?", id).Error
+	return r.db.WithContext(ctx).Delete(&model.Branch{}, "id = ?", id).Error
 }
 
 // List retrieves branches with pagination
-func (r *BranchRepository) List(ctx context.Context, offset, limit int, city *string, province *string) ([]*core.Branch, int64, error) {
+func (r *BranchRepository) List(ctx context.Context, offset, limit int, city *string, province *string) ([]*model.Branch, int64, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		var list []*core.Branch
+		var list []*model.Branch
 		for _, b := range r.branches {
 			if city != nil && !containsIgnoreCase(b.City, *city) {
 				continue
@@ -133,7 +133,7 @@ func (r *BranchRepository) List(ctx context.Context, offset, limit int, city *st
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		total := int64(len(list))
 		if offset > len(list) {
-			return []*core.Branch{}, total, nil
+			return []*model.Branch{}, total, nil
 		}
 		end := offset + limit
 		if end > len(list) {
@@ -141,10 +141,10 @@ func (r *BranchRepository) List(ctx context.Context, offset, limit int, city *st
 		}
 		return list[offset:end], total, nil
 	}
-	var branches []*core.Branch
+	var branches []*model.Branch
 	var total int64
 
-	query := r.db.WithContext(ctx).Model(&core.Branch{})
+	query := r.db.WithContext(ctx).Model(&model.Branch{})
 
 	if city != nil {
 		query = query.Where("city ILIKE ?", "%"+*city+"%")
@@ -165,11 +165,11 @@ func (r *BranchRepository) List(ctx context.Context, offset, limit int, city *st
 }
 
 // GetActiveBranches retrieves all active branches
-func (r *BranchRepository) GetActiveBranches(ctx context.Context) ([]*core.Branch, error) {
+func (r *BranchRepository) GetActiveBranches(ctx context.Context) ([]*model.Branch, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		var list []*core.Branch
+		var list []*model.Branch
 		for _, b := range r.branches {
 			if b.IsActive {
 				list = append(list, b)
@@ -177,14 +177,14 @@ func (r *BranchRepository) GetActiveBranches(ctx context.Context) ([]*core.Branc
 		}
 		return list, nil
 	}
-	var branches []*core.Branch
+	var branches []*model.Branch
 	err := r.db.WithContext(ctx).Where("is_active = ?", true).Find(&branches).Error
 	return branches, err
 }
 
 // GetNearbyBranches retrieves branches within a certain radius
-func (r *BranchRepository) GetNearbyBranches(ctx context.Context, latitude, longitude, radiusKm float64) ([]*core.Branch, error) {
-	var branches []*core.Branch
+func (r *BranchRepository) GetNearbyBranches(ctx context.Context, latitude, longitude, radiusKm float64) ([]*model.Branch, error) {
+	var branches []*model.Branch
 
 	// Using Haversine formula to calculate distance
 	// This is a simplified version - in production, you might want to use PostGIS
@@ -212,11 +212,11 @@ func (r *BranchRepository) GetNearbyBranches(ctx context.Context, latitude, long
 }
 
 // GetByCity retrieves branches by city
-func (r *BranchRepository) GetByCity(ctx context.Context, city string) ([]*core.Branch, error) {
+func (r *BranchRepository) GetByCity(ctx context.Context, city string) ([]*model.Branch, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		var list []*core.Branch
+		var list []*model.Branch
 		for _, b := range r.branches {
 			if b.IsActive && containsIgnoreCase(b.City, city) {
 				list = append(list, b)
@@ -224,17 +224,17 @@ func (r *BranchRepository) GetByCity(ctx context.Context, city string) ([]*core.
 		}
 		return list, nil
 	}
-	var branches []*core.Branch
+	var branches []*model.Branch
 	err := r.db.WithContext(ctx).Where("city ILIKE ? AND is_active = ?", "%"+city+"%", true).Find(&branches).Error
 	return branches, err
 }
 
 // GetByProvince retrieves branches by province
-func (r *BranchRepository) GetByProvince(ctx context.Context, province string) ([]*core.Branch, error) {
+func (r *BranchRepository) GetByProvince(ctx context.Context, province string) ([]*model.Branch, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		var list []*core.Branch
+		var list []*model.Branch
 		for _, b := range r.branches {
 			if b.IsActive && containsIgnoreCase(b.Province, province) {
 				list = append(list, b)
@@ -242,19 +242,19 @@ func (r *BranchRepository) GetByProvince(ctx context.Context, province string) (
 		}
 		return list, nil
 	}
-	var branches []*core.Branch
+	var branches []*model.Branch
 	err := r.db.WithContext(ctx).Where("province ILIKE ? AND is_active = ?", "%"+province+"%", true).Find(&branches).Error
 	return branches, err
 }
 
 // GetTopBranchesByRevenueInDateRange gets top branches by revenue within a date range
-func (r *BranchRepository) GetTopBranchesByRevenueInDateRange(ctx context.Context, startDate, endDate time.Time, limit int) ([]core.BranchStats, error) {
-	var results []core.BranchStats
+func (r *BranchRepository) GetTopBranchesByRevenueInDateRange(ctx context.Context, startDate, endDate time.Time, limit int) ([]model.BranchStats, error) {
+	var results []model.BranchStats
 
-	err := r.db.WithContext(ctx).Model(&core.Payment{}).
+	err := r.db.WithContext(ctx).Model(&model.Payment{}).
 		Select("o.branch_id, COALESCE(SUM(p.amount), 0) as revenue").
 		Joins("JOIN service_orders o ON p.order_id = o.id").
-		Where("p.created_at >= ? AND p.created_at <= ? AND p.status = ?", startDate, endDate, core.PaymentStatusPaid).
+		Where("p.created_at >= ? AND p.created_at <= ? AND p.status = ?", startDate, endDate, model.PaymentStatusPaid).
 		Group("o.branch_id").
 		Order("revenue DESC").
 		Limit(limit).
@@ -264,11 +264,11 @@ func (r *BranchRepository) GetTopBranchesByRevenueInDateRange(ctx context.Contex
 }
 
 // GetBranches retrieves branches with pagination
-func (r *BranchRepository) GetBranches(ctx context.Context, page, limit int) ([]core.Branch, int64, error) {
+func (r *BranchRepository) GetBranches(ctx context.Context, page, limit int) ([]model.Branch, int64, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		var list []core.Branch
+		var list []model.Branch
 		for _, b := range r.branches {
 			list = append(list, *b)
 		}
@@ -276,7 +276,7 @@ func (r *BranchRepository) GetBranches(ctx context.Context, page, limit int) ([]
 		total := int64(len(list))
 		offset := (page - 1) * limit
 		if offset > len(list) {
-			return []core.Branch{}, total, nil
+			return []model.Branch{}, total, nil
 		}
 		end := offset + limit
 		if end > len(list) {
@@ -285,11 +285,11 @@ func (r *BranchRepository) GetBranches(ctx context.Context, page, limit int) ([]
 		return list[offset:end], total, nil
 	}
 
-	var branches []core.Branch
+	var branches []model.Branch
 	var total int64
 
 	// Count total records
-	if err := r.db.WithContext(ctx).Model(&core.Branch{}).Count(&total).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&model.Branch{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 

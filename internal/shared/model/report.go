@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-package core
-=======
 package model
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 
 // ServiceTypeStats represents statistics for a service type
 type ServiceTypeStats struct {

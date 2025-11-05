@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"service/internal/core"
 	"service/internal/orders/service"
+	"service/internal/shared/model"
 	"sync"
 	"time"
 
@@ -62,7 +62,7 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -72,7 +72,7 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -83,7 +83,7 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 	// Get order ID from query
 	orderIDStr := c.Query("order_id")
 	if orderIDStr == "" {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"order_id_required",
 			"Order ID is required",
 			nil,
@@ -93,7 +93,7 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 
 	orderID, err := uuid.Parse(orderIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_order_id",
 			"Invalid order ID format",
 			nil,
@@ -223,7 +223,7 @@ func (h *WebSocketHandler) handleMessage(client *Client, message *Message) {
 // handleChatMessage handles chat messages
 func (h *WebSocketHandler) handleChatMessage(client *Client, message *Message) {
 	// Create chat message request
-	req := &core.ChatMessageRequest{
+	req := &model.ChatMessageRequest{
 		OrderID:    message.OrderID,
 		ReceiverID: message.UserID,
 		Message:    message.Content,

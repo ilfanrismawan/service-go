@@ -2,14 +2,17 @@ package delivery
 
 import (
 	"net/http"
-	"service/internal/core"
+	model "service/internal/shared/model"
 	"service/internal/shared/utils"
 	"service/internal/users/auth"
+	userDTO "service/internal/users/dto"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+type UserRole = model.UserRole
 
 // AuthHandler handles authentication endpoints
 type AuthHandler struct {
@@ -29,16 +32,16 @@ func NewAuthHandler() *AuthHandler {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body core.UserRequest true "User registration data"
-// @Success 201 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 409 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.UserRequest true "User registration data"
+// @Success 201 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 409 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
-	var req core.UserRequest
+	var req userDTO.UserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -51,7 +54,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -62,10 +65,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	user, err := h.authService.Register(c.Request.Context(), &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrEmailExists || err == core.ErrPhoneExists {
+		if err == model.ErrEmailExists || err == model.ErrPhoneExists {
 			statusCode = http.StatusConflict
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"registration_failed",
 			err.Error(),
 			nil,
@@ -73,7 +76,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, core.SuccessResponse(user, "User registered successfully"))
+	c.JSON(http.StatusCreated, model.SuccessResponse(user, "User registered successfully"))
 }
 
 // Login godoc
@@ -82,16 +85,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body core.LoginRequest true "Login credentials"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.LoginRequest true "Login credentials"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
-	var req core.LoginRequest
+	var req model.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -101,7 +104,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -112,10 +115,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	response, err := h.authService.Login(c.Request.Context(), &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrUserNotFound || err == core.ErrInvalidPassword {
+		if err == model.ErrUserNotFound || err == model.ErrInvalidPassword {
 			statusCode = http.StatusUnauthorized
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"login_failed",
 			err.Error(),
 			nil,
@@ -123,7 +126,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(response, "Login successful"))
+	c.JSON(http.StatusOK, model.SuccessResponse(response, "Login successful"))
 }
 
 // RefreshToken godoc
@@ -132,16 +135,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body core.RefreshTokenRequest true "Refresh token data"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.RefreshTokenRequest true "Refresh token data"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /auth/refresh [post]
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
-	var req core.RefreshTokenRequest
+	var req model.RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -151,7 +154,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -162,10 +165,10 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	response, err := h.authService.RefreshToken(c.Request.Context(), &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrInvalidToken {
+		if err == model.ErrInvalidToken {
 			statusCode = http.StatusUnauthorized
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"refresh_failed",
 			err.Error(),
 			nil,
@@ -173,7 +176,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(response, "Token refreshed successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(response, "Token refreshed successfully"))
 }
 
 // Logout godoc
@@ -182,15 +185,15 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body core.RefreshTokenRequest true "Refresh token data"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
+// @Param request body model.RefreshTokenRequest true "Refresh token data"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
 // @Router /auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
-	var req core.RefreshTokenRequest
+	var req model.RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -200,7 +203,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 
 	if err := h.authService.Logout(c.Request.Context(), req.RefreshToken); err != nil {
 		status := http.StatusUnauthorized
-		c.JSON(status, core.CreateErrorResponse(
+		c.JSON(status, model.CreateErrorResponse(
 			"logout_failed",
 			err.Error(),
 			nil,
@@ -208,7 +211,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "Logged out"))
+	c.JSON(http.StatusOK, model.SuccessResponse(nil, "Logged out"))
 }
 
 // GetProfile godoc
@@ -218,15 +221,15 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /auth/profile [get]
 func (h *AuthHandler) GetProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -236,7 +239,7 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -247,10 +250,10 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 	profile, err := h.authService.GetProfile(c.Request.Context(), userUUID)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrUserNotFound {
+		if err == model.ErrUserNotFound {
 			statusCode = http.StatusNotFound
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"profile_fetch_failed",
 			err.Error(),
 			nil,
@@ -258,7 +261,7 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(profile, "Profile retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(profile, "Profile retrieved successfully"))
 }
 
 // UpdateProfile godoc
@@ -268,18 +271,18 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body core.UserRequest true "Profile update data"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 409 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.UserRequest true "Profile update data"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 409 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /auth/profile [put]
 func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -289,7 +292,7 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -297,9 +300,9 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	var req core.UserRequest
+	var req userDTO.UserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -312,7 +315,7 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -323,12 +326,12 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 	profile, err := h.authService.UpdateProfile(c.Request.Context(), userUUID, &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrUserNotFound {
+		if err == model.ErrUserNotFound {
 			statusCode = http.StatusNotFound
-		} else if err == core.ErrEmailExists || err == core.ErrPhoneExists {
+		} else if err == model.ErrEmailExists || err == model.ErrPhoneExists {
 			statusCode = http.StatusConflict
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"profile_update_failed",
 			err.Error(),
 			nil,
@@ -336,7 +339,7 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(profile, "Profile updated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(profile, "Profile updated successfully"))
 }
 
 // ChangePassword godoc
@@ -346,17 +349,17 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body core.ChangePasswordRequest true "Password change data"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.ChangePasswordRequest true "Password change data"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /auth/change-password [post]
 func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -366,7 +369,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -374,9 +377,9 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	var req core.ChangePasswordRequest
+	var req model.ChangePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -386,7 +389,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -397,12 +400,12 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	err := h.authService.ChangePassword(c.Request.Context(), userUUID, &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrUserNotFound {
+		if err == model.ErrUserNotFound {
 			statusCode = http.StatusNotFound
-		} else if err == core.ErrInvalidPassword {
+		} else if err == model.ErrInvalidPassword {
 			statusCode = http.StatusUnauthorized
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"password_change_failed",
 			err.Error(),
 			nil,
@@ -410,7 +413,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "Password changed successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(nil, "Password changed successfully"))
 }
 
 // ForgotPassword godoc
@@ -419,15 +422,15 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body core.ForgotPasswordRequest true "Forgot password data"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.ForgotPasswordRequest true "Forgot password data"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /auth/forgot-password [post]
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
-	var req core.ForgotPasswordRequest
+	var req model.ForgotPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -437,7 +440,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -447,7 +450,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 
 	err := h.authService.ForgotPassword(c.Request.Context(), &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"forgot_password_failed",
 			err.Error(),
 			nil,
@@ -455,7 +458,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "Password reset instructions sent to your email"))
+	c.JSON(http.StatusOK, model.SuccessResponse(nil, "Password reset instructions sent to your email"))
 }
 
 // ResetPassword godoc
@@ -464,16 +467,16 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body core.ResetPasswordRequest true "Reset password data"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.ResetPasswordRequest true "Reset password data"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /auth/reset-password [post]
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
-	var req core.ResetPasswordRequest
+	var req model.ResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -483,7 +486,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -494,10 +497,10 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	err := h.authService.ResetPassword(c.Request.Context(), &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrInvalidToken {
+		if err == model.ErrInvalidToken {
 			statusCode = http.StatusUnauthorized
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"reset_password_failed",
 			err.Error(),
 			nil,
@@ -505,7 +508,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "Password reset successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(nil, "Password reset successfully"))
 }
 
 // GetUsers godoc
@@ -519,9 +522,9 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 // @Param limit query int false "Items per page" default(10)
 // @Param role query string false "Filter by role"
 // @Param branch_id query string false "Filter by branch ID"
-// @Success 200 {object} core.PaginatedResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.PaginatedResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /admin/users [get]
 func (h *AuthHandler) GetUsers(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
@@ -537,9 +540,9 @@ func (h *AuthHandler) GetUsers(c *gin.Context) {
 		limit = 10
 	}
 
-	var role *core.UserRole
+	var role *userDTO.UserRole
 	if roleStr := c.Query("role"); roleStr != "" {
-		r := core.UserRole(roleStr)
+		r := userDTO.UserRole(roleStr)
 		role = &r
 	}
 
@@ -550,9 +553,15 @@ func (h *AuthHandler) GetUsers(c *gin.Context) {
 		}
 	}
 
-	users, total, err := h.authService.ListUsers(c.Request.Context(), page, limit, role, branchID)
+	var modelRole *model.UserRole
+	if role != nil {
+		r := model.UserRole(*role) // konversi dari dto ke model
+		modelRole = &r
+	}
+
+	users, total, err := h.authService.ListUsers(c.Request.Context(), page, limit, modelRole, branchID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"users_fetch_failed",
 			err.Error(),
 			nil,
@@ -560,19 +569,19 @@ func (h *AuthHandler) GetUsers(c *gin.Context) {
 		return
 	}
 
-	var responses []core.UserResponse
+	var responses []userDTO.UserResponse
 	for _, u := range users {
 		responses = append(responses, u.ToResponse())
 	}
 
-	pagination := core.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
 		TotalPages: int((total + int64(limit) - 1) / int64(limit)),
 	}
 
-	c.JSON(http.StatusOK, core.PaginatedSuccessResponse(responses, pagination, "Users retrieved successfully"))
+	c.JSON(http.StatusOK, model.PaginatedSuccessResponse(responses, pagination, "Users retrieved successfully"))
 }
 
 // GetUser godoc
@@ -583,16 +592,16 @@ func (h *AuthHandler) GetUsers(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "User ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /admin/users/{id} [get]
 func (h *AuthHandler) GetUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid user ID format",
 			nil,
@@ -603,14 +612,14 @@ func (h *AuthHandler) GetUser(c *gin.Context) {
 	user, err := h.authService.GetUser(c.Request.Context(), id)
 	if err != nil {
 		status := http.StatusInternalServerError
-		if err == core.ErrUserNotFound {
+		if err == model.ErrUserNotFound {
 			status = http.StatusNotFound
 		}
-		c.JSON(status, core.CreateErrorResponse("user_fetch_failed", err.Error(), nil))
+		c.JSON(status, model.CreateErrorResponse("user_fetch_failed", err.Error(), nil))
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(user, "User retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(user, "User retrieved successfully"))
 }
 
 // UpdateUser godoc
@@ -621,17 +630,17 @@ func (h *AuthHandler) GetUser(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "User ID"
-// @Param request body core.UserRequest true "User data"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.UserRequest true "User data"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /admin/users/{id} [put]
 func (h *AuthHandler) UpdateUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid user ID format",
 			nil,
@@ -639,9 +648,9 @@ func (h *AuthHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	var req core.UserRequest
+	var req userDTO.UserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -650,7 +659,7 @@ func (h *AuthHandler) UpdateUser(c *gin.Context) {
 	}
 
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -661,14 +670,14 @@ func (h *AuthHandler) UpdateUser(c *gin.Context) {
 	user, err := h.authService.UpdateUser(c.Request.Context(), id, &req)
 	if err != nil {
 		status := http.StatusInternalServerError
-		if err == core.ErrUserNotFound {
+		if err == model.ErrUserNotFound {
 			status = http.StatusNotFound
 		}
-		c.JSON(status, core.CreateErrorResponse("user_update_failed", err.Error(), nil))
+		c.JSON(status, model.CreateErrorResponse("user_update_failed", err.Error(), nil))
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(user, "User updated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(user, "User updated successfully"))
 }
 
 // DeleteUser godoc
@@ -679,16 +688,16 @@ func (h *AuthHandler) UpdateUser(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "User ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /admin/users/{id} [delete]
 func (h *AuthHandler) DeleteUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid user ID format",
 			nil,
@@ -698,12 +707,12 @@ func (h *AuthHandler) DeleteUser(c *gin.Context) {
 
 	if err := h.authService.DeleteUser(c.Request.Context(), id); err != nil {
 		status := http.StatusInternalServerError
-		if err == core.ErrUserNotFound {
+		if err == model.ErrUserNotFound {
 			status = http.StatusNotFound
 		}
-		c.JSON(status, core.CreateErrorResponse("user_delete_failed", err.Error(), nil))
+		c.JSON(status, model.CreateErrorResponse("user_delete_failed", err.Error(), nil))
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "User deleted successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(nil, "User deleted successfully"))
 }

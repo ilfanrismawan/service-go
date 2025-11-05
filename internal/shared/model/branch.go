@@ -1,4 +1,4 @@
-package core
+package model
 
 import (
 	"time"
@@ -34,7 +34,7 @@ type BranchRequest struct {
 	Address   string  `json:"address" validate:"required"`
 	City      string  `json:"city" validate:"required"`
 	Province  string  `json:"province" validate:"required"`
-    Phone     string  `json:"phone" validate:"required,phone"`
+	Phone     string  `json:"phone" validate:"required,phone"`
 	Latitude  float64 `json:"latitude" validate:"required"`
 	Longitude float64 `json:"longitude" validate:"required"`
 }

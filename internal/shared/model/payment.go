@@ -1,4 +1,4 @@
-package core
+package model
 
 import (
 	"time"
@@ -19,7 +19,7 @@ const (
 	PaymentMethodTransfer        PaymentMethod = "transfer"
 	PaymentMethodBankTransfer    PaymentMethod = "bank_transfer"
 	PaymentMethodMandiriEchannel PaymentMethod = "mandiri_echannel"
-    PaymentMethodShopeePay       PaymentMethod = "shopeepay"
+	PaymentMethodShopeePay       PaymentMethod = "shopeepay"
 )
 
 // PaymentStatus represents the status of a payment
@@ -109,7 +109,7 @@ type MidtransPaymentRequest struct {
 	OrderID       string  `json:"order_id" validate:"required"`
 	Amount        float64 `json:"amount" validate:"required,gt=0"`
 	CustomerEmail string  `json:"customer_email" validate:"required,email"`
-    CustomerPhone string  `json:"customer_phone" validate:"required,phone"`
+	CustomerPhone string  `json:"customer_phone" validate:"required,phone"`
 }
 
 // MidtransPaymentResponse represents the response from Midtrans API
@@ -122,12 +122,12 @@ type MidtransPaymentResponse struct {
 
 // MidtransCallbackPayload represents Midtrans callback/webhook payload
 type MidtransCallbackPayload struct {
-    OrderID           string `json:"order_id"`
-    TransactionID     string `json:"transaction_id"`
-    StatusCode        string `json:"status_code"`
-    GrossAmount       string `json:"gross_amount"`
-    SignatureKey      string `json:"signature_key"`
-    TransactionStatus string `json:"transaction_status"`
+	OrderID           string `json:"order_id"`
+	TransactionID     string `json:"transaction_id"`
+	StatusCode        string `json:"status_code"`
+	GrossAmount       string `json:"gross_amount"`
+	SignatureKey      string `json:"signature_key"`
+	TransactionStatus string `json:"transaction_status"`
 }
 
 // Invoice represents an invoice

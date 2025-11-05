@@ -3,9 +3,9 @@ package delivery
 import (
 	"log"
 	"net/http"
-	"service/internal/core"
 	"service/internal/orders/service"
-	"service/internal/utils"
+	"service/internal/shared/model"
+	"service/internal/shared/utils"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -41,14 +41,14 @@ func NewFileHandler() *FileHandler {
 // @Security BearerAuth
 // @Param file formData file true "File to upload"
 // @Param folder formData string true "Folder name"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /files/upload [post]
 func (h *FileHandler) UploadFile(c *gin.Context) {
 	if h == nil || h.fileService == nil {
-		c.JSON(http.StatusServiceUnavailable, core.CreateErrorResponse(
+		c.JSON(http.StatusServiceUnavailable, model.CreateErrorResponse(
 			"file_service_unavailable",
 			"File service is not available",
 			nil,
@@ -58,7 +58,7 @@ func (h *FileHandler) UploadFile(c *gin.Context) {
 	// Get file from form
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"file_required",
 			"File is required",
 			nil,
@@ -69,7 +69,7 @@ func (h *FileHandler) UploadFile(c *gin.Context) {
 	// Get folder from form
 	folder := c.PostForm("folder")
 	if folder == "" {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"folder_required",
 			"Folder is required",
 			nil,
@@ -80,7 +80,7 @@ func (h *FileHandler) UploadFile(c *gin.Context) {
 	// Upload file
 	response, err := h.fileService.UploadFile(c.Request.Context(), file, folder)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"file_upload_failed",
 			err.Error(),
 			nil,
@@ -88,7 +88,7 @@ func (h *FileHandler) UploadFile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(response, "File uploaded successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(response, "File uploaded successfully"))
 }
 
 // UploadOrderPhoto godoc
@@ -101,14 +101,14 @@ func (h *FileHandler) UploadFile(c *gin.Context) {
 // @Param file formData file true "Photo file"
 // @Param order_id formData string true "Order ID"
 // @Param photo_type formData string true "Photo type (pickup, service, delivery)"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /files/orders/photo [post]
 func (h *FileHandler) UploadOrderPhoto(c *gin.Context) {
 	if h == nil || h.fileService == nil {
-		c.JSON(http.StatusServiceUnavailable, core.CreateErrorResponse(
+		c.JSON(http.StatusServiceUnavailable, model.CreateErrorResponse(
 			"file_service_unavailable",
 			"File service is not available",
 			nil,
@@ -118,7 +118,7 @@ func (h *FileHandler) UploadOrderPhoto(c *gin.Context) {
 	// Get file from form
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"file_required",
 			"File is required",
 			nil,
@@ -129,7 +129,7 @@ func (h *FileHandler) UploadOrderPhoto(c *gin.Context) {
 	// Get order ID from form
 	orderIDStr := c.PostForm("order_id")
 	if orderIDStr == "" {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"order_id_required",
 			"Order ID is required",
 			nil,
@@ -139,7 +139,7 @@ func (h *FileHandler) UploadOrderPhoto(c *gin.Context) {
 
 	orderID, err := uuid.Parse(orderIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_order_id",
 			"Invalid order ID format",
 			nil,
@@ -150,7 +150,7 @@ func (h *FileHandler) UploadOrderPhoto(c *gin.Context) {
 	// Get photo type from form
 	photoType := c.PostForm("photo_type")
 	if photoType == "" {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"photo_type_required",
 			"Photo type is required",
 			nil,
@@ -161,7 +161,7 @@ func (h *FileHandler) UploadOrderPhoto(c *gin.Context) {
 	// Upload order photo
 	response, err := h.fileService.UploadOrderPhoto(c.Request.Context(), file, orderID, photoType)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"photo_upload_failed",
 			err.Error(),
 			nil,
@@ -169,7 +169,7 @@ func (h *FileHandler) UploadOrderPhoto(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(response, "Order photo uploaded successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(response, "Order photo uploaded successfully"))
 }
 
 // UploadUserAvatar godoc
@@ -180,14 +180,14 @@ func (h *FileHandler) UploadOrderPhoto(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param file formData file true "Avatar file"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /files/users/avatar [post]
 func (h *FileHandler) UploadUserAvatar(c *gin.Context) {
 	if h == nil || h.fileService == nil {
-		c.JSON(http.StatusServiceUnavailable, core.CreateErrorResponse(
+		c.JSON(http.StatusServiceUnavailable, model.CreateErrorResponse(
 			"file_service_unavailable",
 			"File service is not available",
 			nil,
@@ -197,7 +197,7 @@ func (h *FileHandler) UploadUserAvatar(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -207,7 +207,7 @@ func (h *FileHandler) UploadUserAvatar(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -218,7 +218,7 @@ func (h *FileHandler) UploadUserAvatar(c *gin.Context) {
 	// Get file from form
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"file_required",
 			"File is required",
 			nil,
@@ -229,7 +229,7 @@ func (h *FileHandler) UploadUserAvatar(c *gin.Context) {
 	// Upload user avatar
 	response, err := h.fileService.UploadUserAvatar(c.Request.Context(), file, userUUID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"avatar_upload_failed",
 			err.Error(),
 			nil,
@@ -237,7 +237,7 @@ func (h *FileHandler) UploadUserAvatar(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(response, "User avatar uploaded successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(response, "User avatar uploaded successfully"))
 }
 
 // GetFileURL godoc
@@ -249,14 +249,14 @@ func (h *FileHandler) UploadUserAvatar(c *gin.Context) {
 // @Security BearerAuth
 // @Param object_name query string true "Object name"
 // @Param expiry query int false "Expiry in minutes" default(60)
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /files/url [get]
 func (h *FileHandler) GetFileURL(c *gin.Context) {
 	if h == nil || h.fileService == nil {
-		c.JSON(http.StatusServiceUnavailable, core.CreateErrorResponse(
+		c.JSON(http.StatusServiceUnavailable, model.CreateErrorResponse(
 			"file_service_unavailable",
 			"File service is not available",
 			nil,
@@ -265,7 +265,7 @@ func (h *FileHandler) GetFileURL(c *gin.Context) {
 	}
 	objectName := c.Query("object_name")
 	if objectName == "" {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"object_name_required",
 			"Object name is required",
 			nil,
@@ -285,7 +285,7 @@ func (h *FileHandler) GetFileURL(c *gin.Context) {
 	// Get file URL
 	url, err := h.fileService.GetFileURL(c.Request.Context(), objectName, expiry)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"file_url_failed",
 			err.Error(),
 			nil,
@@ -293,7 +293,7 @@ func (h *FileHandler) GetFileURL(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(gin.H{"url": url}, "File URL generated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(gin.H{"url": url}, "File URL generated successfully"))
 }
 
 // ListFiles godoc
@@ -304,14 +304,14 @@ func (h *FileHandler) GetFileURL(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param folder query string true "Folder name"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /files/list [get]
 func (h *FileHandler) ListFiles(c *gin.Context) {
 	if h == nil || h.fileService == nil {
-		c.JSON(http.StatusServiceUnavailable, core.CreateErrorResponse(
+		c.JSON(http.StatusServiceUnavailable, model.CreateErrorResponse(
 			"file_service_unavailable",
 			"File service is not available",
 			nil,
@@ -320,7 +320,7 @@ func (h *FileHandler) ListFiles(c *gin.Context) {
 	}
 	folder := c.Query("folder")
 	if folder == "" {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"folder_required",
 			"Folder is required",
 			nil,
@@ -331,7 +331,7 @@ func (h *FileHandler) ListFiles(c *gin.Context) {
 	// List files
 	files, err := h.fileService.ListFiles(c.Request.Context(), folder)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"list_files_failed",
 			err.Error(),
 			nil,
@@ -339,7 +339,7 @@ func (h *FileHandler) ListFiles(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(files, "Files listed successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(files, "Files listed successfully"))
 }
 
 // DeleteFile godoc
@@ -350,14 +350,14 @@ func (h *FileHandler) ListFiles(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param object_name query string true "Object name"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /files/delete [delete]
 func (h *FileHandler) DeleteFile(c *gin.Context) {
 	if h == nil || h.fileService == nil {
-		c.JSON(http.StatusServiceUnavailable, core.CreateErrorResponse(
+		c.JSON(http.StatusServiceUnavailable, model.CreateErrorResponse(
 			"file_service_unavailable",
 			"File service is not available",
 			nil,
@@ -366,7 +366,7 @@ func (h *FileHandler) DeleteFile(c *gin.Context) {
 	}
 	objectName := c.Query("object_name")
 	if objectName == "" {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"object_name_required",
 			"Object name is required",
 			nil,
@@ -377,7 +377,7 @@ func (h *FileHandler) DeleteFile(c *gin.Context) {
 	// Delete file
 	err := h.fileService.DeleteFile(c.Request.Context(), objectName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"file_delete_failed",
 			err.Error(),
 			nil,
@@ -385,5 +385,5 @@ func (h *FileHandler) DeleteFile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "File deleted successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(nil, "File deleted successfully"))
 }

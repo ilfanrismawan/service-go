@@ -2,10 +2,10 @@ package delivery
 
 import (
 	"net/http"
-    "service/internal/config"
-	"service/internal/core"
 	"service/internal/orders/service"
-	"service/internal/utils"
+	"service/internal/shared/config"
+	"service/internal/shared/model"
+	"service/internal/shared/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -30,37 +30,37 @@ func NewPaymentHandler() *PaymentHandler {
 // @Tags payments
 // @Accept json
 // @Produce json
-// @Param request body core.MidtransCallbackPayload true "Midtrans callback payload"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.MidtransCallbackPayload true "Midtrans callback payload"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /payments/midtrans/callback [post]
 func (h *PaymentHandler) MidtransCallback(c *gin.Context) {
-    var payload core.MidtransCallbackPayload
-    if err := c.ShouldBindJSON(&payload); err != nil {
-        c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
-            "validation_error",
-            "Invalid callback payload",
-            err.Error(),
-        ))
-        return
-    }
+	var payload model.MidtransCallbackPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"validation_error",
+			"Invalid callback payload",
+			err.Error(),
+		))
+		return
+	}
 
-    // Delegate to service for signature verification and updates
-    if err := h.paymentService.HandleMidtransCallback(c.Request.Context(), &payload, config.Config.MidtransServerKey); err != nil {
-        status := http.StatusInternalServerError
-        if err == core.ErrPaymentNotFound {
-            status = http.StatusBadRequest
-        }
-        c.JSON(status, core.CreateErrorResponse(
-            "midtrans_callback_error",
-            err.Error(),
-            nil,
-        ))
-        return
-    }
+	// Delegate to service for signature verification and updates
+	if err := h.paymentService.HandleMidtransCallback(c.Request.Context(), &payload, config.Config.MidtransServerKey); err != nil {
+		status := http.StatusInternalServerError
+		if err == model.ErrPaymentNotFound {
+			status = http.StatusBadRequest
+		}
+		c.JSON(status, model.CreateErrorResponse(
+			"midtrans_callback_error",
+			err.Error(),
+			nil,
+		))
+		return
+	}
 
-    c.JSON(http.StatusOK, core.SuccessResponse(nil, "Callback processed"))
+	c.JSON(http.StatusOK, model.SuccessResponse(nil, "Callback processed"))
 }
 
 // CreatePayment godoc
@@ -70,16 +70,16 @@ func (h *PaymentHandler) MidtransCallback(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body core.PaymentRequest true "Payment data"
-// @Success 201 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.PaymentRequest true "Payment data"
+// @Success 201 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /payments [post]
 func (h *PaymentHandler) CreatePayment(c *gin.Context) {
-	var req core.PaymentRequest
+	var req model.PaymentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -87,12 +87,12 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		return
 	}
 
-    // Sanitize free-text fields
-    utils.SanitizeStructStrings(&req)
+	// Sanitize free-text fields
+	utils.SanitizeStructStrings(&req)
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -103,10 +103,10 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 	payment, err := h.paymentService.CreatePayment(c.Request.Context(), &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrOrderNotFound {
+		if err == model.ErrOrderNotFound {
 			statusCode = http.StatusBadRequest
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"payment_creation_failed",
 			err.Error(),
 			nil,
@@ -114,7 +114,7 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, core.SuccessResponse(payment, "Payment created successfully"))
+	c.JSON(http.StatusCreated, model.SuccessResponse(payment, "Payment created successfully"))
 }
 
 // GetPayment godoc
@@ -124,16 +124,16 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Payment ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /payments/{id} [get]
 func (h *PaymentHandler) GetPayment(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid payment ID format",
 			nil,
@@ -144,10 +144,10 @@ func (h *PaymentHandler) GetPayment(c *gin.Context) {
 	payment, err := h.paymentService.GetPayment(c.Request.Context(), id)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrPaymentNotFound {
+		if err == model.ErrPaymentNotFound {
 			statusCode = http.StatusNotFound
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"payment_not_found",
 			err.Error(),
 			nil,
@@ -155,7 +155,7 @@ func (h *PaymentHandler) GetPayment(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(payment, "Payment retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(payment, "Payment retrieved successfully"))
 }
 
 // GetPaymentByInvoice godoc
@@ -165,10 +165,10 @@ func (h *PaymentHandler) GetPayment(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param invoiceNumber path string true "Invoice Number"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /payments/invoice/{invoiceNumber} [get]
 func (h *PaymentHandler) GetPaymentByInvoice(c *gin.Context) {
 	invoiceNumber := c.Param("invoiceNumber")
@@ -176,10 +176,10 @@ func (h *PaymentHandler) GetPaymentByInvoice(c *gin.Context) {
 	payment, err := h.paymentService.GetPaymentByInvoice(c.Request.Context(), invoiceNumber)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrPaymentNotFound {
+		if err == model.ErrPaymentNotFound {
 			statusCode = http.StatusNotFound
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"payment_not_found",
 			err.Error(),
 			nil,
@@ -187,7 +187,7 @@ func (h *PaymentHandler) GetPaymentByInvoice(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(payment, "Payment retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(payment, "Payment retrieved successfully"))
 }
 
 // UpdatePaymentStatus godoc
@@ -200,17 +200,17 @@ func (h *PaymentHandler) GetPaymentByInvoice(c *gin.Context) {
 // @Param id path string true "Payment ID"
 // @Param status query string true "Payment Status"
 // @Param transaction_id query string false "Transaction ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /payments/{id}/status [put]
 func (h *PaymentHandler) UpdatePaymentStatus(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid payment ID format",
 			nil,
@@ -219,15 +219,15 @@ func (h *PaymentHandler) UpdatePaymentStatus(c *gin.Context) {
 	}
 
 	statusStr := c.Query("status")
-	status := core.PaymentStatus(statusStr)
+	status := model.PaymentStatus(statusStr)
 
 	// Validate status
-	validStatuses := []core.PaymentStatus{
-		core.PaymentStatusPending,
-		core.PaymentStatusPaid,
-		core.PaymentStatusFailed,
-		core.PaymentStatusCancelled,
-		core.PaymentStatusRefunded,
+	validStatuses := []model.PaymentStatus{
+		model.PaymentStatusPending,
+		model.PaymentStatusPaid,
+		model.PaymentStatusFailed,
+		model.PaymentStatusCancelled,
+		model.PaymentStatusRefunded,
 	}
 
 	valid := false
@@ -239,7 +239,7 @@ func (h *PaymentHandler) UpdatePaymentStatus(c *gin.Context) {
 	}
 
 	if !valid {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_status",
 			"Invalid payment status",
 			nil,
@@ -252,10 +252,10 @@ func (h *PaymentHandler) UpdatePaymentStatus(c *gin.Context) {
 	payment, err := h.paymentService.UpdatePaymentStatus(c.Request.Context(), id, status, transactionID)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrPaymentNotFound {
+		if err == model.ErrPaymentNotFound {
 			statusCode = http.StatusNotFound
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"payment_update_failed",
 			err.Error(),
 			nil,
@@ -263,7 +263,7 @@ func (h *PaymentHandler) UpdatePaymentStatus(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(payment, "Payment status updated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(payment, "Payment status updated successfully"))
 }
 
 // ProcessMidtransPayment godoc
@@ -273,16 +273,16 @@ func (h *PaymentHandler) UpdatePaymentStatus(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body core.MidtransPaymentRequest true "Midtrans payment data"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.MidtransPaymentRequest true "Midtrans payment data"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /payments/midtrans [post]
 func (h *PaymentHandler) ProcessMidtransPayment(c *gin.Context) {
-	var req core.MidtransPaymentRequest
+	var req model.MidtransPaymentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -290,12 +290,12 @@ func (h *PaymentHandler) ProcessMidtransPayment(c *gin.Context) {
 		return
 	}
 
-    // Sanitize free-text fields
-    utils.SanitizeStructStrings(&req)
+	// Sanitize free-text fields
+	utils.SanitizeStructStrings(&req)
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -306,10 +306,10 @@ func (h *PaymentHandler) ProcessMidtransPayment(c *gin.Context) {
 	response, err := h.paymentService.ProcessMidtransPayment(c.Request.Context(), &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrOrderNotFound {
+		if err == model.ErrOrderNotFound {
 			statusCode = http.StatusBadRequest
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"midtrans_payment_failed",
 			err.Error(),
 			nil,
@@ -317,7 +317,7 @@ func (h *PaymentHandler) ProcessMidtransPayment(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(response, "Midtrans payment processed successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(response, "Midtrans payment processed successfully"))
 }
 
 // ListPayments godoc
@@ -331,9 +331,9 @@ func (h *PaymentHandler) ProcessMidtransPayment(c *gin.Context) {
 // @Param order_id query string false "Filter by order ID"
 // @Param status query string false "Filter by status"
 // @Param payment_method query string false "Filter by payment method"
-// @Success 200 {object} core.PaginatedResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.PaginatedResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /payments [get]
 func (h *PaymentHandler) ListPayments(c *gin.Context) {
 	// Parse query parameters
@@ -360,18 +360,18 @@ func (h *PaymentHandler) ListPayments(c *gin.Context) {
 	}
 
 	if statusStr := c.Query("status"); statusStr != "" {
-		status := core.PaymentStatus(statusStr)
+		status := model.PaymentStatus(statusStr)
 		filters.Status = &status
 	}
 
 	if paymentMethodStr := c.Query("payment_method"); paymentMethodStr != "" {
-		paymentMethod := core.PaymentMethod(paymentMethodStr)
+		paymentMethod := model.PaymentMethod(paymentMethodStr)
 		filters.PaymentMethod = &paymentMethod
 	}
 
 	result, err := h.paymentService.ListPayments(c.Request.Context(), page, limit, filters)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"payment_list_failed",
 			err.Error(),
 			nil,
@@ -384,9 +384,9 @@ func (h *PaymentHandler) ListPayments(c *gin.Context) {
 
 // CreateInvoice is an alias to CreatePayment for compatibility
 func (h *PaymentHandler) CreateInvoice(c *gin.Context) {
-	var req core.PaymentRequest
+	var req model.PaymentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -397,7 +397,7 @@ func (h *PaymentHandler) CreateInvoice(c *gin.Context) {
 	// Skip strict validation in test mode
 	if gin.Mode() != gin.TestMode {
 		if err := utils.ValidateStruct(&req); err != nil {
-			c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+			c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 				"validation_error",
 				"Validation failed",
 				err.Error(),
@@ -409,10 +409,10 @@ func (h *PaymentHandler) CreateInvoice(c *gin.Context) {
 	payment, err := h.paymentService.CreatePayment(c.Request.Context(), &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrOrderNotFound {
+		if err == model.ErrOrderNotFound {
 			statusCode = http.StatusBadRequest
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"payment_creation_failed",
 			err.Error(),
 			nil,
@@ -420,15 +420,15 @@ func (h *PaymentHandler) CreateInvoice(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, core.SuccessResponse(payment, "Invoice created successfully"))
+	c.JSON(http.StatusCreated, model.SuccessResponse(payment, "Invoice created successfully"))
 }
 
 // ProcessPayment handles generic payment processing endpoint (wraps midtrans processing for now)
 func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	// Try binding to MidtransPaymentRequest
-	var req core.MidtransPaymentRequest
+	var req model.MidtransPaymentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -438,7 +438,7 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 
 	// Validate
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -449,10 +449,10 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	response, err := h.paymentService.ProcessMidtransPayment(c.Request.Context(), &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrOrderNotFound {
+		if err == model.ErrOrderNotFound {
 			statusCode = http.StatusBadRequest
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"process_payment_failed",
 			err.Error(),
 			nil,
@@ -460,7 +460,7 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(response, "Payment processed successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(response, "Payment processed successfully"))
 }
 
 // GetAllPayments for admin
@@ -474,7 +474,7 @@ func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid payment ID format",
 			nil,
@@ -483,17 +483,17 @@ func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 	}
 
 	statusStr := c.Query("status")
-	status := core.PaymentStatus(statusStr)
+	status := model.PaymentStatus(statusStr)
 
 	transactionID := c.Query("transaction_id")
 
 	payment, err := h.paymentService.UpdatePaymentStatus(c.Request.Context(), id, status, transactionID)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrPaymentNotFound {
+		if err == model.ErrPaymentNotFound {
 			statusCode = http.StatusNotFound
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"payment_update_failed",
 			err.Error(),
 			nil,
@@ -501,7 +501,7 @@ func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(payment, "Payment updated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(payment, "Payment updated successfully"))
 }
 
 // GetPaymentsByOrder godoc
@@ -511,15 +511,15 @@ func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param orderId path string true "Order ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /payments/order/{orderId} [get]
 func (h *PaymentHandler) GetPaymentsByOrder(c *gin.Context) {
 	orderIDStr := c.Param("orderId")
 	orderID, err := uuid.Parse(orderIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_order_id",
 			"Invalid order ID format",
 			nil,
@@ -529,7 +529,7 @@ func (h *PaymentHandler) GetPaymentsByOrder(c *gin.Context) {
 
 	payments, err := h.paymentService.GetPaymentsByOrder(c.Request.Context(), orderID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"payments_by_order_failed",
 			err.Error(),
 			nil,
@@ -537,5 +537,5 @@ func (h *PaymentHandler) GetPaymentsByOrder(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(payments, "Payments retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(payments, "Payments retrieved successfully"))
 }

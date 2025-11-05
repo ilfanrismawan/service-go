@@ -2,15 +2,10 @@ package repository
 
 import (
 	"context"
-<<<<<<< HEAD
-	"service/internal/core"
-	"service/internal/database"
-=======
 	"service/internal/branches/dto"
 	paymentDTO "service/internal/payments/dto"
 	"service/internal/shared/database"
 	"service/internal/shared/model"
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	"sort"
 	"strings"
 	"sync"
@@ -25,56 +20,38 @@ type BranchRepository struct {
 	db       *gorm.DB
 	inMemory bool
 	mu       sync.RWMutex
-<<<<<<< HEAD
-	branches map[uuid.UUID]*core.Branch
-=======
 	branches map[uuid.UUID]*dto.Branch
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 }
 
-// NewBranchRepository creates a new branch repository
 func NewBranchRepository() *BranchRepository {
-	if database.DB == nil {
-		// use shared in-memory store
-<<<<<<< HEAD
-		m := make(map[uuid.UUID]*core.Branch)
-		// seed a default test branch so tests that reference a static UUID can work
-		if id, err := uuid.Parse("550e8400-e29b-41d4-a716-446655440000"); err == nil {
-			now := time.Now()
-			m[id] = &core.Branch{
-=======
-		m := make(map[uuid.UUID]*dto.Branch)
-		// seed a default test branch so tests that reference a static UUID can work
-		if id, err := uuid.Parse("550e8400-e29b-41d4-a716-446655440000"); err == nil {
-			now := time.Now()
-			m[id] = &dto.Branch{
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
-				ID:        id,
-				Name:      "Test Branch",
-				City:      "Test City",
-				Province:  "Test Province",
-				IsActive:  true,
-				CreatedAt: now,
-				UpdatedAt: now,
-			}
-		}
-		return &BranchRepository{
-			db:       nil,
-			inMemory: true,
-			branches: m,
+	// use shared in-memory store
+	m := make(map[uuid.UUID]*dto.Branch)
+	// seed a default test branch so tests that reference a static UUID can work
+	if id, err := uuid.Parse("550e8400-e29b-41d4-a716-446655440000"); err == nil {
+		now := time.Now()
+		m[id] = &dto.Branch{
+			ID:        id,
+			Name:      "Test Branch",
+			City:      "Test City",
+			Province:  "Test Province",
+			IsActive:  true,
+			CreatedAt: now,
+			UpdatedAt: now,
 		}
 	}
+	return &BranchRepository{
+		db:       nil,
+		inMemory: true,
+		branches: m,
+	}
+
 	return &BranchRepository{
 		db: database.DB,
 	}
 }
 
 // Create creates a new branch
-<<<<<<< HEAD
-func (r *BranchRepository) Create(ctx context.Context, branch *core.Branch) error {
-=======
 func (r *BranchRepository) Create(ctx context.Context, branch *dto.Branch) error {
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	if r.inMemory {
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -91,11 +68,7 @@ func (r *BranchRepository) Create(ctx context.Context, branch *dto.Branch) error
 }
 
 // GetByID retrieves a branch by ID
-<<<<<<< HEAD
-func (r *BranchRepository) GetByID(ctx context.Context, id uuid.UUID) (*core.Branch, error) {
-=======
 func (r *BranchRepository) GetByID(ctx context.Context, id uuid.UUID) (*dto.Branch, error) {
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
@@ -105,11 +78,7 @@ func (r *BranchRepository) GetByID(ctx context.Context, id uuid.UUID) (*dto.Bran
 		}
 		return b, nil
 	}
-<<<<<<< HEAD
-	var branch core.Branch
-=======
 	var branch dto.Branch
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	err := r.db.WithContext(ctx).First(&branch, "id = ?", id).Error
 	if err != nil {
 		return nil, err
@@ -118,11 +87,7 @@ func (r *BranchRepository) GetByID(ctx context.Context, id uuid.UUID) (*dto.Bran
 }
 
 // Update updates a branch
-<<<<<<< HEAD
-func (r *BranchRepository) Update(ctx context.Context, branch *core.Branch) error {
-=======
 func (r *BranchRepository) Update(ctx context.Context, branch *dto.Branch) error {
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	if r.inMemory {
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -147,17 +112,6 @@ func (r *BranchRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		delete(r.branches, id)
 		return nil
 	}
-<<<<<<< HEAD
-	return r.db.WithContext(ctx).Delete(&core.Branch{}, "id = ?", id).Error
-}
-
-// List retrieves branches with pagination
-func (r *BranchRepository) List(ctx context.Context, offset, limit int, city *string, province *string) ([]*core.Branch, int64, error) {
-	if r.inMemory {
-		r.mu.RLock()
-		defer r.mu.RUnlock()
-		var list []*core.Branch
-=======
 	return r.db.WithContext(ctx).Delete(&dto.Branch{}, "id = ?", id).Error
 }
 
@@ -167,7 +121,6 @@ func (r *BranchRepository) List(ctx context.Context, offset, limit int, city *st
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 		var list []*dto.Branch
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		for _, b := range r.branches {
 			if city != nil && !containsIgnoreCase(b.City, *city) {
 				continue
@@ -180,11 +133,7 @@ func (r *BranchRepository) List(ctx context.Context, offset, limit int, city *st
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		total := int64(len(list))
 		if offset > len(list) {
-<<<<<<< HEAD
-			return []*core.Branch{}, total, nil
-=======
 			return []*dto.Branch{}, total, nil
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		}
 		end := offset + limit
 		if end > len(list) {
@@ -192,17 +141,10 @@ func (r *BranchRepository) List(ctx context.Context, offset, limit int, city *st
 		}
 		return list[offset:end], total, nil
 	}
-<<<<<<< HEAD
-	var branches []*core.Branch
-	var total int64
-
-	query := r.db.WithContext(ctx).Model(&core.Branch{})
-=======
 	var branches []*dto.Branch
 	var total int64
 
 	query := r.db.WithContext(ctx).Model(&dto.Branch{})
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 
 	if city != nil {
 		query = query.Where("city ILIKE ?", "%"+*city+"%")
@@ -223,19 +165,11 @@ func (r *BranchRepository) List(ctx context.Context, offset, limit int, city *st
 }
 
 // GetActiveBranches retrieves all active branches
-<<<<<<< HEAD
-func (r *BranchRepository) GetActiveBranches(ctx context.Context) ([]*core.Branch, error) {
-	if r.inMemory {
-		r.mu.RLock()
-		defer r.mu.RUnlock()
-		var list []*core.Branch
-=======
 func (r *BranchRepository) GetActiveBranches(ctx context.Context) ([]*dto.Branch, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 		var list []*dto.Branch
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		for _, b := range r.branches {
 			if b.IsActive {
 				list = append(list, b)
@@ -243,23 +177,14 @@ func (r *BranchRepository) GetActiveBranches(ctx context.Context) ([]*dto.Branch
 		}
 		return list, nil
 	}
-<<<<<<< HEAD
-	var branches []*core.Branch
-=======
 	var branches []*dto.Branch
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	err := r.db.WithContext(ctx).Where("is_active = ?", true).Find(&branches).Error
 	return branches, err
 }
 
 // GetNearbyBranches retrieves branches within a certain radius
-<<<<<<< HEAD
-func (r *BranchRepository) GetNearbyBranches(ctx context.Context, latitude, longitude, radiusKm float64) ([]*core.Branch, error) {
-	var branches []*core.Branch
-=======
 func (r *BranchRepository) GetNearbyBranches(ctx context.Context, latitude, longitude, radiusKm float64) ([]*dto.Branch, error) {
 	var branches []*dto.Branch
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 
 	// Using Haversine formula to calculate distance
 	// This is a simplified version - in production, you might want to use PostGIS
@@ -287,19 +212,11 @@ func (r *BranchRepository) GetNearbyBranches(ctx context.Context, latitude, long
 }
 
 // GetByCity retrieves branches by city
-<<<<<<< HEAD
-func (r *BranchRepository) GetByCity(ctx context.Context, city string) ([]*core.Branch, error) {
-	if r.inMemory {
-		r.mu.RLock()
-		defer r.mu.RUnlock()
-		var list []*core.Branch
-=======
 func (r *BranchRepository) GetByCity(ctx context.Context, city string) ([]*dto.Branch, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 		var list []*dto.Branch
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		for _, b := range r.branches {
 			if b.IsActive && containsIgnoreCase(b.City, city) {
 				list = append(list, b)
@@ -307,29 +224,17 @@ func (r *BranchRepository) GetByCity(ctx context.Context, city string) ([]*dto.B
 		}
 		return list, nil
 	}
-<<<<<<< HEAD
-	var branches []*core.Branch
-=======
 	var branches []*dto.Branch
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	err := r.db.WithContext(ctx).Where("city ILIKE ? AND is_active = ?", "%"+city+"%", true).Find(&branches).Error
 	return branches, err
 }
 
 // GetByProvince retrieves branches by province
-<<<<<<< HEAD
-func (r *BranchRepository) GetByProvince(ctx context.Context, province string) ([]*core.Branch, error) {
-	if r.inMemory {
-		r.mu.RLock()
-		defer r.mu.RUnlock()
-		var list []*core.Branch
-=======
 func (r *BranchRepository) GetByProvince(ctx context.Context, province string) ([]*dto.Branch, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 		var list []*dto.Branch
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		for _, b := range r.branches {
 			if b.IsActive && containsIgnoreCase(b.Province, province) {
 				list = append(list, b)
@@ -337,25 +242,12 @@ func (r *BranchRepository) GetByProvince(ctx context.Context, province string) (
 		}
 		return list, nil
 	}
-<<<<<<< HEAD
-	var branches []*core.Branch
-=======
 	var branches []*dto.Branch
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 	err := r.db.WithContext(ctx).Where("province ILIKE ? AND is_active = ?", "%"+province+"%", true).Find(&branches).Error
 	return branches, err
 }
 
 // GetTopBranchesByRevenueInDateRange gets top branches by revenue within a date range
-<<<<<<< HEAD
-func (r *BranchRepository) GetTopBranchesByRevenueInDateRange(ctx context.Context, startDate, endDate time.Time, limit int) ([]core.BranchStats, error) {
-	var results []core.BranchStats
-
-	err := r.db.WithContext(ctx).Model(&core.Payment{}).
-		Select("o.branch_id, COALESCE(SUM(p.amount), 0) as revenue").
-		Joins("JOIN service_orders o ON p.order_id = o.id").
-		Where("p.created_at >= ? AND p.created_at <= ? AND p.status = ?", startDate, endDate, core.PaymentStatusPaid).
-=======
 func (r *BranchRepository) GetTopBranchesByRevenueInDateRange(ctx context.Context, startDate, endDate time.Time, limit int) ([]model.BranchStats, error) {
 	var results []model.BranchStats
 
@@ -363,7 +255,6 @@ func (r *BranchRepository) GetTopBranchesByRevenueInDateRange(ctx context.Contex
 		Select("o.branch_id, COALESCE(SUM(p.amount), 0) as revenue").
 		Joins("JOIN service_orders o ON p.order_id = o.id").
 		Where("p.created_at >= ? AND p.created_at <= ? AND p.status = ?", startDate, endDate, paymentDTO.PaymentStatusPaid).
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		Group("o.branch_id").
 		Order("revenue DESC").
 		Limit(limit).
@@ -373,19 +264,11 @@ func (r *BranchRepository) GetTopBranchesByRevenueInDateRange(ctx context.Contex
 }
 
 // GetBranches retrieves branches with pagination
-<<<<<<< HEAD
-func (r *BranchRepository) GetBranches(ctx context.Context, page, limit int) ([]core.Branch, int64, error) {
-	if r.inMemory {
-		r.mu.RLock()
-		defer r.mu.RUnlock()
-		var list []core.Branch
-=======
 func (r *BranchRepository) GetBranches(ctx context.Context, page, limit int) ([]dto.Branch, int64, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 		var list []dto.Branch
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		for _, b := range r.branches {
 			list = append(list, *b)
 		}
@@ -393,11 +276,7 @@ func (r *BranchRepository) GetBranches(ctx context.Context, page, limit int) ([]
 		total := int64(len(list))
 		offset := (page - 1) * limit
 		if offset > len(list) {
-<<<<<<< HEAD
-			return []core.Branch{}, total, nil
-=======
 			return []dto.Branch{}, total, nil
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		}
 		end := offset + limit
 		if end > len(list) {
@@ -406,19 +285,11 @@ func (r *BranchRepository) GetBranches(ctx context.Context, page, limit int) ([]
 		return list[offset:end], total, nil
 	}
 
-<<<<<<< HEAD
-	var branches []core.Branch
-	var total int64
-
-	// Count total records
-	if err := r.db.WithContext(ctx).Model(&core.Branch{}).Count(&total).Error; err != nil {
-=======
 	var branches []dto.Branch
 	var total int64
 
 	// Count total records
 	if err := r.db.WithContext(ctx).Model(&dto.Branch{}).Count(&total).Error; err != nil {
->>>>>>> 62e28be2ad1dcbf35e27144a7b44a87f6b0a371b
 		return nil, 0, err
 	}
 

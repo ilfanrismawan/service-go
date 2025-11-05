@@ -2,7 +2,6 @@ package model
 
 import (
 	branchDTO "service/internal/branches/dto"
-	orderDTO "service/internal/orders/dto"
 	userDTO "service/internal/users/dto"
 	"time"
 
@@ -12,21 +11,21 @@ import (
 
 // Rating represents a customer rating and review
 type Rating struct {
-	ID           uuid.UUID             `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
-	OrderID      uuid.UUID             `json:"order_id" gorm:"type:uuid;not null"`
-	Order        orderDTO.ServiceOrder `json:"order" gorm:"foreignKey:OrderID"`
-	CustomerID   uuid.UUID             `json:"customer_id" gorm:"type:uuid;not null"`
-	Customer     userDTO.User          `json:"customer" gorm:"foreignKey:CustomerID"`
-	BranchID     *uuid.UUID            `json:"branch_id,omitempty" gorm:"type:uuid"`
-	Branch       *branchDTO.Branch     `json:"branch,omitempty" gorm:"foreignKey:BranchID"`
-	TechnicianID *uuid.UUID            `json:"technician_id,omitempty" gorm:"type:uuid"`
-	Technician   *userDTO.User         `json:"technician,omitempty" gorm:"foreignKey:TechnicianID"`
-	Rating       int                   `json:"rating" gorm:"not null;check:rating >= 1 AND rating <= 5"` // 1-5 stars
-	Review       string                `json:"review" gorm:"type:text"`
-	IsPublic     bool                  `json:"is_public" gorm:"default:true"`
-	CreatedAt    time.Time             `json:"created_at"`
-	UpdatedAt    time.Time             `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt        `json:"-" gorm:"index"`
+	ID           uuid.UUID         `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	OrderID      uuid.UUID         `json:"order_id" gorm:"type:uuid;not null"`
+	Order        ServiceOrder      `json:"order" gorm:"foreignKey:OrderID"`
+	CustomerID   uuid.UUID         `json:"customer_id" gorm:"type:uuid;not null"`
+	Customer     userDTO.User      `json:"customer" gorm:"foreignKey:CustomerID"`
+	BranchID     *uuid.UUID        `json:"branch_id,omitempty" gorm:"type:uuid"`
+	Branch       *branchDTO.Branch `json:"branch,omitempty" gorm:"foreignKey:BranchID"`
+	TechnicianID *uuid.UUID        `json:"technician_id,omitempty" gorm:"type:uuid"`
+	Technician   *userDTO.User     `json:"technician,omitempty" gorm:"foreignKey:TechnicianID"`
+	Rating       int               `json:"rating" gorm:"not null;check:rating >= 1 AND rating <= 5"` // 1-5 stars
+	Review       string            `json:"review" gorm:"type:text"`
+	IsPublic     bool              `json:"is_public" gorm:"default:true"`
+	CreatedAt    time.Time         `json:"created_at"`
+	UpdatedAt    time.Time         `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt    `json:"-" gorm:"index"`
 }
 
 // TableName returns the table name for Rating

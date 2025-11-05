@@ -2,6 +2,7 @@ package dto
 
 import (
 	branchDTO "service/internal/branches/dto"
+	"service/internal/shared/model"
 	userDTO "service/internal/users/dto"
 	"time"
 
@@ -9,30 +10,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// OrderStatus represents the status of a service order
-type OrderStatus string
-
-const (
-	StatusPendingPickup OrderStatus = "pending_pickup"
-	StatusOnPickup      OrderStatus = "on_pickup"
-	StatusInService     OrderStatus = "in_service"
-	StatusReady         OrderStatus = "ready"
-	StatusDelivered     OrderStatus = "delivered"
-	StatusCompleted     OrderStatus = "completed"
-	StatusCancelled     OrderStatus = "cancelled"
-)
-
-// ServiceType represents the type of iPhone service
-type ServiceType string
-
-const (
-	ServiceTypeScreenRepair       ServiceType = "screen_repair"
-	ServiceTypeBatteryReplacement ServiceType = "battery_replacement"
-	ServiceTypeWaterDamage        ServiceType = "water_damage"
-	ServiceTypeSoftwareIssue      ServiceType = "software_issue"
-	ServiceTypeHardwareRepair     ServiceType = "hardware_repair"
-	ServiceTypeOther              ServiceType = "other"
-)
+type OrderStatus = model.OrderStatus
+type ServiceType = model.ServiceType
 
 // ServiceOrder represents an iPhone service order
 type ServiceOrder struct {
@@ -115,9 +94,9 @@ type ServiceOrderResponse struct {
 	Technician        *userDTO.UserResponse    `json:"technician,omitempty"`
 	CourierID         *uuid.UUID               `json:"courier_id,omitempty"`
 	Courier           *userDTO.UserResponse    `json:"courier,omitempty"`
-	iPhoneModel       string                   `json:"iphone_model"`
-	iPhoneColor       string                   `json:"iphone_color"`
-	iPhoneIMEI        string                   `json:"iphone_imei"`
+	IPhoneModel       string                   `json:"iphone_model"`
+	IPhoneColor       string                   `json:"iphone_color"`
+	IPhoneIMEI        string                   `json:"iphone_imei"`
 	ServiceType       ServiceType              `json:"service_type"`
 	Description       string                   `json:"description"`
 	PickupAddress     string                   `json:"pickup_address"`
@@ -145,9 +124,9 @@ func (so *ServiceOrder) ToResponse() ServiceOrderResponse {
 		Customer:          so.Customer.ToResponse(),
 		BranchID:          so.BranchID,
 		Branch:            so.Branch.ToResponse(),
-		iPhoneModel:       so.IPhoneModel,
-		iPhoneColor:       so.IPhoneColor,
-		iPhoneIMEI:        so.IPhoneIMEI,
+		IPhoneModel:       so.IPhoneModel,
+		IPhoneColor:       so.IPhoneColor,
+		IPhoneIMEI:        so.IPhoneIMEI,
 		ServiceType:       so.ServiceType,
 		Description:       so.Description,
 		PickupAddress:     so.PickupAddress,

@@ -1,4 +1,4 @@
-package core
+package model
 
 import (
 	"time"
@@ -106,9 +106,9 @@ type ServiceOrderResponse struct {
 	Technician        *UserResponse  `json:"technician,omitempty"`
 	CourierID         *uuid.UUID     `json:"courier_id,omitempty"`
 	Courier           *UserResponse  `json:"courier,omitempty"`
-	iPhoneModel       string         `json:"iphone_model"`
-	iPhoneColor       string         `json:"iphone_color"`
-	iPhoneIMEI        string         `json:"iphone_imei"`
+	IPhoneModel       string         `json:"iphone_model"`
+	IPhoneColor       string         `json:"iphone_color"`
+	IPhoneIMEI        string         `json:"iphone_imei"`
 	ServiceType       ServiceType    `json:"service_type"`
 	Description       string         `json:"description"`
 	PickupAddress     string         `json:"pickup_address"`
@@ -136,9 +136,9 @@ func (so *ServiceOrder) ToResponse() ServiceOrderResponse {
 		Customer:          so.Customer.ToResponse(),
 		BranchID:          so.BranchID,
 		Branch:            so.Branch.ToResponse(),
-		iPhoneModel:       so.IPhoneModel,
-		iPhoneColor:       so.IPhoneColor,
-		iPhoneIMEI:        so.IPhoneIMEI,
+		IPhoneModel:       so.IPhoneModel,
+		IPhoneColor:       so.IPhoneColor,
+		IPhoneIMEI:        so.IPhoneIMEI,
 		ServiceType:       so.ServiceType,
 		Description:       so.Description,
 		PickupAddress:     so.PickupAddress,
