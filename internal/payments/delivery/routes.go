@@ -2,8 +2,8 @@ package delivery
 
 import (
 	"net/http"
-	"service/internal/core"
-	"service/internal/middleware"
+	"service/internal/shared/middleware"
+	"service/internal/shared/model"
 
 	"github.com/gin-gonic/gin"
 )
@@ -130,7 +130,7 @@ func SetupRoutes(r *gin.Engine) {
 		// Admin routes (admin role required)
 		admin := v1.Group("/admin")
 		admin.Use(middleware.AuthMiddleware())
-		admin.Use(middleware.RoleMiddleware(core.RoleAdminPusat, core.RoleAdminCabang))
+		admin.Use(middleware.RoleMiddleware(model.RoleAdminPusat, model.RoleAdminCabang))
 		{
 			// Branch management
 			admin.POST("/branches", branchHandler.CreateBranch)
@@ -165,7 +165,7 @@ func SetupRoutes(r *gin.Engine) {
 		// Cashier routes (kasir role required)
 		cashier := v1.Group("/cashier")
 		cashier.Use(middleware.AuthMiddleware())
-		cashier.Use(middleware.RoleMiddleware(core.RoleKasir))
+		cashier.Use(middleware.RoleMiddleware(model.RoleKasir))
 		{
 			// Order processing
 			cashier.GET("/orders", orderHandler.GetCashierOrders)
@@ -179,7 +179,7 @@ func SetupRoutes(r *gin.Engine) {
 		// Technician routes (teknisi role required)
 		technician := v1.Group("/technician")
 		technician.Use(middleware.AuthMiddleware())
-		technician.Use(middleware.RoleMiddleware(core.RoleTeknisi))
+		technician.Use(middleware.RoleMiddleware(model.RoleTeknisi))
 		{
 			// Order management
 			technician.GET("/orders", orderHandler.GetTechnicianOrders)
@@ -194,7 +194,7 @@ func SetupRoutes(r *gin.Engine) {
 		// Courier routes (kurir role required)
 		courier := v1.Group("/courier")
 		courier.Use(middleware.AuthMiddleware())
-		courier.Use(middleware.RoleMiddleware(core.RoleKurir))
+		courier.Use(middleware.RoleMiddleware(model.RoleKurir))
 		{
 			// Order management
 			courier.GET("/orders", orderHandler.GetCourierOrders)
@@ -212,7 +212,7 @@ func SetupRoutes(r *gin.Engine) {
 
 	// 404 handler
 	r.NoRoute(func(c *gin.Context) {
-		c.JSON(http.StatusNotFound, core.CreateErrorResponse(
+		c.JSON(http.StatusNotFound, model.CreateErrorResponse(
 			"not_found",
 			"Endpoint not found",
 			nil,

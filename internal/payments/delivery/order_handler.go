@@ -2,10 +2,10 @@ package delivery
 
 import (
 	"net/http"
-	"service/internal/core"
 	"service/internal/orders/repository"
 	"service/internal/orders/service"
-	"service/internal/utils"
+	"service/internal/shared/model"
+	"service/internal/shared/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -31,11 +31,11 @@ func NewOrderHandler() *OrderHandler {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body core.ServiceOrderRequest true "Order data"
-// @Success 201 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.ServiceOrderRequest true "Order data"
+// @Success 201 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /orders [post]
 func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	// Get customer ID from context (if present). For tests that don't set auth,
@@ -46,7 +46,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		var ok bool
 		customerUUID, ok = customerID.(uuid.UUID)
 		if !ok {
-			c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+			c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 				"internal_error",
 				"Invalid user ID type",
 				nil,
@@ -56,12 +56,12 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	} else {
 		// try to find any registered customer (use repository directly)
 		userRepo := repository.NewUserRepository()
-		role := core.RolePelanggan
+		role := model.RolePelanggan
 		users, _, err := userRepo.List(c.Request.Context(), 0, 1, &role, nil)
 		if err == nil && len(users) > 0 {
 			customerUUID = users[0].ID
 		} else {
-			c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+			c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 				"unauthorized",
 				"User ID not found in context",
 				nil,
@@ -70,9 +70,9 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		}
 	}
 
-	var req core.ServiceOrderRequest
+	var req model.ServiceOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -101,13 +101,13 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		req.PickupAddress = req.PickupLocation
 	}
 	if req.ServiceType == "" {
-		req.ServiceType = core.ServiceTypeOther
+		req.ServiceType = model.ServiceTypeOther
 	}
 
 	// Skip strict validation in test mode to keep tests lightweight
 	if gin.Mode() != gin.TestMode {
 		if err := utils.ValidateStruct(&req); err != nil {
-			c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+			c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 				"validation_error",
 				"Validation failed",
 				err.Error(),
@@ -119,10 +119,10 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	order, err := h.orderService.CreateOrder(c.Request.Context(), customerUUID, &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrUserNotFound || err == core.ErrBranchNotFound {
+		if err == model.ErrUserNotFound || err == model.ErrBranchNotFound {
 			statusCode = http.StatusBadRequest
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"order_creation_failed",
 			err.Error(),
 			nil,
@@ -130,7 +130,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, core.SuccessResponse(order, "Order created successfully"))
+	c.JSON(http.StatusCreated, model.SuccessResponse(order, "Order created successfully"))
 }
 
 // GetOrder godoc
@@ -140,16 +140,16 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Order ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /orders/{id} [get]
 func (h *OrderHandler) GetOrder(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid order ID format",
 			nil,
@@ -160,10 +160,10 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 	order, err := h.orderService.GetOrder(c.Request.Context(), id)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrOrderNotFound {
+		if err == model.ErrOrderNotFound {
 			statusCode = http.StatusNotFound
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"order_not_found",
 			err.Error(),
 			nil,
@@ -171,7 +171,7 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(order, "Order retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(order, "Order retrieved successfully"))
 }
 
 // GetOrderByNumber godoc
@@ -181,10 +181,10 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param orderNumber path string true "Order Number"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /orders/number/{orderNumber} [get]
 func (h *OrderHandler) GetOrderByNumber(c *gin.Context) {
 	orderNumber := c.Param("orderNumber")
@@ -192,10 +192,10 @@ func (h *OrderHandler) GetOrderByNumber(c *gin.Context) {
 	order, err := h.orderService.GetOrderByNumber(c.Request.Context(), orderNumber)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrOrderNotFound {
+		if err == model.ErrOrderNotFound {
 			statusCode = http.StatusNotFound
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"order_not_found",
 			err.Error(),
 			nil,
@@ -203,7 +203,7 @@ func (h *OrderHandler) GetOrderByNumber(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(order, "Order retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(order, "Order retrieved successfully"))
 }
 
 // UpdateOrderStatus godoc
@@ -214,18 +214,18 @@ func (h *OrderHandler) GetOrderByNumber(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Order ID"
-// @Param request body core.UpdateOrderStatusRequest true "Status update data"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.UpdateOrderStatusRequest true "Status update data"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /orders/{id}/status [put]
 func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid order ID format",
 			nil,
@@ -233,9 +233,9 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
-	var req core.UpdateOrderStatusRequest
+	var req model.UpdateOrderStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -243,12 +243,12 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
-    // Sanitize free-text notes
-    utils.SanitizeStructStrings(&req)
+	// Sanitize free-text notes
+	utils.SanitizeStructStrings(&req)
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -259,10 +259,10 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 	order, err := h.orderService.UpdateOrderStatus(c.Request.Context(), id, &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrOrderNotFound {
+		if err == model.ErrOrderNotFound {
 			statusCode = http.StatusNotFound
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"order_update_failed",
 			err.Error(),
 			nil,
@@ -270,7 +270,7 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(order, "Order status updated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(order, "Order status updated successfully"))
 }
 
 // AssignTechnician godoc
@@ -282,17 +282,17 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Order ID"
 // @Param technician_id query string true "Technician ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /orders/{id}/assign-technician [post]
 func (h *OrderHandler) AssignTechnician(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid order ID format",
 			nil,
@@ -303,7 +303,7 @@ func (h *OrderHandler) AssignTechnician(c *gin.Context) {
 	technicianIDStr := c.Query("technician_id")
 	technicianID, err := uuid.Parse(technicianIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_technician_id",
 			"Invalid technician ID format",
 			nil,
@@ -314,10 +314,10 @@ func (h *OrderHandler) AssignTechnician(c *gin.Context) {
 	order, err := h.orderService.AssignTechnician(c.Request.Context(), id, technicianID)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrOrderNotFound || err.Error() == "user is not a technician" {
+		if err == model.ErrOrderNotFound || err.Error() == "user is not a technician" {
 			statusCode = http.StatusBadRequest
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"technician_assignment_failed",
 			err.Error(),
 			nil,
@@ -325,7 +325,7 @@ func (h *OrderHandler) AssignTechnician(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(order, "Technician assigned successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(order, "Technician assigned successfully"))
 }
 
 // AssignCourier godoc
@@ -337,17 +337,17 @@ func (h *OrderHandler) AssignTechnician(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Order ID"
 // @Param courier_id query string true "Courier ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /orders/{id}/assign-courier [post]
 func (h *OrderHandler) AssignCourier(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid order ID format",
 			nil,
@@ -358,7 +358,7 @@ func (h *OrderHandler) AssignCourier(c *gin.Context) {
 	courierIDStr := c.Query("courier_id")
 	courierID, err := uuid.Parse(courierIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_courier_id",
 			"Invalid courier ID format",
 			nil,
@@ -369,10 +369,10 @@ func (h *OrderHandler) AssignCourier(c *gin.Context) {
 	order, err := h.orderService.AssignCourier(c.Request.Context(), id, courierID)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrOrderNotFound || err.Error() == "user is not a courier" {
+		if err == model.ErrOrderNotFound || err.Error() == "user is not a courier" {
 			statusCode = http.StatusBadRequest
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"courier_assignment_failed",
 			err.Error(),
 			nil,
@@ -380,7 +380,7 @@ func (h *OrderHandler) AssignCourier(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(order, "Courier assigned successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(order, "Courier assigned successfully"))
 }
 
 // ListOrders godoc
@@ -397,9 +397,9 @@ func (h *OrderHandler) AssignCourier(c *gin.Context) {
 // @Param courier_id query string false "Filter by courier ID"
 // @Param status query string false "Filter by status"
 // @Param service_type query string false "Filter by service type"
-// @Success 200 {object} core.PaginatedResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.PaginatedResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /orders [get]
 func (h *OrderHandler) ListOrders(c *gin.Context) {
 	// Parse query parameters
@@ -444,18 +444,18 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 	}
 
 	if statusStr := c.Query("status"); statusStr != "" {
-		status := core.OrderStatus(statusStr)
+		status := model.OrderStatus(statusStr)
 		filters.Status = &status
 	}
 
 	if serviceTypeStr := c.Query("service_type"); serviceTypeStr != "" {
-		serviceType := core.ServiceType(serviceTypeStr)
+		serviceType := model.ServiceType(serviceTypeStr)
 		filters.ServiceType = &serviceType
 	}
 
 	result, err := h.orderService.ListOrders(c.Request.Context(), page, limit, filters)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"order_list_failed",
 			err.Error(),
 			nil,
@@ -473,15 +473,15 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /orders/my [get]
 func (h *OrderHandler) GetMyOrders(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -491,7 +491,7 @@ func (h *OrderHandler) GetMyOrders(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -501,7 +501,7 @@ func (h *OrderHandler) GetMyOrders(c *gin.Context) {
 
 	orders, err := h.orderService.GetOrdersByCustomer(c.Request.Context(), userUUID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"my_orders_failed",
 			err.Error(),
 			nil,
@@ -509,7 +509,7 @@ func (h *OrderHandler) GetMyOrders(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(orders, "My orders retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(orders, "My orders retrieved successfully"))
 }
 
 // GetOrders godoc
@@ -523,10 +523,10 @@ func (h *OrderHandler) GetMyOrders(c *gin.Context) {
 // @Param limit query int false "Items per page" default(10)
 // @Param status query string false "Order status filter"
 // @Param branch_id query string false "Branch ID filter"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /orders [get]
 func (h *OrderHandler) GetOrders(c *gin.Context) {
 	// Get pagination parameters
@@ -555,7 +555,7 @@ func (h *OrderHandler) GetOrders(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -565,7 +565,7 @@ func (h *OrderHandler) GetOrders(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -575,7 +575,7 @@ func (h *OrderHandler) GetOrders(c *gin.Context) {
 
 	orders, total, err := h.orderService.GetOrders(c.Request.Context(), userUUID, page, limit, status, branchID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"orders_failed",
 			err.Error(),
 			nil,
@@ -584,14 +584,14 @@ func (h *OrderHandler) GetOrders(c *gin.Context) {
 	}
 
 	// Create paginated response
-	pagination := core.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
 		TotalPages: int((total + int64(limit) - 1) / int64(limit)),
 	}
 
-	c.JSON(http.StatusOK, core.PaginatedSuccessResponse(orders, pagination, "Orders retrieved successfully"))
+	c.JSON(http.StatusOK, model.PaginatedSuccessResponse(orders, pagination, "Orders retrieved successfully"))
 }
 
 // GetAllOrders godoc
@@ -605,10 +605,10 @@ func (h *OrderHandler) GetOrders(c *gin.Context) {
 // @Param limit query int false "Items per page" default(10)
 // @Param status query string false "Order status filter"
 // @Param branch_id query string false "Branch ID filter"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /admin/orders [get]
 func (h *OrderHandler) GetAllOrders(c *gin.Context) {
 	// Get pagination parameters
@@ -636,7 +636,7 @@ func (h *OrderHandler) GetAllOrders(c *gin.Context) {
 
 	orders, total, err := h.orderService.GetAllOrders(c.Request.Context(), page, limit, status, branchID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"all_orders_failed",
 			err.Error(),
 			nil,
@@ -645,14 +645,14 @@ func (h *OrderHandler) GetAllOrders(c *gin.Context) {
 	}
 
 	// Create paginated response
-	pagination := core.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
 		TotalPages: int((total + int64(limit) - 1) / int64(limit)),
 	}
 
-	c.JSON(http.StatusOK, core.PaginatedSuccessResponse(orders, pagination, "All orders retrieved successfully"))
+	c.JSON(http.StatusOK, model.PaginatedSuccessResponse(orders, pagination, "All orders retrieved successfully"))
 }
 
 // UpdateOrder godoc
@@ -663,18 +663,18 @@ func (h *OrderHandler) GetAllOrders(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Order ID"
-// @Param request body core.ServiceOrderRequest true "Order update data"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.ServiceOrderRequest true "Order update data"
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /admin/orders/{id} [put]
 func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid order ID format",
 			nil,
@@ -682,9 +682,9 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 		return
 	}
 
-	var req core.ServiceOrderRequest
+	var req model.ServiceOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -695,10 +695,10 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 	order, err := h.orderService.UpdateOrder(c.Request.Context(), id, &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrOrderNotFound {
+		if err == model.ErrOrderNotFound {
 			statusCode = http.StatusNotFound
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"update_order_failed",
 			err.Error(),
 			nil,
@@ -706,7 +706,7 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(order, "Order updated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(order, "Order updated successfully"))
 }
 
 // DeleteOrder godoc
@@ -717,17 +717,17 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Order ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /admin/orders/{id} [delete]
 func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid order ID format",
 			nil,
@@ -738,10 +738,10 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 	err = h.orderService.DeleteOrder(c.Request.Context(), id)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrOrderNotFound {
+		if err == model.ErrOrderNotFound {
 			statusCode = http.StatusNotFound
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"delete_order_failed",
 			err.Error(),
 			nil,
@@ -749,7 +749,7 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "Order deleted successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(nil, "Order deleted successfully"))
 }
 
 // GetCashierOrders godoc
@@ -761,10 +761,10 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 // @Security BearerAuth
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(10)
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /cashier/orders [get]
 func (h *OrderHandler) GetCashierOrders(c *gin.Context) {
 	// Get pagination parameters
@@ -782,7 +782,7 @@ func (h *OrderHandler) GetCashierOrders(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -792,7 +792,7 @@ func (h *OrderHandler) GetCashierOrders(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -802,7 +802,7 @@ func (h *OrderHandler) GetCashierOrders(c *gin.Context) {
 
 	orders, total, err := h.orderService.GetOrdersByBranch(c.Request.Context(), userUUID, page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"cashier_orders_failed",
 			err.Error(),
 			nil,
@@ -811,14 +811,14 @@ func (h *OrderHandler) GetCashierOrders(c *gin.Context) {
 	}
 
 	// Create paginated response
-	pagination := core.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
 		TotalPages: int((total + int64(limit) - 1) / int64(limit)),
 	}
 
-	c.JSON(http.StatusOK, core.PaginatedSuccessResponse(orders, pagination, "Cashier orders retrieved successfully"))
+	c.JSON(http.StatusOK, model.PaginatedSuccessResponse(orders, pagination, "Cashier orders retrieved successfully"))
 }
 
 // GetBranchOrders godoc
@@ -831,16 +831,16 @@ func (h *OrderHandler) GetCashierOrders(c *gin.Context) {
 // @Param branch_id path string true "Branch ID"
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(10)
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /branches/{branch_id}/orders [get]
 func (h *OrderHandler) GetBranchOrders(c *gin.Context) {
 	branchIDStr := c.Param("branch_id")
 	branchID, err := uuid.Parse(branchIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_branch_id",
 			"Invalid branch ID format",
 			nil,
@@ -862,7 +862,7 @@ func (h *OrderHandler) GetBranchOrders(c *gin.Context) {
 
 	orders, total, err := h.orderService.GetOrdersByBranchID(c.Request.Context(), branchID, page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"branch_orders_failed",
 			err.Error(),
 			nil,
@@ -871,14 +871,14 @@ func (h *OrderHandler) GetBranchOrders(c *gin.Context) {
 	}
 
 	// Create paginated response
-	pagination := core.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
 		TotalPages: int((total + int64(limit) - 1) / int64(limit)),
 	}
 
-	c.JSON(http.StatusOK, core.PaginatedSuccessResponse(orders, pagination, "Branch orders retrieved successfully"))
+	c.JSON(http.StatusOK, model.PaginatedSuccessResponse(orders, pagination, "Branch orders retrieved successfully"))
 }
 
 // GetTechnicianOrders godoc
@@ -890,10 +890,10 @@ func (h *OrderHandler) GetBranchOrders(c *gin.Context) {
 // @Security BearerAuth
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(10)
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /technician/orders [get]
 func (h *OrderHandler) GetTechnicianOrders(c *gin.Context) {
 	// Get pagination parameters
@@ -911,7 +911,7 @@ func (h *OrderHandler) GetTechnicianOrders(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -921,7 +921,7 @@ func (h *OrderHandler) GetTechnicianOrders(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -931,7 +931,7 @@ func (h *OrderHandler) GetTechnicianOrders(c *gin.Context) {
 
 	orders, total, err := h.orderService.GetOrdersByTechnician(c.Request.Context(), userUUID, page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"technician_orders_failed",
 			err.Error(),
 			nil,
@@ -940,14 +940,14 @@ func (h *OrderHandler) GetTechnicianOrders(c *gin.Context) {
 	}
 
 	// Create paginated response
-	pagination := core.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
 		TotalPages: int((total + int64(limit) - 1) / int64(limit)),
 	}
 
-	c.JSON(http.StatusOK, core.PaginatedSuccessResponse(orders, pagination, "Technician orders retrieved successfully"))
+	c.JSON(http.StatusOK, model.PaginatedSuccessResponse(orders, pagination, "Technician orders retrieved successfully"))
 }
 
 // GetCourierOrders godoc
@@ -959,10 +959,10 @@ func (h *OrderHandler) GetTechnicianOrders(c *gin.Context) {
 // @Security BearerAuth
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(10)
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /courier/orders [get]
 func (h *OrderHandler) GetCourierOrders(c *gin.Context) {
 	// Get pagination parameters
@@ -980,7 +980,7 @@ func (h *OrderHandler) GetCourierOrders(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -990,7 +990,7 @@ func (h *OrderHandler) GetCourierOrders(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -1000,7 +1000,7 @@ func (h *OrderHandler) GetCourierOrders(c *gin.Context) {
 
 	orders, total, err := h.orderService.GetOrdersByCourier(c.Request.Context(), userUUID, page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"courier_orders_failed",
 			err.Error(),
 			nil,
@@ -1009,14 +1009,14 @@ func (h *OrderHandler) GetCourierOrders(c *gin.Context) {
 	}
 
 	// Create paginated response
-	pagination := core.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
 		TotalPages: int((total + int64(limit) - 1) / int64(limit)),
 	}
 
-	c.JSON(http.StatusOK, core.PaginatedSuccessResponse(orders, pagination, "Courier orders retrieved successfully"))
+	c.JSON(http.StatusOK, model.PaginatedSuccessResponse(orders, pagination, "Courier orders retrieved successfully"))
 }
 
 // GetAvailableJobs godoc
@@ -1028,10 +1028,10 @@ func (h *OrderHandler) GetCourierOrders(c *gin.Context) {
 // @Security BearerAuth
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(10)
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /courier/jobs [get]
 func (h *OrderHandler) GetAvailableJobs(c *gin.Context) {
 	// Get pagination parameters
@@ -1048,7 +1048,7 @@ func (h *OrderHandler) GetAvailableJobs(c *gin.Context) {
 
 	orders, total, err := h.orderService.GetAvailableJobs(c.Request.Context(), page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"available_jobs_failed",
 			err.Error(),
 			nil,
@@ -1057,14 +1057,14 @@ func (h *OrderHandler) GetAvailableJobs(c *gin.Context) {
 	}
 
 	// Create paginated response
-	pagination := core.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
 		TotalPages: int((total + int64(limit) - 1) / int64(limit)),
 	}
 
-	c.JSON(http.StatusOK, core.PaginatedSuccessResponse(orders, pagination, "Available jobs retrieved successfully"))
+	c.JSON(http.StatusOK, model.PaginatedSuccessResponse(orders, pagination, "Available jobs retrieved successfully"))
 }
 
 // AcceptJob godoc
@@ -1075,17 +1075,17 @@ func (h *OrderHandler) GetAvailableJobs(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Order ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /courier/jobs/{id}/accept [post]
 func (h *OrderHandler) AcceptJob(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid order ID format",
 			nil,
@@ -1096,7 +1096,7 @@ func (h *OrderHandler) AcceptJob(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -1106,7 +1106,7 @@ func (h *OrderHandler) AcceptJob(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -1117,10 +1117,10 @@ func (h *OrderHandler) AcceptJob(c *gin.Context) {
 	order, err := h.orderService.AssignCourier(c.Request.Context(), id, userUUID)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrOrderNotFound {
+		if err == model.ErrOrderNotFound {
 			statusCode = http.StatusNotFound
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"accept_job_failed",
 			err.Error(),
 			nil,
@@ -1128,5 +1128,5 @@ func (h *OrderHandler) AcceptJob(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(order, "Job accepted successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(order, "Job accepted successfully"))
 }

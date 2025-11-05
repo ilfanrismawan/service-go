@@ -2,8 +2,8 @@ package delivery
 
 import (
 	"net/http"
-	"service/internal/core"
 	"service/internal/orders/service"
+	"service/internal/shared/model"
 	"strconv"
 	"time"
 
@@ -31,10 +31,10 @@ func NewReportHandler() *ReportHandler {
 // @Security BearerAuth
 // @Param year query int true "Year" default(2024)
 // @Param month query int true "Month (1-12)" default(1)
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /reports/monthly [get]
 func (h *ReportHandler) GetMonthlyReport(c *gin.Context) {
 	// Parse query parameters
@@ -43,7 +43,7 @@ func (h *ReportHandler) GetMonthlyReport(c *gin.Context) {
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year < 2020 || year > 2030 {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid year parameter",
 			nil,
@@ -53,7 +53,7 @@ func (h *ReportHandler) GetMonthlyReport(c *gin.Context) {
 
 	month, err := strconv.Atoi(monthStr)
 	if err != nil || month < 1 || month > 12 {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid month parameter (must be 1-12)",
 			nil,
@@ -63,7 +63,7 @@ func (h *ReportHandler) GetMonthlyReport(c *gin.Context) {
 
 	report, err := h.reportService.GenerateMonthlyReport(c.Request.Context(), year, month)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"report_generation_failed",
 			err.Error(),
 			nil,
@@ -71,7 +71,7 @@ func (h *ReportHandler) GetMonthlyReport(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(report, "Monthly report generated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(report, "Monthly report generated successfully"))
 }
 
 // GetYearlyReport godoc
@@ -82,10 +82,10 @@ func (h *ReportHandler) GetMonthlyReport(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param year query int true "Year" default(2024)
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /reports/yearly [get]
 func (h *ReportHandler) GetYearlyReport(c *gin.Context) {
 	// Parse query parameters
@@ -93,7 +93,7 @@ func (h *ReportHandler) GetYearlyReport(c *gin.Context) {
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year < 2020 || year > 2030 {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid year parameter",
 			nil,
@@ -103,7 +103,7 @@ func (h *ReportHandler) GetYearlyReport(c *gin.Context) {
 
 	report, err := h.reportService.GetYearlyReport(c.Request.Context(), year)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"report_generation_failed",
 			err.Error(),
 			nil,
@@ -111,7 +111,7 @@ func (h *ReportHandler) GetYearlyReport(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(report, "Yearly report generated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(report, "Yearly report generated successfully"))
 }
 
 // GetCurrentMonthReport godoc
@@ -121,15 +121,15 @@ func (h *ReportHandler) GetYearlyReport(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /reports/current-month [get]
 func (h *ReportHandler) GetCurrentMonthReport(c *gin.Context) {
 	now := time.Now()
 	report, err := h.reportService.GenerateMonthlyReport(c.Request.Context(), now.Year(), int(now.Month()))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"report_generation_failed",
 			err.Error(),
 			nil,
@@ -137,7 +137,7 @@ func (h *ReportHandler) GetCurrentMonthReport(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(report, "Current month report generated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(report, "Current month report generated successfully"))
 }
 
 // GetReportSummary godoc
@@ -147,13 +147,13 @@ func (h *ReportHandler) GetCurrentMonthReport(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /reports/summary [get]
 func (h *ReportHandler) GetReportSummary(c *gin.Context) {
 	now := time.Now()
-	var summary []core.MonthlyReportData
+	var summary []model.MonthlyReportData
 
 	// Get data for the last 12 months
 	for i := 11; i >= 0; i-- {
@@ -163,12 +163,12 @@ func (h *ReportHandler) GetReportSummary(c *gin.Context) {
 			continue
 		}
 
-		summary = append(summary, core.MonthlyReportData{
+		summary = append(summary, model.MonthlyReportData{
 			Month:   report.Month,
 			Orders:  report.TotalOrders,
 			Revenue: report.TotalRevenue,
 		})
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(summary, "Report summary generated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(summary, "Report summary generated successfully"))
 }

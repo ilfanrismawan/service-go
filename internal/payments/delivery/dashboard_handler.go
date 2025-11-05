@@ -2,8 +2,8 @@ package delivery
 
 import (
 	"net/http"
-	"service/internal/core"
 	"service/internal/orders/service"
+	"service/internal/shared/model"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -30,15 +30,15 @@ func NewDashboardHandler() *DashboardHandler {
 // @Produce json
 // @Security BearerAuth
 // @Param branch_id query string false "Branch ID (for admin users)"
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /dashboard/stats [get]
 func (h *DashboardHandler) GetDashboardStats(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -48,7 +48,7 @@ func (h *DashboardHandler) GetDashboardStats(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -66,7 +66,7 @@ func (h *DashboardHandler) GetDashboardStats(c *gin.Context) {
 
 	stats, err := h.dashboardService.GetDashboardStats(c.Request.Context(), &userUUID, branchID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"dashboard_stats_failed",
 			err.Error(),
 			nil,
@@ -74,7 +74,7 @@ func (h *DashboardHandler) GetDashboardStats(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(stats, "Dashboard statistics retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(stats, "Dashboard statistics retrieved successfully"))
 }
 
 // GetServiceStats godoc
@@ -85,15 +85,15 @@ func (h *DashboardHandler) GetDashboardStats(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param branch_id query string false "Branch ID (for admin users)"
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /dashboard/service-stats [get]
 func (h *DashboardHandler) GetServiceStats(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -103,7 +103,7 @@ func (h *DashboardHandler) GetServiceStats(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -121,7 +121,7 @@ func (h *DashboardHandler) GetServiceStats(c *gin.Context) {
 
 	stats, err := h.dashboardService.GetServiceStats(c.Request.Context(), &userUUID, branchID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"service_stats_failed",
 			err.Error(),
 			nil,
@@ -129,7 +129,7 @@ func (h *DashboardHandler) GetServiceStats(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(stats, "Service statistics retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(stats, "Service statistics retrieved successfully"))
 }
 
 // GetRevenueReport godoc
@@ -142,16 +142,16 @@ func (h *DashboardHandler) GetServiceStats(c *gin.Context) {
 // @Param branch_id query string false "Branch ID (for admin users)"
 // @Param date_from query string true "Start date (YYYY-MM-DD)"
 // @Param date_to query string true "End date (YYYY-MM-DD)"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /dashboard/revenue-report [get]
 func (h *DashboardHandler) GetRevenueReport(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -161,7 +161,7 @@ func (h *DashboardHandler) GetRevenueReport(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -174,7 +174,7 @@ func (h *DashboardHandler) GetRevenueReport(c *gin.Context) {
 	dateTo := c.Query("date_to")
 
 	if dateFrom == "" || dateTo == "" {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"missing_parameters",
 			"date_from and date_to are required",
 			nil,
@@ -192,7 +192,7 @@ func (h *DashboardHandler) GetRevenueReport(c *gin.Context) {
 
 	report, err := h.dashboardService.GetRevenueReport(c.Request.Context(), &userUUID, branchID, dateFrom, dateTo)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"revenue_report_failed",
 			err.Error(),
 			nil,
@@ -200,7 +200,7 @@ func (h *DashboardHandler) GetRevenueReport(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(report, "Revenue report retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(report, "Revenue report retrieved successfully"))
 }
 
 // GetBranchStats godoc
@@ -211,16 +211,16 @@ func (h *DashboardHandler) GetRevenueReport(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param branchId path string true "Branch ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /dashboard/branches/{branchId}/stats [get]
 func (h *DashboardHandler) GetBranchStats(c *gin.Context) {
 	branchIDStr := c.Param("branchId")
 	branchID, err := uuid.Parse(branchIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_branch_id",
 			"Invalid branch ID format",
 			nil,
@@ -230,7 +230,7 @@ func (h *DashboardHandler) GetBranchStats(c *gin.Context) {
 
 	stats, err := h.dashboardService.GetBranchStats(c.Request.Context(), branchID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"branch_stats_failed",
 			err.Error(),
 			nil,
@@ -238,7 +238,7 @@ func (h *DashboardHandler) GetBranchStats(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(stats, "Branch statistics retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(stats, "Branch statistics retrieved successfully"))
 }
 
 // GetUserStats godoc
@@ -249,16 +249,16 @@ func (h *DashboardHandler) GetBranchStats(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param userId path string true "User ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /dashboard/users/{userId}/stats [get]
 func (h *DashboardHandler) GetUserStats(c *gin.Context) {
 	userIDStr := c.Param("userId")
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_user_id",
 			"Invalid user ID format",
 			nil,
@@ -268,7 +268,7 @@ func (h *DashboardHandler) GetUserStats(c *gin.Context) {
 
 	stats, err := h.dashboardService.GetUserStats(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"user_stats_failed",
 			err.Error(),
 			nil,
@@ -276,7 +276,7 @@ func (h *DashboardHandler) GetUserStats(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(stats, "User statistics retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(stats, "User statistics retrieved successfully"))
 }
 
 // GetPopularServices godoc
@@ -288,15 +288,15 @@ func (h *DashboardHandler) GetUserStats(c *gin.Context) {
 // @Security BearerAuth
 // @Param limit query int false "Number of services to return" default(5)
 // @Param branch_id query string false "Branch ID (for admin users)"
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /dashboard/popular-services [get]
 func (h *DashboardHandler) GetPopularServices(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -306,7 +306,7 @@ func (h *DashboardHandler) GetPopularServices(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -331,7 +331,7 @@ func (h *DashboardHandler) GetPopularServices(c *gin.Context) {
 
 	stats, err := h.dashboardService.GetServiceStats(c.Request.Context(), &userUUID, branchID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"popular_services_failed",
 			err.Error(),
 			nil,
@@ -344,7 +344,7 @@ func (h *DashboardHandler) GetPopularServices(c *gin.Context) {
 		stats = stats[:limit]
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(stats, "Popular services retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(stats, "Popular services retrieved successfully"))
 }
 
 // GetOverview godoc
@@ -354,9 +354,9 @@ func (h *DashboardHandler) GetPopularServices(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /dashboard/overview [get]
 func (h *DashboardHandler) GetOverview(c *gin.Context) {
 	h.GetDashboardStats(c)
@@ -369,9 +369,9 @@ func (h *DashboardHandler) GetOverview(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /dashboard/orders [get]
 func (h *DashboardHandler) GetOrderStats(c *gin.Context) {
 	// Reuse service stats for now
@@ -385,9 +385,9 @@ func (h *DashboardHandler) GetOrderStats(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /dashboard/revenue [get]
 func (h *DashboardHandler) GetRevenueStats(c *gin.Context) {
 	// If date range provided, use revenue report; otherwise return overview
@@ -405,12 +405,12 @@ func (h *DashboardHandler) GetAdminDashboard(c *gin.Context) {
 	// Call GetDashboardStats with nil user to get overall stats
 	stats, err := h.dashboardService.GetDashboardStats(c.Request.Context(), nil, nil)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"admin_dashboard_failed",
 			err.Error(),
 			nil,
 		))
 		return
 	}
-	c.JSON(http.StatusOK, core.SuccessResponse(stats, "Admin dashboard retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(stats, "Admin dashboard retrieved successfully"))
 }

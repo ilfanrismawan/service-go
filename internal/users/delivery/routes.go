@@ -3,7 +3,7 @@ package delivery
 import (
 	"net/http"
 	"service/internal/core"
-	"service/internal/middleware"
+	"service/internal/shared/middleware"
 
 	"github.com/gin-gonic/gin"
 )

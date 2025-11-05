@@ -2,9 +2,9 @@ package delivery
 
 import (
 	"net/http"
-	"service/internal/core"
 	"service/internal/orders/service"
-	"service/internal/utils"
+	"service/internal/shared/model"
+	"service/internal/shared/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -30,17 +30,17 @@ func NewChatHandler() *ChatHandler {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body core.ChatMessageRequest true "Chat message data"
-// @Success 201 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Param request body model.ChatMessageRequest true "Chat message data"
+// @Success 201 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /chat/messages [post]
 func (h *ChatHandler) SendMessage(c *gin.Context) {
 	// Get sender ID from context
 	senderID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -50,7 +50,7 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 
 	senderUUID, ok := senderID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -58,9 +58,9 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
-	var req core.ChatMessageRequest
+	var req model.ChatMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid request data",
 			err.Error(),
@@ -70,7 +70,7 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Validation failed",
 			err.Error(),
@@ -81,10 +81,10 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 	message, err := h.chatService.SendMessage(c.Request.Context(), senderUUID, &req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == core.ErrOrderNotFound || err == core.ErrUserNotFound {
+		if err == model.ErrOrderNotFound || err == model.ErrUserNotFound {
 			statusCode = http.StatusBadRequest
 		}
-		c.JSON(statusCode, core.CreateErrorResponse(
+		c.JSON(statusCode, model.CreateErrorResponse(
 			"message_send_failed",
 			err.Error(),
 			nil,
@@ -92,7 +92,7 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, core.SuccessResponse(message, "Message sent successfully"))
+	c.JSON(http.StatusCreated, model.SuccessResponse(message, "Message sent successfully"))
 }
 
 // GetChatMessages godoc
@@ -104,15 +104,15 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 // @Param orderId path string true "Order ID"
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(20)
-// @Success 200 {object} core.PaginatedResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.PaginatedResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /chat/orders/{orderId}/messages [get]
 func (h *ChatHandler) GetChatMessages(c *gin.Context) {
 	orderIDStr := c.Param("orderId")
 	orderID, err := uuid.Parse(orderIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_order_id",
 			"Invalid order ID format",
 			nil,
@@ -136,7 +136,7 @@ func (h *ChatHandler) GetChatMessages(c *gin.Context) {
 
 	result, err := h.chatService.GetChatMessages(c.Request.Context(), orderID, page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"chat_messages_fetch_failed",
 			err.Error(),
 			nil,
@@ -154,15 +154,15 @@ func (h *ChatHandler) GetChatMessages(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /chat/conversations [get]
 func (h *ChatHandler) GetUserChats(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -172,7 +172,7 @@ func (h *ChatHandler) GetUserChats(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -182,7 +182,7 @@ func (h *ChatHandler) GetUserChats(c *gin.Context) {
 
 	chats, err := h.chatService.GetUserChats(c.Request.Context(), userUUID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"user_chats_fetch_failed",
 			err.Error(),
 			nil,
@@ -190,7 +190,7 @@ func (h *ChatHandler) GetUserChats(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(chats, "User chats retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(chats, "User chats retrieved successfully"))
 }
 
 // MarkAsRead godoc
@@ -201,17 +201,17 @@ func (h *ChatHandler) GetUserChats(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Message ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /chat/messages/{id}/read [put]
 func (h *ChatHandler) MarkAsRead(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_id",
 			"Invalid message ID format",
 			nil,
@@ -221,7 +221,7 @@ func (h *ChatHandler) MarkAsRead(c *gin.Context) {
 
 	err = h.chatService.MarkAsRead(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"mark_read_failed",
 			err.Error(),
 			nil,
@@ -229,7 +229,7 @@ func (h *ChatHandler) MarkAsRead(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "Message marked as read"))
+	c.JSON(http.StatusOK, model.SuccessResponse(nil, "Message marked as read"))
 }
 
 // MarkOrderMessagesAsRead godoc
@@ -240,16 +240,16 @@ func (h *ChatHandler) MarkAsRead(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param orderId path string true "Order ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /chat/orders/{orderId}/read [put]
 func (h *ChatHandler) MarkOrderMessagesAsRead(c *gin.Context) {
 	orderIDStr := c.Param("orderId")
 	orderID, err := uuid.Parse(orderIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, core.CreateErrorResponse(
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_order_id",
 			"Invalid order ID format",
 			nil,
@@ -260,7 +260,7 @@ func (h *ChatHandler) MarkOrderMessagesAsRead(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -270,7 +270,7 @@ func (h *ChatHandler) MarkOrderMessagesAsRead(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -280,7 +280,7 @@ func (h *ChatHandler) MarkOrderMessagesAsRead(c *gin.Context) {
 
 	err = h.chatService.MarkOrderMessagesAsRead(c.Request.Context(), orderID, userUUID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"mark_order_read_failed",
 			err.Error(),
 			nil,
@@ -288,7 +288,7 @@ func (h *ChatHandler) MarkOrderMessagesAsRead(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(nil, "Order messages marked as read"))
+	c.JSON(http.StatusOK, model.SuccessResponse(nil, "Order messages marked as read"))
 }
 
 // GetUnreadCount godoc
@@ -298,15 +298,15 @@ func (h *ChatHandler) MarkOrderMessagesAsRead(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} model.APIResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /chat/unread-count [get]
 func (h *ChatHandler) GetUnreadCount(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, core.CreateErrorResponse(
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
 			"unauthorized",
 			"User ID not found in context",
 			nil,
@@ -316,7 +316,7 @@ func (h *ChatHandler) GetUnreadCount(c *gin.Context) {
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"internal_error",
 			"Invalid user ID type",
 			nil,
@@ -326,7 +326,7 @@ func (h *ChatHandler) GetUnreadCount(c *gin.Context) {
 
 	count, err := h.chatService.GetUnreadCount(c.Request.Context(), userUUID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, core.CreateErrorResponse(
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
 			"unread_count_fetch_failed",
 			err.Error(),
 			nil,
@@ -334,5 +334,5 @@ func (h *ChatHandler) GetUnreadCount(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, core.SuccessResponse(gin.H{"unread_count": count}, "Unread count retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(gin.H{"unread_count": count}, "Unread count retrieved successfully"))
 }
