@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
-	"service/internal/core"
 	"service/internal/orders/repository"
+	"service/internal/shared/model"
 	"time"
 
 	"github.com/google/uuid"
@@ -25,7 +25,7 @@ func NewMembershipService() *MembershipService {
 }
 
 // CreateMembership creates a new membership for a user
-func (s *MembershipService) CreateMembership(ctx context.Context, userID uuid.UUID, tier core.MembershipTier) (*core.Membership, error) {
+func (s *MembershipService) CreateMembership(ctx context.Context, userID uuid.UUID, tier model.MembershipTier) (*model.Membership, error) {
 	// Check if user exists
 	_, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -39,17 +39,17 @@ func (s *MembershipService) CreateMembership(ctx context.Context, userID uuid.UU
 	}
 
 	// Get tier configuration
-	config := core.GetMembershipTierConfig(tier)
+	config := model.GetMembershipTierConfig(tier)
 
 	// Create membership with trial period
 	now := time.Now()
 	trialEndsAt := now.AddDate(0, 0, 7) // 7 days trial
 
-	membership := &core.Membership{
+	membership := &model.Membership{
 		UserID:             userID,
 		Tier:               tier,
-		Status:             core.MembershipStatusTrial,
-		SubscriptionType:   core.SubscriptionTypeMonthly,
+		Status:             model.MembershipStatusTrial,
+		SubscriptionType:   model.SubscriptionTypeMonthly,
 		DiscountPercentage: config.DiscountPercentage,
 		Points:             0,
 		TotalSpent:         0,
@@ -72,7 +72,7 @@ func (s *MembershipService) CreateMembership(ctx context.Context, userID uuid.UU
 }
 
 // SubscribeToMembership creates a new subscription for a user
-func (s *MembershipService) SubscribeToMembership(ctx context.Context, userID uuid.UUID, req *core.SubscriptionRequest) (*core.SubscriptionResult, error) {
+func (s *MembershipService) SubscribeToMembership(ctx context.Context, userID uuid.UUID, req *model.SubscriptionRequest) (*model.SubscriptionResult, error) {
 	// Check if user exists
 	_, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -81,16 +81,16 @@ func (s *MembershipService) SubscribeToMembership(ctx context.Context, userID uu
 
 	// Check if user already has active membership
 	existingMembership, err := s.membershipRepo.GetByUserID(ctx, userID)
-	if err == nil && existingMembership != nil && existingMembership.Status == core.MembershipStatusActive {
+	if err == nil && existingMembership != nil && existingMembership.Status == model.MembershipStatusActive {
 		return nil, fmt.Errorf("user already has active membership")
 	}
 
 	// Get tier configuration
-	config := core.GetMembershipTierConfig(req.Tier)
+	config := model.GetMembershipTierConfig(req.Tier)
 
 	// Calculate price
 	var price float64
-	if req.SubscriptionType == core.SubscriptionTypeYearly {
+	if req.SubscriptionType == model.SubscriptionTypeYearly {
 		price = config.YearlyPrice
 	} else {
 		price = config.MonthlyPrice
@@ -98,14 +98,14 @@ func (s *MembershipService) SubscribeToMembership(ctx context.Context, userID uu
 
 	// Create or update membership
 	now := time.Now()
-	var membership *core.Membership
+	var membership *model.Membership
 
 	if existingMembership != nil {
 		// Update existing membership
 		membership = existingMembership
 		membership.Tier = req.Tier
 		membership.SubscriptionType = req.SubscriptionType
-		membership.Status = core.MembershipStatusActive
+		membership.Status = model.MembershipStatusActive
 		membership.DiscountPercentage = config.DiscountPercentage
 		membership.MonthlyPrice = config.MonthlyPrice
 		membership.YearlyPrice = config.YearlyPrice
@@ -114,10 +114,10 @@ func (s *MembershipService) SubscribeToMembership(ctx context.Context, userID uu
 		membership.TrialEndsAt = nil
 	} else {
 		// Create new membership
-		membership = &core.Membership{
+		membership = &model.Membership{
 			UserID:             userID,
 			Tier:               req.Tier,
-			Status:             core.MembershipStatusActive,
+			Status:             model.MembershipStatusActive,
 			SubscriptionType:   req.SubscriptionType,
 			DiscountPercentage: config.DiscountPercentage,
 			Points:             0,
@@ -132,7 +132,7 @@ func (s *MembershipService) SubscribeToMembership(ctx context.Context, userID uu
 	}
 
 	// Set billing dates
-	if req.SubscriptionType == core.SubscriptionTypeYearly {
+	if req.SubscriptionType == model.SubscriptionTypeYearly {
 		nextBilling := now.AddDate(1, 0, 0)
 		membership.NextBillingDate = &nextBilling
 		expiresAt := now.AddDate(1, 0, 0)
@@ -158,7 +158,7 @@ func (s *MembershipService) SubscribeToMembership(ctx context.Context, userID uu
 	// TODO: Integrate with payment gateway to get payment URL
 	paymentURL := fmt.Sprintf("/payment/subscription/%s", membership.ID.String())
 
-	return &core.SubscriptionResult{
+	return &model.SubscriptionResult{
 		MembershipID:     membership.ID,
 		Tier:             membership.Tier,
 		SubscriptionType: membership.SubscriptionType,
@@ -171,18 +171,18 @@ func (s *MembershipService) SubscribeToMembership(ctx context.Context, userID uu
 }
 
 // CancelSubscription cancels a user's subscription
-func (s *MembershipService) CancelSubscription(ctx context.Context, userID uuid.UUID, req *core.CancelSubscriptionRequest) error {
+func (s *MembershipService) CancelSubscription(ctx context.Context, userID uuid.UUID, req *model.CancelSubscriptionRequest) error {
 	membership, err := s.membershipRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("membership not found: %w", err)
 	}
 
-	if membership.Status != core.MembershipStatusActive {
+	if membership.Status != model.MembershipStatusActive {
 		return fmt.Errorf("membership is not active")
 	}
 
 	// Update membership status
-	membership.Status = core.MembershipStatusCancelled
+	membership.Status = model.MembershipStatusCancelled
 	membership.AutoRenew = false
 
 	if err := s.membershipRepo.Update(ctx, membership); err != nil {
@@ -193,7 +193,7 @@ func (s *MembershipService) CancelSubscription(ctx context.Context, userID uuid.
 }
 
 // StartTrial starts a trial membership for a user
-func (s *MembershipService) StartTrial(ctx context.Context, userID uuid.UUID, tier core.MembershipTier) (*core.Membership, error) {
+func (s *MembershipService) StartTrial(ctx context.Context, userID uuid.UUID, tier model.MembershipTier) (*model.Membership, error) {
 	// Check if user exists
 	_, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -207,17 +207,17 @@ func (s *MembershipService) StartTrial(ctx context.Context, userID uuid.UUID, ti
 	}
 
 	// Get tier configuration
-	config := core.GetMembershipTierConfig(tier)
+	config := model.GetMembershipTierConfig(tier)
 
 	// Create trial membership
 	now := time.Now()
 	trialEndsAt := now.AddDate(0, 0, 7) // 7 days trial
 
-	membership := &core.Membership{
+	membership := &model.Membership{
 		UserID:             userID,
 		Tier:               tier,
-		Status:             core.MembershipStatusTrial,
-		SubscriptionType:   core.SubscriptionTypeMonthly,
+		Status:             model.MembershipStatusTrial,
+		SubscriptionType:   model.SubscriptionTypeMonthly,
 		DiscountPercentage: config.DiscountPercentage,
 		Points:             0,
 		TotalSpent:         0,
@@ -240,7 +240,7 @@ func (s *MembershipService) StartTrial(ctx context.Context, userID uuid.UUID, ti
 }
 
 // GetMembership gets a membership by user ID
-func (s *MembershipService) GetMembership(ctx context.Context, userID uuid.UUID) (*core.Membership, error) {
+func (s *MembershipService) GetMembership(ctx context.Context, userID uuid.UUID) (*model.Membership, error) {
 	membership, err := s.membershipRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("membership not found: %w", err)
@@ -249,7 +249,7 @@ func (s *MembershipService) GetMembership(ctx context.Context, userID uuid.UUID)
 }
 
 // UpdateMembership updates a membership
-func (s *MembershipService) UpdateMembership(ctx context.Context, userID uuid.UUID, req *core.MembershipRequest) (*core.Membership, error) {
+func (s *MembershipService) UpdateMembership(ctx context.Context, userID uuid.UUID, req *model.MembershipRequest) (*model.Membership, error) {
 	membership, err := s.membershipRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("membership not found: %w", err)
@@ -257,7 +257,7 @@ func (s *MembershipService) UpdateMembership(ctx context.Context, userID uuid.UU
 
 	// Update tier if provided
 	if req.Tier != "" {
-		config := core.GetMembershipTierConfig(req.Tier)
+		config := model.GetMembershipTierConfig(req.Tier)
 		membership.Tier = req.Tier
 		membership.DiscountPercentage = config.DiscountPercentage
 	}
@@ -275,11 +275,11 @@ func (s *MembershipService) UpdateMembership(ctx context.Context, userID uuid.UU
 }
 
 // ProcessOrderWithMembership processes an order with membership benefits
-func (s *MembershipService) ProcessOrderWithMembership(ctx context.Context, userID uuid.UUID, orderAmount float64, isService bool, isPickup bool) (*core.MembershipOrderResult, error) {
+func (s *MembershipService) ProcessOrderWithMembership(ctx context.Context, userID uuid.UUID, orderAmount float64, isService bool, isPickup bool) (*model.MembershipOrderResult, error) {
 	membership, err := s.membershipRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		// If no membership, return without discount
-		return &core.MembershipOrderResult{
+		return &model.MembershipOrderResult{
 			HasMembership:      false,
 			OriginalAmount:     orderAmount,
 			DiscountAmount:     0,
@@ -290,8 +290,8 @@ func (s *MembershipService) ProcessOrderWithMembership(ctx context.Context, user
 	}
 
 	// Check if membership is active or in trial
-	if membership.Status != core.MembershipStatusActive && membership.Status != core.MembershipStatusTrial {
-		return &core.MembershipOrderResult{
+	if membership.Status != model.MembershipStatusActive && membership.Status != model.MembershipStatusTrial {
+		return &model.MembershipOrderResult{
 			HasMembership:      false,
 			OriginalAmount:     orderAmount,
 			DiscountAmount:     0,
@@ -302,8 +302,8 @@ func (s *MembershipService) ProcessOrderWithMembership(ctx context.Context, user
 	}
 
 	// Check if trial has expired
-	if membership.Status == core.MembershipStatusTrial && membership.IsTrialExpired() {
-		return &core.MembershipOrderResult{
+	if membership.Status == model.MembershipStatusTrial && membership.IsTrialExpired() {
+		return &model.MembershipOrderResult{
 			HasMembership:      false,
 			OriginalAmount:     orderAmount,
 			DiscountAmount:     0,
@@ -313,7 +313,7 @@ func (s *MembershipService) ProcessOrderWithMembership(ctx context.Context, user
 		}, nil
 	}
 
-	config := core.GetMembershipTierConfig(membership.Tier)
+	config := model.GetMembershipTierConfig(membership.Tier)
 
 	// Check for free services and pickups
 	var freeServiceUsed, freePickupUsed bool
@@ -356,7 +356,7 @@ func (s *MembershipService) ProcessOrderWithMembership(ctx context.Context, user
 		return nil, fmt.Errorf("failed to update membership points: %w", err)
 	}
 
-	return &core.MembershipOrderResult{
+	return &model.MembershipOrderResult{
 		HasMembership:         true,
 		OriginalAmount:        orderAmount,
 		DiscountAmount:        discountAmount,
@@ -372,7 +372,7 @@ func (s *MembershipService) ProcessOrderWithMembership(ctx context.Context, user
 }
 
 // ListMemberships gets a list of memberships with pagination
-func (s *MembershipService) ListMemberships(ctx context.Context, page, limit int, tier *core.MembershipTier, status *core.MembershipStatus) ([]*core.Membership, int64, error) {
+func (s *MembershipService) ListMemberships(ctx context.Context, page, limit int, tier *model.MembershipTier, status *model.MembershipStatus) ([]*model.Membership, int64, error) {
 	return s.membershipRepo.List(ctx, page, limit, tier, status)
 }
 
@@ -382,18 +382,18 @@ func (s *MembershipService) GetMembershipStats(ctx context.Context) (map[string]
 }
 
 // GetTopSpenders gets top spending members
-func (s *MembershipService) GetTopSpenders(ctx context.Context, limit int) ([]*core.Membership, error) {
+func (s *MembershipService) GetTopSpenders(ctx context.Context, limit int) ([]*model.Membership, error) {
 	return s.membershipRepo.GetTopSpenders(ctx, limit)
 }
 
 // RedeemPoints redeems membership points for discount
-func (s *MembershipService) RedeemPoints(ctx context.Context, userID uuid.UUID, pointsToRedeem int64) (*core.MembershipPointsResult, error) {
+func (s *MembershipService) RedeemPoints(ctx context.Context, userID uuid.UUID, pointsToRedeem int64) (*model.MembershipPointsResult, error) {
 	membership, err := s.membershipRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("membership not found: %w", err)
 	}
 
-	if membership.Status != core.MembershipStatusActive {
+	if membership.Status != model.MembershipStatusActive {
 		return nil, fmt.Errorf("membership is not active")
 	}
 
@@ -412,7 +412,7 @@ func (s *MembershipService) RedeemPoints(ctx context.Context, userID uuid.UUID, 
 		return nil, fmt.Errorf("failed to update points: %w", err)
 	}
 
-	return &core.MembershipPointsResult{
+	return &model.MembershipPointsResult{
 		PointsRedeemed:  pointsToRedeem,
 		RemainingPoints: newPoints,
 		DiscountValue:   discountValue,
@@ -420,27 +420,27 @@ func (s *MembershipService) RedeemPoints(ctx context.Context, userID uuid.UUID, 
 }
 
 // GetMembershipTiers returns all available membership tiers
-func (s *MembershipService) GetMembershipTiers(ctx context.Context) []core.MembershipTierConfig {
-	return core.GetMembershipTierConfigs()
+func (s *MembershipService) GetMembershipTiers(ctx context.Context) []model.MembershipTierConfig {
+	return model.GetMembershipTierConfigs()
 }
 
 // UpgradeMembership upgrades a user's membership tier
-func (s *MembershipService) UpgradeMembership(ctx context.Context, userID uuid.UUID, newTier core.MembershipTier, subscriptionType core.SubscriptionType) (*core.SubscriptionResult, error) {
+func (s *MembershipService) UpgradeMembership(ctx context.Context, userID uuid.UUID, newTier model.MembershipTier, subscriptionType model.SubscriptionType) (*model.SubscriptionResult, error) {
 	membership, err := s.membershipRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("membership not found: %w", err)
 	}
 
-	if membership.Status != core.MembershipStatusActive && membership.Status != core.MembershipStatusTrial {
+	if membership.Status != model.MembershipStatusActive && membership.Status != model.MembershipStatusTrial {
 		return nil, fmt.Errorf("membership is not active")
 	}
 
 	// Get new tier configuration
-	config := core.GetMembershipTierConfig(newTier)
+	config := model.GetMembershipTierConfig(newTier)
 
 	// Calculate price difference
 	var priceDifference float64
-	if subscriptionType == core.SubscriptionTypeYearly {
+	if subscriptionType == model.SubscriptionTypeYearly {
 		priceDifference = config.YearlyPrice - membership.YearlyPrice
 	} else {
 		priceDifference = config.MonthlyPrice - membership.MonthlyPrice
@@ -453,7 +453,7 @@ func (s *MembershipService) UpgradeMembership(ctx context.Context, userID uuid.U
 	membership.MonthlyPrice = config.MonthlyPrice
 	membership.YearlyPrice = config.YearlyPrice
 
-	if subscriptionType == core.SubscriptionTypeYearly {
+	if subscriptionType == model.SubscriptionTypeYearly {
 		membership.CurrentPrice = config.YearlyPrice
 	} else {
 		membership.CurrentPrice = config.MonthlyPrice
@@ -461,7 +461,7 @@ func (s *MembershipService) UpgradeMembership(ctx context.Context, userID uuid.U
 
 	// Update billing dates
 	now := time.Now()
-	if subscriptionType == core.SubscriptionTypeYearly {
+	if subscriptionType == model.SubscriptionTypeYearly {
 		nextBilling := now.AddDate(1, 0, 0)
 		membership.NextBillingDate = &nextBilling
 		expiresAt := now.AddDate(1, 0, 0)
@@ -480,7 +480,7 @@ func (s *MembershipService) UpgradeMembership(ctx context.Context, userID uuid.U
 	// TODO: Integrate with payment gateway for upgrade payment
 	paymentURL := fmt.Sprintf("/payment/upgrade/%s", membership.ID.String())
 
-	return &core.SubscriptionResult{
+	return &model.SubscriptionResult{
 		MembershipID:     membership.ID,
 		Tier:             membership.Tier,
 		SubscriptionType: membership.SubscriptionType,
@@ -493,11 +493,11 @@ func (s *MembershipService) UpgradeMembership(ctx context.Context, userID uuid.U
 }
 
 // GetMembershipUsage gets the current month usage for a membership
-func (s *MembershipService) GetMembershipUsage(ctx context.Context, userID uuid.UUID) (*core.MembershipUsage, error) {
+func (s *MembershipService) GetMembershipUsage(ctx context.Context, userID uuid.UUID) (*model.MembershipUsage, error) {
 	// TODO: Implement usage tracking
 	// For now, return empty usage
 	now := time.Now()
-	return &core.MembershipUsage{
+	return &model.MembershipUsage{
 		MembershipID:     userID,
 		FreeServicesUsed: 0,
 		FreePickupsUsed:  0,

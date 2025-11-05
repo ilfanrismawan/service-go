@@ -2,9 +2,9 @@ package main
 
 import (
 	"log"
-	"service/internal/core"
 	"service/internal/shared/config/config"
 	"service/internal/shared/database/database"
+	"service/internal/shared/model"
 	"time"
 
 	"github.com/google/uuid"
@@ -58,14 +58,14 @@ func clearData(db *gorm.DB) {
 }
 
 func seedUsers(db *gorm.DB) {
-	users := []*core.User{
+	users := []*model.User{
 		{
 			ID:       uuid.New(),
 			Name:     "Admin Central",
 			Email:    "admin@iphoneservice.com",
 			Phone:    "081234567890",
 			Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-			Role:     core.RoleAdminPusat,
+			Role:     model.RoleAdminPusat,
 			IsActive: true,
 		},
 		{
@@ -74,7 +74,7 @@ func seedUsers(db *gorm.DB) {
 			Email:    "admin.jakarta@iphoneservice.com",
 			Phone:    "081234567891",
 			Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-			Role:     core.RoleAdminCabang,
+			Role:     model.RoleAdminCabang,
 			IsActive: true,
 		},
 		{
@@ -83,7 +83,7 @@ func seedUsers(db *gorm.DB) {
 			Email:    "cashier.jakarta@iphoneservice.com",
 			Phone:    "081234567892",
 			Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-			Role:     core.RoleKasir,
+			Role:     model.RoleKasir,
 			IsActive: true,
 		},
 		{
@@ -92,7 +92,7 @@ func seedUsers(db *gorm.DB) {
 			Email:    "technician.jakarta@iphoneservice.com",
 			Phone:    "081234567893",
 			Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-			Role:     core.RoleTeknisi,
+			Role:     model.RoleTeknisi,
 			IsActive: true,
 		},
 		{
@@ -101,7 +101,7 @@ func seedUsers(db *gorm.DB) {
 			Email:    "courier.jakarta@iphoneservice.com",
 			Phone:    "081234567894",
 			Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-			Role:     core.RoleKurir,
+			Role:     model.RoleKurir,
 			IsActive: true,
 		},
 		{
@@ -110,7 +110,7 @@ func seedUsers(db *gorm.DB) {
 			Email:    "john.doe@example.com",
 			Phone:    "081234567895",
 			Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-			Role:     core.RolePelanggan,
+			Role:     model.RolePelanggan,
 			IsActive: true,
 		},
 		{
@@ -119,7 +119,7 @@ func seedUsers(db *gorm.DB) {
 			Email:    "jane.smith@example.com",
 			Phone:    "081234567896",
 			Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-			Role:     core.RolePelanggan,
+			Role:     model.RolePelanggan,
 			IsActive: true,
 		},
 	}
@@ -134,7 +134,7 @@ func seedUsers(db *gorm.DB) {
 }
 
 func seedBranches(db *gorm.DB) {
-	branches := []*core.Branch{
+	branches := []*model.Branch{
 		{
 			ID:        uuid.New(),
 			Name:      "Jakarta Central",
@@ -203,8 +203,8 @@ func seedBranches(db *gorm.DB) {
 
 func seedServiceOrders(db *gorm.DB) {
 	// Get user and branch IDs
-	var users []core.User
-	var branches []core.Branch
+	var users []model.User
+	var branches []model.Branch
 	db.Find(&users)
 	db.Find(&branches)
 
@@ -213,7 +213,7 @@ func seedServiceOrders(db *gorm.DB) {
 		return
 	}
 
-	orders := []*core.ServiceOrder{
+	orders := []*model.ServiceOrder{
 		{
 			ID:                uuid.New(),
 			UserID:            users[5].ID,    // John Doe
@@ -222,7 +222,7 @@ func seedServiceOrders(db *gorm.DB) {
 			IPhoneType:        "iPhone 14 Pro",
 			Complaint:         "Screen cracked, needs replacement",
 			PickupLocation:    "Jakarta Selatan",
-			Status:            core.StatusInService,
+			Status:            model.StatusInService,
 			ServiceCost:       500000,
 			EstimatedDuration: 3,
 			CreatedAt:         time.Now().AddDate(0, 0, -5),
@@ -236,7 +236,7 @@ func seedServiceOrders(db *gorm.DB) {
 			IPhoneType:        "iPhone 13",
 			Complaint:         "Battery draining fast, needs replacement",
 			PickupLocation:    "Surabaya",
-			Status:            core.StatusReady,
+			Status:            model.StatusReady,
 			ServiceCost:       300000,
 			EstimatedDuration: 2,
 			CreatedAt:         time.Now().AddDate(0, 0, -3),
@@ -250,7 +250,7 @@ func seedServiceOrders(db *gorm.DB) {
 			IPhoneType:        "iPhone 12",
 			Complaint:         "Camera not working, needs repair",
 			PickupLocation:    "Jakarta Pusat",
-			Status:            core.StatusCompleted,
+			Status:            model.StatusCompleted,
 			ServiceCost:       400000,
 			EstimatedDuration: 4,
 			CreatedAt:         time.Now().AddDate(0, 0, -7),
@@ -269,7 +269,7 @@ func seedServiceOrders(db *gorm.DB) {
 
 func seedPayments(db *gorm.DB) {
 	// Get order IDs
-	var orders []core.ServiceOrder
+	var orders []model.ServiceOrder
 	db.Find(&orders)
 
 	if len(orders) == 0 {
@@ -277,14 +277,14 @@ func seedPayments(db *gorm.DB) {
 		return
 	}
 
-	payments := []*core.Payment{
+	payments := []*model.Payment{
 		{
 			ID:            uuid.New(),
 			OrderID:       orders[0].ID,
 			UserID:        orders[0].UserID,
 			Amount:        orders[0].ServiceCost,
-			PaymentMethod: core.PaymentMethodMidtrans,
-			Status:        core.PaymentStatusPaid,
+			PaymentMethod: model.PaymentMethodMidtrans,
+			Status:        model.PaymentStatusPaid,
 			TransactionID: "TXN-001",
 			InvoiceNumber: "INV-20240101-001",
 			PaidAt:        &time.Time{},
@@ -296,8 +296,8 @@ func seedPayments(db *gorm.DB) {
 			OrderID:       orders[1].ID,
 			UserID:        orders[1].UserID,
 			Amount:        orders[1].ServiceCost,
-			PaymentMethod: core.PaymentMethodGopay,
-			Status:        core.PaymentStatusPaid,
+			PaymentMethod: model.PaymentMethodGopay,
+			Status:        model.PaymentStatusPaid,
 			TransactionID: "TXN-002",
 			InvoiceNumber: "INV-20240102-002",
 			PaidAt:        &time.Time{},
@@ -309,8 +309,8 @@ func seedPayments(db *gorm.DB) {
 			OrderID:       orders[2].ID,
 			UserID:        orders[2].UserID,
 			Amount:        orders[2].ServiceCost,
-			PaymentMethod: core.PaymentMethodCash,
-			Status:        core.PaymentStatusPaid,
+			PaymentMethod: model.PaymentMethodCash,
+			Status:        model.PaymentStatusPaid,
 			TransactionID: "TXN-003",
 			InvoiceNumber: "INV-20240103-003",
 			PaidAt:        &time.Time{},
@@ -330,8 +330,8 @@ func seedPayments(db *gorm.DB) {
 
 func seedNotifications(db *gorm.DB) {
 	// Get user and order IDs
-	var users []core.User
-	var orders []core.ServiceOrder
+	var users []model.User
+	var orders []model.ServiceOrder
 	db.Find(&users)
 	db.Find(&orders)
 
@@ -340,12 +340,12 @@ func seedNotifications(db *gorm.DB) {
 		return
 	}
 
-	notifications := []*core.Notification{
+	notifications := []*model.Notification{
 		{
 			ID:        uuid.New(),
 			UserID:    users[5].ID, // John Doe
 			OrderID:   &orders[0].ID,
-			Type:      core.NotificationTypeOrderUpdate,
+			Type:      model.NotificationTypeOrderUpdate,
 			Message:   "Your order ORD-20240101-001 is now in service",
 			IsRead:    false,
 			CreatedAt: time.Now().AddDate(0, 0, -2),
@@ -355,7 +355,7 @@ func seedNotifications(db *gorm.DB) {
 			ID:        uuid.New(),
 			UserID:    users[6].ID, // Jane Smith
 			OrderID:   &orders[1].ID,
-			Type:      core.NotificationTypeOrderReady,
+			Type:      model.NotificationTypeOrderReady,
 			Message:   "Your order ORD-20240102-002 is ready for pickup",
 			IsRead:    true,
 			CreatedAt: time.Now().AddDate(0, 0, -1),
@@ -365,7 +365,7 @@ func seedNotifications(db *gorm.DB) {
 			ID:        uuid.New(),
 			UserID:    users[5].ID, // John Doe
 			OrderID:   &orders[2].ID,
-			Type:      core.NotificationTypeOrderCompleted,
+			Type:      model.NotificationTypeOrderCompleted,
 			Message:   "Your order ORD-20240103-003 has been completed",
 			IsRead:    true,
 			CreatedAt: time.Now().AddDate(0, 0, -1),

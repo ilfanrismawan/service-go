@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"service/internal/core"
 	"service/internal/orders/repository"
+	"service/internal/shared/model"
 
 	"github.com/google/uuid"
 )
@@ -25,7 +25,7 @@ func NewNotificationService() *NotificationService {
 }
 
 // SendNotification sends a notification to a user
-func (s *NotificationService) SendNotification(ctx context.Context, req *core.NotificationRequest) (*core.NotificationResponse, error) {
+func (s *NotificationService) SendNotification(ctx context.Context, req *model.NotificationRequest) (*model.NotificationResponse, error) {
 	// Validate user exists
 	userID, err := uuid.Parse(req.UserID)
 	if err != nil {
@@ -34,7 +34,7 @@ func (s *NotificationService) SendNotification(ctx context.Context, req *core.No
 
 	_, err = s.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		return nil, core.ErrUserNotFound
+		return nil, model.ErrUserNotFound
 	}
 
 	// Parse order ID if provided
@@ -48,13 +48,13 @@ func (s *NotificationService) SendNotification(ctx context.Context, req *core.No
 	}
 
 	// Create notification entity
-	notification := &core.Notification{
+	notification := &model.Notification{
 		UserID:  userID,
 		OrderID: orderID,
 		Type:    req.Type,
 		Title:   req.Title,
 		Message: req.Message,
-		Status:  core.NotificationStatusPending,
+		Status:  model.NotificationStatusPending,
 	}
 
 	// Save to database
@@ -64,7 +64,7 @@ func (s *NotificationService) SendNotification(ctx context.Context, req *core.No
 
 	// TODO: Send actual notification based on type
 	// For now, just mark as sent
-	notification.Status = core.NotificationStatusSent
+	notification.Status = model.NotificationStatusSent
 	s.notificationRepo.Update(ctx, notification)
 
 	response := notification.ToResponse()
@@ -72,7 +72,7 @@ func (s *NotificationService) SendNotification(ctx context.Context, req *core.No
 }
 
 // SendOrderStatusNotification sends notification when order status changes
-func (s *NotificationService) SendOrderStatusNotification(ctx context.Context, orderID uuid.UUID, status core.OrderStatus) error {
+func (s *NotificationService) SendOrderStatusNotification(ctx context.Context, orderID uuid.UUID, status model.OrderStatus) error {
 	// Get order details
 	order, err := s.orderRepo.GetByID(ctx, orderID)
 	if err != nil {
@@ -80,13 +80,13 @@ func (s *NotificationService) SendOrderStatusNotification(ctx context.Context, o
 	}
 
 	// Create notification for customer
-	notification := &core.Notification{
+	notification := &model.Notification{
 		UserID:  order.CustomerID,
 		OrderID: &orderID,
-		Type:    core.NotificationTypeEmail,
+		Type:    model.NotificationTypeEmail,
 		Title:   "Order Status Update",
 		Message: s.getOrderStatusMessage(order.OrderNumber, status),
-		Status:  core.NotificationStatusPending,
+		Status:  model.NotificationStatusPending,
 	}
 
 	// Save notification
@@ -95,14 +95,14 @@ func (s *NotificationService) SendOrderStatusNotification(ctx context.Context, o
 	}
 
 	// TODO: Send actual notification
-	notification.Status = core.NotificationStatusSent
+	notification.Status = model.NotificationStatusSent
 	s.notificationRepo.Update(ctx, notification)
 
 	return nil
 }
 
 // SendPaymentNotification sends notification for payment updates
-func (s *NotificationService) SendPaymentNotification(ctx context.Context, orderID uuid.UUID, paymentStatus core.PaymentStatus) error {
+func (s *NotificationService) SendPaymentNotification(ctx context.Context, orderID uuid.UUID, paymentStatus model.PaymentStatus) error {
 	// Get order details
 	order, err := s.orderRepo.GetByID(ctx, orderID)
 	if err != nil {
@@ -110,13 +110,13 @@ func (s *NotificationService) SendPaymentNotification(ctx context.Context, order
 	}
 
 	// Create notification for customer
-	notification := &core.Notification{
+	notification := &model.Notification{
 		UserID:  order.CustomerID,
 		OrderID: &orderID,
-		Type:    core.NotificationTypeEmail,
+		Type:    model.NotificationTypeEmail,
 		Title:   "Payment Update",
 		Message: s.getPaymentStatusMessage(order.OrderNumber, paymentStatus),
-		Status:  core.NotificationStatusPending,
+		Status:  model.NotificationStatusPending,
 	}
 
 	// Save notification
@@ -125,14 +125,14 @@ func (s *NotificationService) SendPaymentNotification(ctx context.Context, order
 	}
 
 	// TODO: Send actual notification
-	notification.Status = core.NotificationStatusSent
+	notification.Status = model.NotificationStatusSent
 	s.notificationRepo.Update(ctx, notification)
 
 	return nil
 }
 
 // GetNotifications retrieves notifications for a user
-func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.UUID, page, limit int) (*core.PaginatedResponse, error) {
+func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.UUID, page, limit int) (*model.PaginatedResponse, error) {
 	offset := (page - 1) * limit
 
 	notifications, total, err := s.notificationRepo.ListByUserID(ctx, userID, offset, limit)
@@ -141,26 +141,26 @@ func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.
 	}
 
 	// Convert to response format
-	var responses []core.NotificationResponse
+	var responses []model.NotificationResponse
 	for _, notification := range notifications {
 		responses = append(responses, notification.ToResponse())
 	}
 
 	// Calculate pagination
 	totalPages := int((total + int64(limit) - 1) / int64(limit))
-	pagination := core.PaginationResponse{
+	pagination := model.PaginationResponse{
 		Page:       page,
 		Limit:      limit,
 		Total:      total,
 		TotalPages: totalPages,
 	}
 
-	return &core.PaginatedResponse{
+	return &model.PaginatedResponse{
 		Status:     "success",
 		Data:       responses,
 		Pagination: pagination,
 		Message:    "Notifications retrieved successfully",
-		Timestamp:  core.GetCurrentTimestamp(),
+		Timestamp:  model.GetCurrentTimestamp(),
 	}, nil
 }
 
@@ -177,21 +177,21 @@ func (s *NotificationService) MarkAsRead(ctx context.Context, notificationID uui
 }
 
 // getOrderStatusMessage returns appropriate message for order status
-func (s *NotificationService) getOrderStatusMessage(orderNumber string, status core.OrderStatus) string {
+func (s *NotificationService) getOrderStatusMessage(orderNumber string, status model.OrderStatus) string {
 	switch status {
-	case core.StatusPendingPickup:
+	case model.StatusPendingPickup:
 		return "Order " + orderNumber + " is pending pickup. Our courier will contact you soon."
-	case core.StatusOnPickup:
+	case model.StatusOnPickup:
 		return "Order " + orderNumber + " is being picked up. Please prepare your device."
-	case core.StatusInService:
+	case model.StatusInService:
 		return "Order " + orderNumber + " is now in service. We'll keep you updated on the progress."
-	case core.StatusReady:
+	case model.StatusReady:
 		return "Order " + orderNumber + " is ready! We'll arrange delivery soon."
-	case core.StatusDelivered:
+	case model.StatusDelivered:
 		return "Order " + orderNumber + " has been delivered. Thank you for choosing our service!"
-	case core.StatusCompleted:
+	case model.StatusCompleted:
 		return "Order " + orderNumber + " has been completed successfully."
-	case core.StatusCancelled:
+	case model.StatusCancelled:
 		return "Order " + orderNumber + " has been cancelled."
 	default:
 		return "Order " + orderNumber + " status has been updated."
@@ -199,15 +199,15 @@ func (s *NotificationService) getOrderStatusMessage(orderNumber string, status c
 }
 
 // getPaymentStatusMessage returns appropriate message for payment status
-func (s *NotificationService) getPaymentStatusMessage(orderNumber string, status core.PaymentStatus) string {
+func (s *NotificationService) getPaymentStatusMessage(orderNumber string, status model.PaymentStatus) string {
 	switch status {
-	case core.PaymentStatusPaid:
+	case model.PaymentStatusPaid:
 		return "Payment for order " + orderNumber + " has been received successfully."
-	case core.PaymentStatusFailed:
+	case model.PaymentStatusFailed:
 		return "Payment for order " + orderNumber + " has failed. Please try again."
-	case core.PaymentStatusCancelled:
+	case model.PaymentStatusCancelled:
 		return "Payment for order " + orderNumber + " has been cancelled."
-	case core.PaymentStatusRefunded:
+	case model.PaymentStatusRefunded:
 		return "Payment for order " + orderNumber + " has been refunded."
 	default:
 		return "Payment status for order " + orderNumber + " has been updated."

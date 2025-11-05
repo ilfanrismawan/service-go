@@ -102,7 +102,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		req.PickupAddress = req.PickupLocation
 	}
 	if req.ServiceType == "" {
-		req.ServiceType = dto.ServiceTypeOther
+		req.ServiceType = model.ServiceTypeOther
 	}
 
 	// Skip strict validation in test mode to keep tests lightweight

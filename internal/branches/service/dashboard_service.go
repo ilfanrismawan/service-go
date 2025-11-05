@@ -144,11 +144,11 @@ func (s *DashboardService) GetServiceStats(ctx context.Context, userID *uuid.UUI
 	serviceStatsMap := make(map[model.ServiceType]*model.ServiceStats)
 	for _, order := range orders {
 		if order.Status == model.StatusCompleted {
-			if stats, exists := serviceStatsMap[model.ServiceType]; exists {
+			if stats, exists := serviceStatsMap[order.ServiceType]; exists {
 				stats.Count++
 				stats.Revenue += order.ActualCost
 			} else {
-				serviceStatsMap[model.ServiceType] = &model.ServiceStats{
+				serviceStatsMap[order.ServiceType] = &model.ServiceStats{
 					ServiceType: string(order.ServiceType),
 					Count:       1,
 					Revenue:     order.ActualCost,
@@ -191,7 +191,7 @@ func (s *DashboardService) GetRevenueReport(ctx context.Context, userID *uuid.UU
 	// Group by date
 	revenueMap := make(map[string]*model.RevenueReport)
 	for _, order := range orders {
-		if order.Status == orderDTO.StatusCompleted {
+		if order.Status == model.StatusCompleted {
 			date := order.CreatedAt.Format("2006-01-02")
 			if report, exists := revenueMap[date]; exists {
 				report.Revenue += order.ActualCost
