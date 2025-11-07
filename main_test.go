@@ -5,8 +5,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"service/internal/core"
-	"service/internal/orders/handler"
+	branchHandler "service/internal/domain/branches/handler"
+	orderHandler "service/internal/domain/orders/handler"
+	paymentHandler "service/internal/domain/payments/handler"
+	authHandler "service/internal/domain/users/handler"
+	"service/internal/shared/handlers"
+	"service/internal/shared/model"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +23,7 @@ func TestHealthCheck(t *testing.T) {
 
 	// Create a new Gin router
 	r := gin.New()
-	r.GET("/health", delivery.HealthCheckHandler)
+	r.GET("/health", handlers.NewHealthHandler().HealthCheck)
 
 	// Create a test request
 	req, err := http.NewRequest("GET", "/health", nil)
@@ -48,16 +52,16 @@ func TestAuthRegister(t *testing.T) {
 
 	// Create a new Gin router
 	r := gin.New()
-	authHandler := delivery.NewAuthHandler()
+	authHandler := authHandler.NewAuthHandler()
 	r.POST("/auth/register", authHandler.Register)
 
 	// Create test user data
-	userData := core.UserRequest{
+	userData := model.UserRequest{
 		FullName: "Test User",
 		Email:    "test@example.com",
 		Phone:    "081234567890",
 		Password: "password123",
-		Role:     core.RolePelanggan,
+		Role:     model.RolePelanggan,
 	}
 
 	// Convert to JSON
@@ -78,7 +82,7 @@ func TestAuthRegister(t *testing.T) {
 	// Assert the response
 	assert.Equal(t, http.StatusCreated, w.Code)
 
-	var response core.APIResponse
+	var response model.APIResponse
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
@@ -92,11 +96,11 @@ func TestAuthLogin(t *testing.T) {
 
 	// Create a new Gin router
 	r := gin.New()
-	authHandler := delivery.NewAuthHandler()
+	authHandler := authHandler.NewAuthHandler()
 	r.POST("/auth/login", authHandler.Login)
 
 	// Create test login data
-	loginData := core.LoginRequest{
+	loginData := model.LoginRequest{
 		Email:    "test@example.com",
 		Password: "password123",
 	}
@@ -119,7 +123,7 @@ func TestAuthLogin(t *testing.T) {
 	// Assert the response
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response core.APIResponse
+	var response model.APIResponse
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
@@ -133,7 +137,7 @@ func TestBranchList(t *testing.T) {
 
 	// Create a new Gin router
 	r := gin.New()
-	branchHandler := delivery.NewBranchHandler()
+	branchHandler := branchHandler.NewBranchHandler()
 	r.GET("/branches", branchHandler.GetBranches)
 
 	// Create a test request
@@ -149,7 +153,7 @@ func TestBranchList(t *testing.T) {
 	// Assert the response
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response core.PaginatedResponse
+	var response model.PaginatedResponse
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
@@ -162,11 +166,11 @@ func TestOrderCreate(t *testing.T) {
 
 	// Create a new Gin router
 	r := gin.New()
-	orderHandler := delivery.NewOrderHandler()
+	orderHandler := orderHandler.NewOrderHandler()
 	r.POST("/orders", orderHandler.CreateOrder)
 
 	// Create test order data
-	orderData := core.ServiceOrderRequest{
+	orderData := model.ServiceOrderRequest{
 		IPhoneType:        "iPhone 14 Pro",
 		Complaint:         "Screen cracked",
 		PickupLocation:    "Jakarta",
@@ -193,7 +197,7 @@ func TestOrderCreate(t *testing.T) {
 	// Assert the response
 	assert.Equal(t, http.StatusCreated, w.Code)
 
-	var response core.APIResponse
+	var response model.APIResponse
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
@@ -207,14 +211,14 @@ func TestPaymentCreateInvoice(t *testing.T) {
 
 	// Create a new Gin router
 	r := gin.New()
-	paymentHandler := delivery.NewPaymentHandler()
+	paymentHandler := paymentHandler.NewPaymentHandler()
 	r.POST("/payments/create-invoice", paymentHandler.CreateInvoice)
 
 	// Create test payment data
-	paymentData := core.PaymentRequest{
+	paymentData := model.PaymentRequest{
 		OrderID:       "550e8400-e29b-41d4-a716-446655440000",
 		Amount:        500000,
-		PaymentMethod: core.PaymentMethodMidtrans,
+		PaymentMethod: model.PaymentMethodMidtrans,
 		Notes:         "Payment for iPhone repair",
 	}
 
@@ -236,7 +240,7 @@ func TestPaymentCreateInvoice(t *testing.T) {
 	// Assert the response
 	assert.Equal(t, http.StatusCreated, w.Code)
 
-	var response core.APIResponse
+	var response model.APIResponse
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
@@ -248,7 +252,7 @@ func TestPaymentCreateInvoice(t *testing.T) {
 func BenchmarkHealthCheck(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.GET("/health", delivery.HealthCheckHandler)
+	r.GET("/health", handlers.NewHealthHandler().HealthCheck)
 
 	req, _ := http.NewRequest("GET", "/health", nil)
 	w := httptest.NewRecorder()
@@ -262,10 +266,10 @@ func BenchmarkHealthCheck(b *testing.B) {
 func BenchmarkAuthLogin(b *testing.B) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	authHandler := delivery.NewAuthHandler()
+	authHandler := authHandler.NewAuthHandler()
 	r.POST("/auth/login", authHandler.Login)
 
-	loginData := core.LoginRequest{
+	loginData := model.LoginRequest{
 		Email:    "test@example.com",
 		Password: "password123",
 	}

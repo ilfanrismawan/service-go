@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	chatService "service/internal/domain/chat/service"
 	"service/internal/shared/model"
-	service "service/internal/shared/service"
 	"sync"
 	"time"
 
@@ -17,7 +17,7 @@ import (
 
 // WebSocketHandler handles WebSocket connections
 type WebSocketHandler struct {
-	chatService *service.ChatService
+	chatService *chatService.ChatService
 	upgrader    websocket.Upgrader
 	clients     map[*websocket.Conn]*Client
 	rooms       map[string][]*websocket.Conn
@@ -46,7 +46,7 @@ type Message struct {
 // NewWebSocketHandler creates a new WebSocket handler
 func NewWebSocketHandler() *WebSocketHandler {
 	return &WebSocketHandler{
-		chatService: service.NewChatService(),
+		chatService: chatService.NewChatService(),
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
 				return true // Allow all origins in development

@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"service/internal/shared/config/config"
-	"service/internal/shared/database/database"
+	"service/internal/shared/database"
 	"service/internal/shared/model"
 	"time"
 
@@ -216,7 +216,7 @@ func seedServiceOrders(db *gorm.DB) {
 	orders := []*model.ServiceOrder{
 		{
 			ID:                uuid.New(),
-			UserID:            users[5].ID,    // John Doe
+			CustomerID:        users[5].ID,    // John Doe
 			BranchID:          branches[0].ID, // Jakarta Central
 			OrderNumber:       "ORD-20240101-001",
 			IPhoneType:        "iPhone 14 Pro",
@@ -230,7 +230,7 @@ func seedServiceOrders(db *gorm.DB) {
 		},
 		{
 			ID:                uuid.New(),
-			UserID:            users[6].ID,    // Jane Smith
+			CustomerID:        users[6].ID,    // Jane Smith
 			BranchID:          branches[1].ID, // Surabaya Branch
 			OrderNumber:       "ORD-20240102-002",
 			IPhoneType:        "iPhone 13",
@@ -244,7 +244,7 @@ func seedServiceOrders(db *gorm.DB) {
 		},
 		{
 			ID:                uuid.New(),
-			UserID:            users[5].ID,    // John Doe
+			CustomerID:        users[5].ID,    // John Doe
 			BranchID:          branches[0].ID, // Jakarta Central
 			OrderNumber:       "ORD-20240103-003",
 			IPhoneType:        "iPhone 12",
@@ -281,7 +281,7 @@ func seedPayments(db *gorm.DB) {
 		{
 			ID:            uuid.New(),
 			OrderID:       orders[0].ID,
-			UserID:        orders[0].UserID,
+			UserID:        orders[0].CustomerID,
 			Amount:        orders[0].ServiceCost,
 			PaymentMethod: model.PaymentMethodMidtrans,
 			Status:        model.PaymentStatusPaid,
@@ -294,7 +294,7 @@ func seedPayments(db *gorm.DB) {
 		{
 			ID:            uuid.New(),
 			OrderID:       orders[1].ID,
-			UserID:        orders[1].UserID,
+			UserID:        orders[1].CustomerID,
 			Amount:        orders[1].ServiceCost,
 			PaymentMethod: model.PaymentMethodGopay,
 			Status:        model.PaymentStatusPaid,
@@ -307,7 +307,7 @@ func seedPayments(db *gorm.DB) {
 		{
 			ID:            uuid.New(),
 			OrderID:       orders[2].ID,
-			UserID:        orders[2].UserID,
+			UserID:        orders[2].CustomerID,
 			Amount:        orders[2].ServiceCost,
 			PaymentMethod: model.PaymentMethodCash,
 			Status:        model.PaymentStatusPaid,

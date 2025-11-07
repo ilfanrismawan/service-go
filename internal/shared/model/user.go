@@ -11,77 +11,101 @@ import (
 type UserRole string
 
 const (
-	RoleAdminPusat  UserRole = "admin_pusat"
-	RoleAdminCabang UserRole = "admin_cabang"
-	RoleKasir       UserRole = "kasir"
-	RoleTeknisi     UserRole = "teknisi"
-	RoleKurir       UserRole = "kurir"
-	RolePelanggan   UserRole = "pelanggan"
+	RoleAdminPusat   UserRole = "admin_pusat"
+	RoleAdminCabang  UserRole = "admin_cabang"
+	RoleKasir        UserRole = "kasir"
+	RoleTeknisi      UserRole = "teknisi"
+	RoleKurir        UserRole = "kurir"
+	RolePelanggan    UserRole = "pelanggan"
+	UserRoleProvider UserRole = "provider"
 )
 
-// User represents a user in the system
+type UserStatus string
+
+const (
+	UserStatusActive   UserStatus = "active"
+	UserStatusInactive UserStatus = "inactive"
+	UserStatusBanned   UserStatus = "banned"
+)
+
+// User represents a user entity stored in the database
 type User struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
-	Email     string         `json:"email" gorm:"uniqueIndex;not null"`
-	Password  string         `json:"-" gorm:"not null"`
-	FullName  string         `json:"full_name" gorm:"not null"`
-	Name      string         `json:"name" gorm:"-"` // Computed field, maps to FullName
-	Phone     string         `json:"phone" gorm:"not null"`
-	Role      UserRole       `json:"role" gorm:"type:text;not null"`
-	BranchID  *uuid.UUID     `json:"branch_id,omitempty" gorm:"type:uuid;references:id"`
-	Branch    *Branch        `json:"branch,omitempty" gorm:"foreignKey:BranchID"`
-	IsActive  bool           `json:"is_active" gorm:"default:true"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+	ID          uuid.UUID  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	Email       string     `gorm:"uniqueIndex;not null"`
+	Password    string     `gorm:"not null"`
+	FullName    string     `gorm:"not null"`
+	Name        string     `gorm:"-"` // computed, maps to FullName
+	Phone       string     `gorm:"not null"`
+	AvatarURL   string     `json:"avatar_url"`
+	Role        UserRole   `json:"role" gorm:"type:varchar(50);not null"`
+	Status      UserStatus `json:"status" gorm:"type:varchar(50);default:'active'"`
+	LastLoginAt *time.Time `json:"last_login_at"`
+	BranchID    *uuid.UUID `gorm:"type:uuid;references:id"`
+	Branch      *Branch    `gorm:"foreignKey:BranchID"`
+	IsActive    bool       `gorm:"default:true"`
+	FCMToken    string     `json:"fcm_token,omitempty" gorm:"type:text"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
-// TableName returns the table name for User
+// TableName overrides the table name
 func (User) TableName() string {
 	return "users"
 }
 
-// UserRequest represents the request payload for creating/updating a user
+// SetName maps FullName → Name (used in domain logic)
+func (u *User) SetName() {
+	u.Name = u.FullName
+}
+
+// UserRequest defines request payload for creating or updating user
 type UserRequest struct {
 	Email    string   `json:"email" validate:"required,email"`
 	Password string   `json:"password" validate:"required,min=6"`
 	FullName string   `json:"full_name" validate:"required"`
-	Phone    string   `json:"phone" validate:"required,phone"`
+	Phone    string   `json:"phone" validate:"required"`
 	Role     UserRole `json:"role" validate:"required"`
 	BranchID *string  `json:"branch_id,omitempty"`
 }
 
-// UserResponse represents the response payload for user data
+// UserResponse defines how user data is returned to the client
 type UserResponse struct {
-	ID        uuid.UUID  `json:"id"`
-	Email     string     `json:"email"`
-	FullName  string     `json:"full_name"`
-	Phone     string     `json:"phone"`
-	Role      UserRole   `json:"role"`
-	BranchID  *uuid.UUID `json:"branch_id,omitempty"`
-	Branch    *Branch    `json:"branch,omitempty"`
-	IsActive  bool       `json:"is_active"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
+	ID          uuid.UUID       `json:"id"`
+	Email       string          `json:"email"`
+	FullName    string          `json:"full_name"`
+	Phone       string          `json:"phone"`
+	Role        UserRole        `json:"role"`
+	AvatarURL   string          `json:"avatar_url"`
+	Status      UserStatus      `json:"status"`
+	LastLoginAt *time.Time      `json:"last_login_at,omitempty"`
+	BranchID    *uuid.UUID      `json:"branch_id,omitempty"`
+	Branch      *BranchResponse `json:"branch,omitempty"`
+	IsActive    bool            `json:"is_active"`
+	CreatedAt   time.Time       `json:"created_at"`
+	UpdatedAt   time.Time       `json:"updated_at"`
 }
 
-// ToResponse converts User to UserResponse
+type UserUpdateRequest struct {
+	FullName  string     `json:"full_name,omitempty"`
+	Email     string     `json:"email,omitempty" validate:"omitempty,email"`
+	Phone     string     `json:"phone,omitempty"`
+	Password  string     `json:"password,omitempty"`
+	AvatarURL string     `json:"avatar_url,omitempty"`
+	Status    UserStatus `json:"status,omitempty"`
+}
+
 func (u *User) ToResponse() UserResponse {
 	return UserResponse{
-		ID:        u.ID,
-		Email:     u.Email,
-		FullName:  u.FullName,
-		Phone:     u.Phone,
-		Role:      u.Role,
-		BranchID:  u.BranchID,
-		Branch:    u.Branch,
-		IsActive:  u.IsActive,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
+		ID:          u.ID,
+		FullName:    u.FullName,
+		Email:       u.Email,
+		Phone:       u.Phone,
+		AvatarURL:   u.AvatarURL,
+		Role:        u.Role,
+		Status:      u.Status,
+		LastLoginAt: u.LastLoginAt,
+		CreatedAt:   u.CreatedAt,
+		UpdatedAt:   u.UpdatedAt,
 	}
-}
-
-// SetName sets the Name field from FullName
-func (u *User) SetName() {
-	u.Name = u.FullName
 }

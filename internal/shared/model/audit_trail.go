@@ -1,7 +1,6 @@
 package model
 
 import (
-	userDTO "service/internal/users/dto"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,7 +26,7 @@ const (
 type AuditTrail struct {
 	ID           uuid.UUID      `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
 	UserID       *uuid.UUID     `json:"user_id,omitempty" gorm:"type:uuid"`
-	User         *userDTO.User  `json:"user,omitempty" gorm:"foreignKey:UserID"`
+	User         *User          `json:"user,omitempty" gorm:"foreignKey:UserID"`
 	Action       AuditAction    `json:"action" gorm:"not null"`
 	Resource     string         `json:"resource" gorm:"not null"`               // e.g., "order", "payment", "user"
 	ResourceID   *uuid.UUID     `json:"resource_id,omitempty" gorm:"type:uuid"` // ID of the affected resource

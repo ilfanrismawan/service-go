@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"service/internal/shared/config/config"
-	"service/internal/shared/database/database"
+	"service/internal/shared/database"
 	"service/internal/shared/model"
 
 	"gorm.io/gorm"

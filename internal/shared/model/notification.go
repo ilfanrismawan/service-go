@@ -1,7 +1,6 @@
 package model
 
 import (
-	userDTO "service/internal/users/dto"
 	"time"
 
 	"github.com/google/uuid"
@@ -45,7 +44,7 @@ const (
 type Notification struct {
 	ID        uuid.UUID          `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
 	UserID    uuid.UUID          `json:"user_id" gorm:"type:uuid;not null"`
-	User      userDTO.User       `json:"user" gorm:"foreignKey:UserID"`
+	User      User               `json:"user" gorm:"foreignKey:UserID"`
 	OrderID   *uuid.UUID         `json:"order_id,omitempty" gorm:"type:uuid"`
 	Order     *ServiceOrder      `json:"order,omitempty" gorm:"foreignKey:OrderID"`
 	Type      NotificationType   `json:"type" gorm:"not null"`
@@ -77,7 +76,7 @@ type NotificationRequest struct {
 type NotificationResponse struct {
 	ID        uuid.UUID             `json:"id"`
 	UserID    uuid.UUID             `json:"user_id"`
-	User      userDTO.UserResponse  `json:"user"`
+	User      UserResponse          `json:"user"`
 	OrderID   *uuid.UUID            `json:"order_id,omitempty"`
 	Order     *ServiceOrderResponse `json:"order,omitempty"`
 	Type      NotificationType      `json:"type"`
@@ -121,9 +120,9 @@ type ChatMessage struct {
 	OrderID    uuid.UUID      `json:"order_id" gorm:"type:uuid;not null"`
 	Order      ServiceOrder   `json:"order" gorm:"foreignKey:OrderID"`
 	SenderID   uuid.UUID      `json:"sender_id" gorm:"type:uuid;not null"`
-	Sender     userDTO.User   `json:"sender" gorm:"foreignKey:SenderID"`
+	Sender     User           `json:"sender" gorm:"foreignKey:SenderID"`
 	ReceiverID uuid.UUID      `json:"receiver_id" gorm:"type:uuid;not null"`
-	Receiver   userDTO.User   `json:"receiver" gorm:"foreignKey:ReceiverID"`
+	Receiver   User           `json:"receiver" gorm:"foreignKey:ReceiverID"`
 	Message    string         `json:"message" gorm:"not null"`
 	IsRead     bool           `json:"is_read" gorm:"default:false"`
 	CreatedAt  time.Time      `json:"created_at"`
@@ -149,9 +148,9 @@ type ChatMessageResponse struct {
 	OrderID    uuid.UUID            `json:"order_id"`
 	Order      ServiceOrderResponse `json:"order"`
 	SenderID   uuid.UUID            `json:"sender_id"`
-	Sender     userDTO.UserResponse `json:"sender"`
+	Sender     UserResponse         `json:"sender"`
 	ReceiverID uuid.UUID            `json:"receiver_id"`
-	Receiver   userDTO.UserResponse `json:"receiver"`
+	Receiver   UserResponse         `json:"receiver"`
 	Message    string               `json:"message"`
 	IsRead     bool                 `json:"is_read"`
 	CreatedAt  time.Time            `json:"created_at"`

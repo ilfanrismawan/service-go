@@ -2,13 +2,18 @@ package router
 
 import (
 	"net/http"
-	branchHandler "service/internal/branches/handler"
-	orderHandler "service/internal/orders/handler"
-	paymentHandler "service/internal/payments/handler"
+	dashboardHandler "service/internal/domain/admin/handler"
+	branchHandler "service/internal/domain/branches/handler"
+	chatHandler "service/internal/domain/chat/handler"
+	fileHandler "service/internal/domain/media/handler"
+	membershipHandler "service/internal/domain/membership/handler"
+	notificationHandler "service/internal/domain/notification/handler"
+	orderHandler "service/internal/domain/orders/handler"
+	paymentHandler "service/internal/domain/payments/handler"
+	userHandler "service/internal/domain/users/handler"
 	sharedHandlers "service/internal/shared/handlers"
 	"service/internal/shared/middleware"
 	"service/internal/shared/model"
-	"service/internal/users/handler"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,22 +21,22 @@ import (
 // SetupRoutes sets up all API routes
 func SetupRoutes(r *gin.Engine) {
 	// Initialize domain handlers
-	authHandler := handler.NewAuthHandler()
+	authHandler := userHandler.NewAuthHandler()
 	branchHdlr := branchHandler.NewBranchHandler()
 	orderHdlr := orderHandler.NewOrderHandler()
 	paymentHdlr := paymentHandler.NewPaymentHandler()
 
 	// Initialize shared handlers
-	notificationHandler := sharedHandlers.NewNotificationHandler()
-	chatHandler := sharedHandlers.NewChatHandler()
-	dashboardHandler := sharedHandlers.NewDashboardHandler()
-	fileHandler := sharedHandlers.NewFileHandler()
+	notificationHandler := notificationHandler.NewNotificationHandler()
+	chatHandler := chatHandler.NewChatHandler()
+	dashboardHandler := dashboardHandler.NewDashboardHandler()
+	fileHandler := fileHandler.NewFileHandler()
 	healthHandler := sharedHandlers.NewHealthHandler()
 	wsHandler := sharedHandlers.NewWebSocketHandler()
 	swaggerHandler := sharedHandlers.NewSwaggerHandler()
-	membershipHandler := sharedHandlers.NewMembershipHandler()
-	reportHandler := sharedHandlers.NewReportHandler()
-	ratingHandler := sharedHandlers.NewRatingHandler()
+	membershipHandler := membershipHandler.NewMembershipHandler()
+	reportHandler := orderHandler.NewReportHandler()
+	ratingHandler := orderHandler.NewRatingHandler()
 
 	// Setup Swagger documentation routes
 	swaggerHandler.SetupSwaggerRoutes(r)

@@ -1,11 +1,7 @@
 package monitoring
 
 import (
-	branchDTO "service/internal/branches/dto"
-	orderDTO "service/internal/orders/dto"
-	paymentDTO "service/internal/payments/dto"
 	"service/internal/shared/model"
-	userDTO "service/internal/users/dto"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -281,20 +277,20 @@ func (m *Metrics) RecordHTTPRequest(method, endpoint, statusCode string, duratio
 }
 
 // RecordOrderCreated records order creation metrics
-func (m *Metrics) RecordOrderCreated(order *orderDTO.ServiceOrder) {
+func (m *Metrics) RecordOrderCreated(order *model.ServiceOrder) {
 	m.OrdersTotal.WithLabelValues(order.BranchID.String(), order.CustomerID.String()).Inc()
 	m.OrdersByStatus.WithLabelValues(string(order.Status)).Inc()
 	m.OrdersByBranch.WithLabelValues(order.BranchID.String(), "").Inc()
 }
 
 // RecordOrderStatusChange records order status change metrics
-func (m *Metrics) RecordOrderStatusChange(order *orderDTO.ServiceOrder, oldStatus, newStatus orderDTO.OrderStatus) {
+func (m *Metrics) RecordOrderStatusChange(order *model.ServiceOrder, oldStatus, newStatus model.OrderStatus) {
 	m.OrdersByStatus.WithLabelValues(string(oldStatus)).Dec()
 	m.OrdersByStatus.WithLabelValues(string(newStatus)).Inc()
 }
 
 // RecordPaymentProcessed records payment processing metrics
-func (m *Metrics) RecordPaymentProcessed(payment *paymentDTO.Payment) {
+func (m *Metrics) RecordPaymentProcessed(payment *model.Payment) {
 	m.PaymentsTotal.WithLabelValues(string(payment.PaymentMethod), string(payment.Status)).Inc()
 	m.PaymentsByMethod.WithLabelValues(string(payment.PaymentMethod)).Inc()
 	m.PaymentsByStatus.WithLabelValues(string(payment.Status)).Inc()
@@ -309,7 +305,7 @@ func (m *Metrics) RecordNotificationSent(notification *model.Notification, chann
 }
 
 // RecordUserRegistration records user registration metrics
-func (m *Metrics) RecordUserRegistration(user *userDTO.User) {
+func (m *Metrics) RecordUserRegistration(user *model.User) {
 	m.UsersTotal.WithLabelValues(string(user.Role)).Inc()
 	m.UsersByRole.WithLabelValues(string(user.Role)).Inc()
 	if user.BranchID != nil {
@@ -318,7 +314,7 @@ func (m *Metrics) RecordUserRegistration(user *userDTO.User) {
 }
 
 // RecordBranchCreated records branch creation metrics
-func (m *Metrics) RecordBranchCreated(branch *branchDTO.Branch) {
+func (m *Metrics) RecordBranchCreated(branch *model.Branch) {
 	m.BranchesTotal.WithLabelValues(branch.City, branch.Province).Inc()
 	m.BranchesByCity.WithLabelValues(branch.City).Inc()
 	m.BranchesByProvince.WithLabelValues(branch.Province).Inc()

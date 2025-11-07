@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"service/internal/branches/dto"
-	orderDTO "service/internal/orders/dto"
 	"service/internal/shared/database"
 	"service/internal/shared/model"
 	"time"
@@ -35,7 +33,7 @@ func NewCacheService() *CacheService {
 }
 
 // GetBranch retrieves branch from cache or returns nil
-func (c *CacheService) GetBranch(ctx context.Context, branchID uuid.UUID) (*dto.Branch, error) {
+func (c *CacheService) GetBranch(ctx context.Context, branchID uuid.UUID) (*model.Branch, error) {
 	if database.Redis == nil {
 		return nil, fmt.Errorf("redis not initialized")
 	}
@@ -46,7 +44,7 @@ func (c *CacheService) GetBranch(ctx context.Context, branchID uuid.UUID) (*dto.
 		return nil, err
 	}
 
-	var branch dto.Branch
+	var branch model.Branch
 	if err := json.Unmarshal([]byte(data), &branch); err != nil {
 		return nil, err
 	}
@@ -55,7 +53,7 @@ func (c *CacheService) GetBranch(ctx context.Context, branchID uuid.UUID) (*dto.
 }
 
 // SetBranch caches a branch
-func (c *CacheService) SetBranch(ctx context.Context, branch *dto.Branch) error {
+func (c *CacheService) SetBranch(ctx context.Context, branch *model.Branch) error {
 	if database.Redis == nil {
 		return fmt.Errorf("redis not initialized")
 	}
@@ -134,7 +132,7 @@ func (c *CacheService) InvalidateMembership(ctx context.Context, userID uuid.UUI
 }
 
 // GetServicePrice retrieves service price estimate from cache
-func (c *CacheService) GetServicePrice(ctx context.Context, serviceType orderDTO.ServiceType) (*model.ServiceEstimate, error) {
+func (c *CacheService) GetServicePrice(ctx context.Context, serviceType model.ServiceType) (*model.ServiceEstimate, error) {
 	if database.Redis == nil {
 		return nil, fmt.Errorf("redis not initialized")
 	}
@@ -154,7 +152,7 @@ func (c *CacheService) GetServicePrice(ctx context.Context, serviceType orderDTO
 }
 
 // SetServicePrice caches service price estimate
-func (c *CacheService) SetServicePrice(ctx context.Context, serviceType orderDTO.ServiceType, estimate *model.ServiceEstimate) error {
+func (c *CacheService) SetServicePrice(ctx context.Context, serviceType model.ServiceType, estimate *model.ServiceEstimate) error {
 	if database.Redis == nil {
 		return fmt.Errorf("redis not initialized")
 	}
