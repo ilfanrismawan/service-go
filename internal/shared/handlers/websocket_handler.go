@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	chatService "service/internal/domain/chat/service"
+	chatService "service/internal/modules/chat/service"
 	"service/internal/shared/model"
 	"sync"
 	"time"
