@@ -6,6 +6,10 @@ import (
 	orderRepo "service/internal/modules/orders/repository"
 	userRepo "service/internal/modules/users/repository"
 	"service/internal/shared/model"
+	notificationEntity "service-go/internal/modules/notification/entity"
+	notificationDto "service-go/internal/modules/notification/dto"
+	orderEntity "service-go/internal/modules/orders/entity"
+	paymentEntity "service-go/internal/modules/payments/entity"
 
 	"github.com/google/uuid"
 )
@@ -27,7 +31,7 @@ func NewNotificationService() *NotificationService {
 }
 
 // SendNotification sends a notification to a user
-func (s *NotificationService) SendNotification(ctx context.Context, req *model.NotificationRequest) (*model.NotificationResponse, error) {
+func (s *NotificationService) SendNotification(ctx context.Context, req *notificationDto.NotificationRequest) (*notificationDto.NotificationResponse, error) {
 	// Validate user exists
 	userID, err := uuid.Parse(req.UserID)
 	if err != nil {
@@ -50,13 +54,13 @@ func (s *NotificationService) SendNotification(ctx context.Context, req *model.N
 	}
 
 	// Create notification entity
-	notification := &model.Notification{
+	notification := &notificationEntity.Notification{
 		UserID:  userID,
 		OrderID: orderID,
 		Type:    req.Type,
 		Title:   req.Title,
 		Message: req.Message,
-		Status:  model.NotificationStatusPending,
+		Status:  notificationEntity.NotificationStatusPending,
 	}
 
 	// Save to database
@@ -66,15 +70,15 @@ func (s *NotificationService) SendNotification(ctx context.Context, req *model.N
 
 	// TODO: Send actual notification based on type
 	// For now, just mark as sent
-	notification.Status = model.NotificationStatusSent
+	notification.Status = notificationEntity.NotificationStatusSent
 	s.notificationRepo.Update(ctx, notification)
 
-	response := notification.ToResponse()
+	response := notificationDto.ToNotificationResponse(notification)
 	return &response, nil
 }
 
 // SendOrderStatusNotification sends notification when order status changes
-func (s *NotificationService) SendOrderStatusNotification(ctx context.Context, orderID uuid.UUID, status model.OrderStatus) error {
+func (s *NotificationService) SendOrderStatusNotification(ctx context.Context, orderID uuid.UUID, status orderEntity.OrderStatus) error {
 	// Get order details
 	order, err := s.orderRepo.GetByID(ctx, orderID)
 	if err != nil {
@@ -82,13 +86,13 @@ func (s *NotificationService) SendOrderStatusNotification(ctx context.Context, o
 	}
 
 	// Create notification for customer
-	notification := &model.Notification{
+	notification := &notificationEntity.Notification{
 		UserID:  order.CustomerID,
 		OrderID: &orderID,
-		Type:    model.NotificationTypeEmail,
+		Type:    notificationEntity.NotificationTypeEmail,
 		Title:   "Order Status Update",
 		Message: s.getOrderStatusMessage(order.OrderNumber, status),
-		Status:  model.NotificationStatusPending,
+		Status:  notificationEntity.NotificationStatusPending,
 	}
 
 	// Save notification
@@ -97,14 +101,14 @@ func (s *NotificationService) SendOrderStatusNotification(ctx context.Context, o
 	}
 
 	// TODO: Send actual notification
-	notification.Status = model.NotificationStatusSent
+	notification.Status = notificationEntity.NotificationStatusSent
 	s.notificationRepo.Update(ctx, notification)
 
 	return nil
 }
 
 // SendPaymentNotification sends notification for payment updates
-func (s *NotificationService) SendPaymentNotification(ctx context.Context, orderID uuid.UUID, paymentStatus model.PaymentStatus) error {
+func (s *NotificationService) SendPaymentNotification(ctx context.Context, orderID uuid.UUID, paymentStatus paymentEntity.PaymentStatus) error {
 	// Get order details
 	order, err := s.orderRepo.GetByID(ctx, orderID)
 	if err != nil {
@@ -112,13 +116,13 @@ func (s *NotificationService) SendPaymentNotification(ctx context.Context, order
 	}
 
 	// Create notification for customer
-	notification := &model.Notification{
+	notification := &notificationEntity.Notification{
 		UserID:  order.CustomerID,
 		OrderID: &orderID,
-		Type:    model.NotificationTypeEmail,
+		Type:    notificationEntity.NotificationTypeEmail,
 		Title:   "Payment Update",
 		Message: s.getPaymentStatusMessage(order.OrderNumber, paymentStatus),
-		Status:  model.NotificationStatusPending,
+		Status:  notificationEntity.NotificationStatusPending,
 	}
 
 	// Save notification
@@ -127,7 +131,7 @@ func (s *NotificationService) SendPaymentNotification(ctx context.Context, order
 	}
 
 	// TODO: Send actual notification
-	notification.Status = model.NotificationStatusSent
+	notification.Status = notificationEntity.NotificationStatusSent
 	s.notificationRepo.Update(ctx, notification)
 
 	return nil
@@ -143,9 +147,9 @@ func (s *NotificationService) GetNotifications(ctx context.Context, userID uuid.
 	}
 
 	// Convert to response format
-	var responses []model.NotificationResponse
+	var responses []notificationDto.NotificationResponse
 	for _, notification := range notifications {
-		responses = append(responses, notification.ToResponse())
+		responses = append(responses, notificationDto.ToNotificationResponse(notification))
 	}
 
 	// Calculate pagination
@@ -203,13 +207,13 @@ func (s *NotificationService) getOrderStatusMessage(orderNumber string, status m
 // getPaymentStatusMessage returns appropriate message for payment status
 func (s *NotificationService) getPaymentStatusMessage(orderNumber string, status model.PaymentStatus) string {
 	switch status {
-	case model.PaymentStatusPaid:
+	case paymentEntity.PaymentStatusPaid:
 		return "Payment for order " + orderNumber + " has been received successfully."
-	case model.PaymentStatusFailed:
+	case paymentEntity.PaymentStatusFailed:
 		return "Payment for order " + orderNumber + " has failed. Please try again."
-	case model.PaymentStatusCancelled:
+	case paymentEntity.PaymentStatusCancelled:
 		return "Payment for order " + orderNumber + " has been cancelled."
-	case model.PaymentStatusRefunded:
+	case paymentEntity.PaymentStatusRefunded:
 		return "Payment for order " + orderNumber + " has been refunded."
 	default:
 		return "Payment status for order " + orderNumber + " has been updated."

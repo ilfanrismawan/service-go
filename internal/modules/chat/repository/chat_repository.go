@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"service/internal/shared/database"
-	"service/internal/shared/model"
+	chatEntity "service-go/internal/modules/chat/entity"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -22,13 +22,13 @@ func NewChatRepository() *ChatRepository {
 }
 
 // Create creates a new chat message
-func (r *ChatRepository) Create(ctx context.Context, message *model.ChatMessage) error {
+func (r *ChatRepository) Create(ctx context.Context, message *chatEntity.ChatMessage) error {
 	return r.db.WithContext(ctx).Create(message).Error
 }
 
 // GetByID retrieves a chat message by ID
-func (r *ChatRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.ChatMessage, error) {
-	var message model.ChatMessage
+func (r *ChatRepository) GetByID(ctx context.Context, id uuid.UUID) (*chatEntity.ChatMessage, error) {
+	var message chatEntity.ChatMessage
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Sender").
@@ -41,21 +41,21 @@ func (r *ChatRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Chat
 }
 
 // Update updates a chat message
-func (r *ChatRepository) Update(ctx context.Context, message *model.ChatMessage) error {
+func (r *ChatRepository) Update(ctx context.Context, message *chatEntity.ChatMessage) error {
 	return r.db.WithContext(ctx).Save(message).Error
 }
 
 // Delete soft deletes a chat message
 func (r *ChatRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Delete(&model.ChatMessage{}, "id = ?", id).Error
+	return r.db.WithContext(ctx).Delete(&chatEntity.ChatMessage{}, "id = ?", id).Error
 }
 
 // ListByOrderID retrieves chat messages for a specific order with pagination
-func (r *ChatRepository) ListByOrderID(ctx context.Context, orderID uuid.UUID, offset, limit int) ([]*model.ChatMessage, int64, error) {
-	var messages []*model.ChatMessage
+func (r *ChatRepository) ListByOrderID(ctx context.Context, orderID uuid.UUID, offset, limit int) ([]*chatEntity.ChatMessage, int64, error) {
+	var messages []*chatEntity.ChatMessage
 	var total int64
 
-	query := r.db.WithContext(ctx).Model(&model.ChatMessage{}).Where("order_id = ?", orderID)
+	query := r.db.WithContext(ctx).Model(&chatEntity.ChatMessage{}).Where("order_id = ?", orderID)
 
 	// Get total count
 	if err := query.Count(&total).Error; err != nil {
@@ -75,8 +75,8 @@ func (r *ChatRepository) ListByOrderID(ctx context.Context, orderID uuid.UUID, o
 }
 
 // GetByUserID retrieves chat messages by user ID
-func (r *ChatRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*model.ChatMessage, error) {
-	var messages []*model.ChatMessage
+func (r *ChatRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*chatEntity.ChatMessage, error) {
+	var messages []*chatEntity.ChatMessage
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Sender").
@@ -88,8 +88,8 @@ func (r *ChatRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*
 }
 
 // GetByOrderID retrieves chat messages by order ID
-func (r *ChatRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID) ([]*model.ChatMessage, error) {
-	var messages []*model.ChatMessage
+func (r *ChatRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID) ([]*chatEntity.ChatMessage, error) {
+	var messages []*chatEntity.ChatMessage
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Sender").
@@ -103,7 +103,7 @@ func (r *ChatRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID) ([
 // MarkOrderMessagesAsRead marks all messages in an order as read for a specific user
 func (r *ChatRepository) MarkOrderMessagesAsRead(ctx context.Context, orderID, userID uuid.UUID) error {
 	return r.db.WithContext(ctx).
-		Model(&model.ChatMessage{}).
+		Model(&chatEntity.ChatMessage{}).
 		Where("order_id = ? AND receiver_id = ? AND is_read = ?", orderID, userID, false).
 		Update("is_read", true).Error
 }
@@ -112,15 +112,15 @@ func (r *ChatRepository) MarkOrderMessagesAsRead(ctx context.Context, orderID, u
 func (r *ChatRepository) GetUnreadCount(ctx context.Context, userID uuid.UUID) (int64, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
-		Model(&model.ChatMessage{}).
+		Model(&chatEntity.ChatMessage{}).
 		Where("receiver_id = ? AND is_read = ?", userID, false).
 		Count(&count).Error
 	return count, err
 }
 
 // GetUnreadMessagesByOrder gets unread messages for a user in a specific order
-func (r *ChatRepository) GetUnreadMessagesByOrder(ctx context.Context, orderID, userID uuid.UUID) ([]*model.ChatMessage, error) {
-	var messages []*model.ChatMessage
+func (r *ChatRepository) GetUnreadMessagesByOrder(ctx context.Context, orderID, userID uuid.UUID) ([]*chatEntity.ChatMessage, error) {
+	var messages []*chatEntity.ChatMessage
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Sender").

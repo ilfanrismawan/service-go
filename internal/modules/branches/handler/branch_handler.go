@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"service/internal/modules/branches/service"
 	"service/internal/shared/model"
+	branchDto "service-go/internal/modules/branches/dto"
 	"service/internal/shared/utils"
 	"strconv"
 
@@ -37,7 +38,7 @@ func NewBranchHandler() *BranchHandler {
 // @Failure 500 {object} model.ErrorResponse
 // @Router /branches [post]
 func (h *BranchHandler) CreateBranch(c *gin.Context) {
-	var req model.BranchRequest
+	var req branchDto.BranchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -138,7 +139,7 @@ func (h *BranchHandler) UpdateBranch(c *gin.Context) {
 		return
 	}
 
-	var req model.BranchRequest
+	var req branchDto.BranchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",

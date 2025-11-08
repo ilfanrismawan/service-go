@@ -7,6 +7,9 @@ import (
 	pay "service/internal/modules/payments/legacy_payment"
 	repo "service/internal/modules/payments/repository"
 	"service/internal/shared/model"
+	paymentEntity "service-go/internal/modules/payments/entity"
+	paymentDto "service-go/internal/modules/payments/dto"
+	orderEntity "service-go/internal/modules/orders/entity"
 	"service/internal/shared/utils"
 
 	"github.com/google/uuid"
@@ -27,7 +30,7 @@ func NewPaymentService() *PaymentService {
 }
 
 // HandleMidtransCallback verifies payload and updates payment/order state
-func (s *PaymentService) HandleMidtransCallback(ctx context.Context, cb *model.MidtransCallbackPayload, serverKey string) error {
+func (s *PaymentService) HandleMidtransCallback(ctx context.Context, cb *paymentDto.MidtransCallbackPayload, serverKey string) error {
 	// Verify signature: sha512(order_id+status_code+gross_amount+server_key)
 	expected := utils.SHA512Hex(cb.OrderID + cb.StatusCode + cb.GrossAmount + serverKey)
 	if expected != cb.SignatureKey {
@@ -35,7 +38,7 @@ func (s *PaymentService) HandleMidtransCallback(ctx context.Context, cb *model.M
 	}
 
 	// Find payment by transaction ID first, fallback to invoice/order_id equals payment.ID if used as order_id
-	var payment *model.Payment
+	var payment *paymentEntity.Payment
 	// Try by transaction ID
 	if cb.TransactionID != "" {
 		if p, err := s.paymentRepo.GetByTransactionID(ctx, cb.TransactionID); err == nil {
@@ -53,18 +56,18 @@ func (s *PaymentService) HandleMidtransCallback(ctx context.Context, cb *model.M
 	}
 
 	// Idempotency: if status already mapped, no-op
-	mapped := model.PaymentStatusPending
+	mapped := paymentEntity.PaymentStatusPending
 	switch cb.TransactionStatus {
 	case "capture", "settlement":
-		mapped = model.PaymentStatusPaid
+		mapped = paymentEntity.PaymentStatusPaid
 	case "pending":
-		mapped = model.PaymentStatusPending
+		mapped = paymentEntity.PaymentStatusPending
 	case "deny", "expire", "cancel":
-		mapped = model.PaymentStatusFailed
+		mapped = paymentEntity.PaymentStatusFailed
 	case "refund", "partial_refund":
-		mapped = model.PaymentStatusRefunded
+		mapped = paymentEntity.PaymentStatusRefunded
 	default:
-		mapped = model.PaymentStatusPending
+		mapped = paymentEntity.PaymentStatusPending
 	}
 	if payment.Status == mapped {
 		return nil
@@ -75,7 +78,7 @@ func (s *PaymentService) HandleMidtransCallback(ctx context.Context, cb *model.M
 	if cb.TransactionID != "" {
 		payment.TransactionID = cb.TransactionID
 	}
-	if mapped == model.PaymentStatusPaid {
+	if mapped == paymentEntity.PaymentStatusPaid {
 		now := model.GetCurrentTimestamp()
 		payment.PaidAt = &now
 	}
@@ -84,9 +87,9 @@ func (s *PaymentService) HandleMidtransCallback(ctx context.Context, cb *model.M
 	}
 
 	// Update order on success
-	if mapped == model.PaymentStatusPaid {
+	if mapped == paymentEntity.PaymentStatusPaid {
 		if order, err := s.orderRepo.GetByID(ctx, payment.OrderID); err == nil {
-			order.Status = model.StatusReady
+			order.Status = orderEntity.StatusReady
 			_ = s.orderRepo.Update(ctx, order)
 		}
 	}
@@ -94,7 +97,7 @@ func (s *PaymentService) HandleMidtransCallback(ctx context.Context, cb *model.M
 }
 
 // CreatePayment creates a new payment
-func (s *PaymentService) CreatePayment(ctx context.Context, req *model.PaymentRequest) (*model.PaymentResponse, error) {
+func (s *PaymentService) CreatePayment(ctx context.Context, req *paymentDto.PaymentRequest) (*paymentDto.PaymentResponse, error) {
 	// Validate order exists
 	orderID, err := uuid.Parse(req.OrderID)
 	if err != nil {
@@ -120,11 +123,11 @@ func (s *PaymentService) CreatePayment(ctx context.Context, req *model.PaymentRe
 	}
 
 	// Create payment entity
-	payment := &model.Payment{
+	payment := &paymentEntity.Payment{
 		OrderID:       orderID,
 		Amount:        req.Amount,
 		PaymentMethod: req.PaymentMethod,
-		Status:        model.PaymentStatusPending,
+		Status:        paymentEntity.PaymentStatusPending,
 		InvoiceNumber: invoiceNumber,
 		Notes:         req.Notes,
 	}
@@ -135,34 +138,34 @@ func (s *PaymentService) CreatePayment(ctx context.Context, req *model.PaymentRe
 	}
 
 	// Return response with populated data
-	response := payment.ToResponse()
+	response := paymentDto.ToPaymentResponse(payment)
 	return &response, nil
 }
 
 // GetPayment retrieves a payment by ID
-func (s *PaymentService) GetPayment(ctx context.Context, id uuid.UUID) (*model.PaymentResponse, error) {
+func (s *PaymentService) GetPayment(ctx context.Context, id uuid.UUID) (*paymentDto.PaymentResponse, error) {
 	payment, err := s.paymentRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, model.ErrPaymentNotFound
 	}
 
-	response := payment.ToResponse()
+	response := paymentDto.ToPaymentResponse(payment)
 	return &response, nil
 }
 
 // GetPaymentByInvoice retrieves a payment by invoice number
-func (s *PaymentService) GetPaymentByInvoice(ctx context.Context, invoiceNumber string) (*model.PaymentResponse, error) {
+func (s *PaymentService) GetPaymentByInvoice(ctx context.Context, invoiceNumber string) (*paymentDto.PaymentResponse, error) {
 	payment, err := s.paymentRepo.GetByInvoiceNumber(ctx, invoiceNumber)
 	if err != nil {
 		return nil, model.ErrPaymentNotFound
 	}
 
-	response := payment.ToResponse()
+	response := paymentDto.ToPaymentResponse(payment)
 	return &response, nil
 }
 
 // UpdatePaymentStatus updates the status of a payment
-func (s *PaymentService) UpdatePaymentStatus(ctx context.Context, id uuid.UUID, status model.PaymentStatus, transactionID string) (*model.PaymentResponse, error) {
+func (s *PaymentService) UpdatePaymentStatus(ctx context.Context, id uuid.UUID, status paymentEntity.PaymentStatus, transactionID string) (*paymentDto.PaymentResponse, error) {
 	// Get existing payment
 	payment, err := s.paymentRepo.GetByID(ctx, id)
 	if err != nil {
@@ -176,7 +179,7 @@ func (s *PaymentService) UpdatePaymentStatus(ctx context.Context, id uuid.UUID, 
 	}
 
 	// Set paid_at if status is paid
-	if status == model.PaymentStatusPaid {
+	if status == paymentEntity.PaymentStatusPaid {
 		now := model.GetCurrentTimestamp()
 		payment.PaidAt = &now
 	}
@@ -186,12 +189,12 @@ func (s *PaymentService) UpdatePaymentStatus(ctx context.Context, id uuid.UUID, 
 		return nil, err
 	}
 
-	response := payment.ToResponse()
+	response := paymentDto.ToPaymentResponse(payment)
 	return &response, nil
 }
 
 // ProcessMidtransPayment processes payment through Midtrans
-func (s *PaymentService) ProcessMidtransPayment(ctx context.Context, req *model.MidtransPaymentRequest) (*model.MidtransPaymentResponse, error) {
+func (s *PaymentService) ProcessMidtransPayment(ctx context.Context, req *paymentDto.MidtransPaymentRequest) (*paymentDto.MidtransPaymentResponse, error) {
 	// Validate order exists
 	orderID, err := uuid.Parse(req.OrderID)
 	if err != nil {
@@ -207,11 +210,11 @@ func (s *PaymentService) ProcessMidtransPayment(ctx context.Context, req *model.
 	invoiceNumber := utils.GenerateInvoiceNumber()
 
 	// Create payment record
-	payment := &model.Payment{
+	payment := &paymentEntity.Payment{
 		OrderID:       orderID,
 		Amount:        req.Amount,
-		PaymentMethod: model.PaymentMethodMidtrans,
-		Status:        model.PaymentStatusPending,
+		PaymentMethod: paymentEntity.PaymentMethodMidtrans,
+		Status:        paymentEntity.PaymentStatusPending,
 		InvoiceNumber: invoiceNumber,
 	}
 
@@ -222,7 +225,7 @@ func (s *PaymentService) ProcessMidtransPayment(ctx context.Context, req *model.
 
 	// TODO: Integrate with actual Midtrans API
 	// For now, return mock response
-	response := &model.MidtransPaymentResponse{
+	response := &paymentDto.MidtransPaymentResponse{
 		Token:         "mock-token-" + payment.ID.String(),
 		RedirectURL:   "https://app.midtrans.com/snap/v2/vtweb/" + payment.ID.String(),
 		StatusCode:    "201",
@@ -235,7 +238,7 @@ func (s *PaymentService) ProcessMidtransPayment(ctx context.Context, req *model.
 // ReconcilePendingPayments checks pending Midtrans payments and updates their status
 func (s *PaymentService) ReconcilePendingPayments(ctx context.Context) error {
 	// Get pending payments
-	pendingList, err := s.paymentRepo.GetByStatus(ctx, model.PaymentStatusPending)
+	pendingList, err := s.paymentRepo.GetByStatus(ctx, paymentEntity.PaymentStatusPending)
 	if err != nil {
 		return err
 	}
@@ -245,7 +248,7 @@ func (s *PaymentService) ReconcilePendingPayments(ctx context.Context) error {
 	ms := pay.NewMidtransService()
 	for _, p := range pendingList {
 		// Only reconcile online payments
-		if p.PaymentMethod != model.PaymentMethodMidtrans && p.PaymentMethod != model.PaymentMethodGopay && p.PaymentMethod != model.PaymentMethodQris && p.PaymentMethod != model.PaymentMethodBankTransfer && p.PaymentMethod != model.PaymentMethodMandiriEchannel {
+		if p.PaymentMethod != paymentEntity.PaymentMethodMidtrans && p.PaymentMethod != paymentEntity.PaymentMethodGopay && p.PaymentMethod != paymentEntity.PaymentMethodQris && p.PaymentMethod != paymentEntity.PaymentMethodBankTransfer && p.PaymentMethod != paymentEntity.PaymentMethodMandiriEchannel {
 			continue
 		}
 		if p.TransactionID == "" {
@@ -256,29 +259,29 @@ func (s *PaymentService) ReconcilePendingPayments(ctx context.Context) error {
 			continue
 		}
 		// Map Midtrans status
-		newStatus := model.PaymentStatusPending
+		newStatus := paymentEntity.PaymentStatusPending
 		switch resp.TransactionStatus {
 		case "capture", "settlement":
-			newStatus = model.PaymentStatusPaid
+			newStatus = paymentEntity.PaymentStatusPaid
 		case "pending":
-			newStatus = model.PaymentStatusPending
+			newStatus = paymentEntity.PaymentStatusPending
 		case "deny", "expire", "cancel":
-			newStatus = model.PaymentStatusFailed
+			newStatus = paymentEntity.PaymentStatusFailed
 		case "refund", "partial_refund":
-			newStatus = model.PaymentStatusRefunded
+			newStatus = paymentEntity.PaymentStatusRefunded
 		}
 		if p.Status == newStatus {
 			continue
 		}
 		p.Status = newStatus
-		if newStatus == model.PaymentStatusPaid {
+		if newStatus == paymentEntity.PaymentStatusPaid {
 			now := model.GetCurrentTimestamp()
 			p.PaidAt = &now
 		}
 		_ = s.paymentRepo.Update(ctx, p)
-		if newStatus == model.PaymentStatusPaid {
+		if newStatus == paymentEntity.PaymentStatusPaid {
 			if order, err := s.orderRepo.GetByID(ctx, p.OrderID); err == nil {
-				order.Status = model.StatusReady
+				order.Status = orderEntity.StatusReady
 				_ = s.orderRepo.Update(ctx, order)
 			}
 		}
@@ -309,9 +312,9 @@ func (s *PaymentService) ListPayments(ctx context.Context, page, limit int, filt
 	}
 
 	// Convert to response format
-	var responses []model.PaymentResponse
+	var responses []paymentDto.PaymentResponse
 	for _, payment := range payments {
-		responses = append(responses, payment.ToResponse())
+		responses = append(responses, paymentDto.ToPaymentResponse(payment))
 	}
 
 	// Calculate pagination
@@ -333,30 +336,30 @@ func (s *PaymentService) ListPayments(ctx context.Context, page, limit int, filt
 }
 
 // GetPaymentsByOrder retrieves payments for a specific order
-func (s *PaymentService) GetPaymentsByOrder(ctx context.Context, orderID uuid.UUID) ([]model.PaymentResponse, error) {
+func (s *PaymentService) GetPaymentsByOrder(ctx context.Context, orderID uuid.UUID) ([]paymentDto.PaymentResponse, error) {
 	payments, err := s.paymentRepo.GetByOrderID(ctx, orderID)
 	if err != nil {
 		return nil, err
 	}
 
-	var responses []model.PaymentResponse
+	var responses []paymentDto.PaymentResponse
 	for _, payment := range payments {
-		responses = append(responses, payment.ToResponse())
+		responses = append(responses, paymentDto.ToPaymentResponse(payment))
 	}
 
 	return responses, nil
 }
 
 // GetPaymentsByStatus retrieves payments by status
-func (s *PaymentService) GetPaymentsByStatus(ctx context.Context, status model.PaymentStatus) ([]model.PaymentResponse, error) {
+func (s *PaymentService) GetPaymentsByStatus(ctx context.Context, status paymentEntity.PaymentStatus) ([]paymentDto.PaymentResponse, error) {
 	payments, err := s.paymentRepo.GetByStatus(ctx, status)
 	if err != nil {
 		return nil, err
 	}
 
-	var responses []model.PaymentResponse
+	var responses []paymentDto.PaymentResponse
 	for _, payment := range payments {
-		responses = append(responses, payment.ToResponse())
+		responses = append(responses, paymentDto.ToPaymentResponse(payment))
 	}
 
 	return responses, nil
@@ -365,8 +368,8 @@ func (s *PaymentService) GetPaymentsByStatus(ctx context.Context, status model.P
 // PaymentFilters represents filters for payment queries
 type PaymentFilters struct {
 	OrderID       *uuid.UUID
-	Status        *model.PaymentStatus
-	PaymentMethod *model.PaymentMethod
+	Status        *paymentEntity.PaymentStatus
+	PaymentMethod *paymentEntity.PaymentMethod
 	DateFrom      *string
 	DateTo        *string
 }

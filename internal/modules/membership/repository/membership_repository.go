@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"service/internal/shared/database"
-	"service/internal/shared/model"
+	membershipEntity "service-go/internal/modules/membership/entity"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -22,13 +22,13 @@ func NewMembershipRepository() *MembershipRepository {
 }
 
 // Create creates a new membership
-func (r *MembershipRepository) Create(ctx context.Context, membership *model.Membership) error {
+func (r *MembershipRepository) Create(ctx context.Context, membership *membershipEntity.Membership) error {
 	return r.db.WithContext(ctx).Create(membership).Error
 }
 
 // GetByID gets a membership by ID
-func (r *MembershipRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Membership, error) {
-	var membership model.Membership
+func (r *MembershipRepository) GetByID(ctx context.Context, id uuid.UUID) (*membershipEntity.Membership, error) {
+	var membership membershipEntity.Membership
 	err := r.db.WithContext(ctx).Preload("User").First(&membership, "id = ?", id).Error
 	if err != nil {
 		return nil, err
@@ -37,8 +37,8 @@ func (r *MembershipRepository) GetByID(ctx context.Context, id uuid.UUID) (*mode
 }
 
 // GetByUserID gets a membership by user ID
-func (r *MembershipRepository) GetByUserID(ctx context.Context, userID uuid.UUID) (*model.Membership, error) {
-	var membership model.Membership
+func (r *MembershipRepository) GetByUserID(ctx context.Context, userID uuid.UUID) (*membershipEntity.Membership, error) {
+	var membership membershipEntity.Membership
 	err := r.db.WithContext(ctx).Preload("User").First(&membership, "user_id = ?", userID).Error
 	if err != nil {
 		return nil, err
@@ -47,21 +47,21 @@ func (r *MembershipRepository) GetByUserID(ctx context.Context, userID uuid.UUID
 }
 
 // Update updates a membership
-func (r *MembershipRepository) Update(ctx context.Context, membership *model.Membership) error {
+func (r *MembershipRepository) Update(ctx context.Context, membership *membershipEntity.Membership) error {
 	return r.db.WithContext(ctx).Save(membership).Error
 }
 
 // Delete soft deletes a membership
 func (r *MembershipRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Delete(&model.Membership{}, "id = ?", id).Error
+	return r.db.WithContext(ctx).Delete(&membershipEntity.Membership{}, "id = ?", id).Error
 }
 
 // List gets a list of memberships with pagination
-func (r *MembershipRepository) List(ctx context.Context, page, limit int, tier *model.MembershipTier, status *model.MembershipStatus) ([]*model.Membership, int64, error) {
-	var memberships []*model.Membership
+func (r *MembershipRepository) List(ctx context.Context, page, limit int, tier *membershipEntity.MembershipTier, status *membershipEntity.MembershipStatus) ([]*membershipEntity.Membership, int64, error) {
+	var memberships []*membershipEntity.Membership
 	var total int64
 
-	query := r.db.WithContext(ctx).Model(&model.Membership{}).Preload("User")
+	query := r.db.WithContext(ctx).Model(&membershipEntity.Membership{}).Preload("User")
 
 	// Apply filters
 	if tier != nil {
@@ -86,29 +86,29 @@ func (r *MembershipRepository) List(ctx context.Context, page, limit int, tier *
 }
 
 // GetActiveMemberships gets all active memberships
-func (r *MembershipRepository) GetActiveMemberships(ctx context.Context) ([]*model.Membership, error) {
-	var memberships []*model.Membership
-	err := r.db.WithContext(ctx).Preload("User").Where("status = ?", model.MembershipStatusActive).Find(&memberships).Error
+func (r *MembershipRepository) GetActiveMemberships(ctx context.Context) ([]*membershipEntity.Membership, error) {
+	var memberships []*membershipEntity.Membership
+	err := r.db.WithContext(ctx).Preload("User").Where("status = ?", membershipEntity.MembershipStatusActive).Find(&memberships).Error
 	return memberships, err
 }
 
 // GetMembershipsByTier gets memberships by tier
-func (r *MembershipRepository) GetMembershipsByTier(ctx context.Context, tier model.MembershipTier) ([]*model.Membership, error) {
-	var memberships []*model.Membership
-	err := r.db.WithContext(ctx).Preload("User").Where("tier = ? AND status = ?", tier, model.MembershipStatusActive).Find(&memberships).Error
+func (r *MembershipRepository) GetMembershipsByTier(ctx context.Context, tier membershipEntity.MembershipTier) ([]*membershipEntity.Membership, error) {
+	var memberships []*membershipEntity.Membership
+	err := r.db.WithContext(ctx).Preload("User").Where("tier = ? AND status = ?", tier, membershipEntity.MembershipStatusActive).Find(&memberships).Error
 	return memberships, err
 }
 
 // UpdatePoints updates membership points
 func (r *MembershipRepository) UpdatePoints(ctx context.Context, userID uuid.UUID, points int64) error {
-	return r.db.WithContext(ctx).Model(&model.Membership{}).
+	return r.db.WithContext(ctx).Model(&membershipEntity.Membership{}).
 		Where("user_id = ?", userID).
 		Update("points", gorm.Expr("points + ?", points)).Error
 }
 
 // UpdateSpending updates membership spending and order count
 func (r *MembershipRepository) UpdateSpending(ctx context.Context, userID uuid.UUID, amount float64) error {
-	return r.db.WithContext(ctx).Model(&model.Membership{}).
+	return r.db.WithContext(ctx).Model(&membershipEntity.Membership{}).
 		Where("user_id = ?", userID).
 		Updates(map[string]interface{}{
 			"total_spent":   gorm.Expr("total_spent + ?", amount),
@@ -118,10 +118,10 @@ func (r *MembershipRepository) UpdateSpending(ctx context.Context, userID uuid.U
 }
 
 // GetTopSpenders gets top spending members
-func (r *MembershipRepository) GetTopSpenders(ctx context.Context, limit int) ([]*model.Membership, error) {
-	var memberships []*model.Membership
+func (r *MembershipRepository) GetTopSpenders(ctx context.Context, limit int) ([]*membershipEntity.Membership, error) {
+	var memberships []*membershipEntity.Membership
 	err := r.db.WithContext(ctx).Preload("User").
-		Where("status = ?", model.MembershipStatusActive).
+		Where("status = ?", membershipEntity.MembershipStatusActive).
 		Order("total_spent DESC").
 		Limit(limit).
 		Find(&memberships).Error
@@ -134,25 +134,25 @@ func (r *MembershipRepository) GetMembershipStats(ctx context.Context) (map[stri
 
 	// Total memberships
 	var totalMemberships int64
-	if err := r.db.WithContext(ctx).Model(&model.Membership{}).Count(&totalMemberships).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&membershipEntity.Membership{}).Count(&totalMemberships).Error; err != nil {
 		return nil, err
 	}
 	stats["total_memberships"] = totalMemberships
 
 	// Active memberships
 	var activeMemberships int64
-	if err := r.db.WithContext(ctx).Model(&model.Membership{}).Where("status = ?", model.MembershipStatusActive).Count(&activeMemberships).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&membershipEntity.Membership{}).Where("status = ?", membershipEntity.MembershipStatusActive).Count(&activeMemberships).Error; err != nil {
 		return nil, err
 	}
 	stats["active_memberships"] = activeMemberships
 
 	// Memberships by tier
 	tierStats := make(map[string]int64)
-	tiers := []model.MembershipTier{model.MembershipTierBasic, model.MembershipTierPremium, model.MembershipTierVIP, model.MembershipTierElite}
+	tiers := []membershipEntity.MembershipTier{membershipEntity.MembershipTierBasic, membershipEntity.MembershipTierPremium, membershipEntity.MembershipTierVIP, membershipEntity.MembershipTierElite}
 
 	for _, tier := range tiers {
 		var count int64
-		if err := r.db.WithContext(ctx).Model(&model.Membership{}).Where("tier = ? AND status = ?", tier, model.MembershipStatusActive).Count(&count).Error; err != nil {
+		if err := r.db.WithContext(ctx).Model(&membershipEntity.Membership{}).Where("tier = ? AND status = ?", tier, membershipEntity.MembershipStatusActive).Count(&count).Error; err != nil {
 			return nil, err
 		}
 		tierStats[string(tier)] = count
@@ -161,14 +161,14 @@ func (r *MembershipRepository) GetMembershipStats(ctx context.Context) (map[stri
 
 	// Total points distributed
 	var totalPoints int64
-	if err := r.db.WithContext(ctx).Model(&model.Membership{}).Select("COALESCE(SUM(points), 0)").Scan(&totalPoints).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&membershipEntity.Membership{}).Select("COALESCE(SUM(points), 0)").Scan(&totalPoints).Error; err != nil {
 		return nil, err
 	}
 	stats["total_points"] = totalPoints
 
 	// Total spending by members
 	var totalSpending float64
-	if err := r.db.WithContext(ctx).Model(&model.Membership{}).Select("COALESCE(SUM(total_spent), 0)").Scan(&totalSpending).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&membershipEntity.Membership{}).Select("COALESCE(SUM(total_spent), 0)").Scan(&totalSpending).Error; err != nil {
 		return nil, err
 	}
 	stats["total_spending"] = totalSpending

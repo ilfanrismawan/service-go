@@ -7,6 +7,8 @@ import (
 	"service/internal/modules/orders/repository"
 	userRepo "service/internal/modules/users/repository"
 	"service/internal/shared/model"
+	orderEntity "service-go/internal/modules/orders/entity"
+	orderDto "service-go/internal/modules/orders/dto"
 	"service/internal/shared/utils"
 
 	"github.com/google/uuid"
@@ -28,7 +30,7 @@ func NewOrderService() *OrderService {
 }
 
 // CreateOrder creates a new service order
-func (s *OrderService) CreateOrder(ctx context.Context, customerID uuid.UUID, req *model.ServiceOrderRequest) (*model.ServiceOrderResponse, error) {
+func (s *OrderService) CreateOrder(ctx context.Context, customerID uuid.UUID, req *orderDto.ServiceOrderRequest) (*orderDto.ServiceOrderResponse, error) {
 	// Validate customer exists
 	_, err := s.userRepo.GetByID(ctx, customerID)
 	if err != nil {
@@ -60,7 +62,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, customerID uuid.UUID, re
 	}
 
 	// Create order entity
-	order := &model.ServiceOrder{
+	order := &orderEntity.ServiceOrder{
 		OrderNumber:       orderNumber,
 		CustomerID:        customerID,
 		BranchID:          branchID,
@@ -72,7 +74,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, customerID uuid.UUID, re
 		PickupAddress:     req.PickupAddress,
 		PickupLatitude:    req.PickupLatitude,
 		PickupLongitude:   req.PickupLongitude,
-		Status:            model.StatusPendingPickup,
+		Status:            orderEntity.StatusPendingPickup,
 		EstimatedCost:     0,
 		ActualCost:        0,
 		EstimatedDuration: 0,
@@ -85,34 +87,34 @@ func (s *OrderService) CreateOrder(ctx context.Context, customerID uuid.UUID, re
 	}
 
 	// Return response with populated data
-	response := order.ToResponse()
+	response := orderDto.ToServiceOrderResponse(order)
 	return &response, nil
 }
 
 // GetOrder retrieves an order by ID
-func (s *OrderService) GetOrder(ctx context.Context, id uuid.UUID) (*model.ServiceOrderResponse, error) {
+func (s *OrderService) GetOrder(ctx context.Context, id uuid.UUID) (*orderDto.ServiceOrderResponse, error) {
 	order, err := s.orderRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, model.ErrOrderNotFound
 	}
 
-	response := order.ToResponse()
+	response := orderDto.ToServiceOrderResponse(order)
 	return &response, nil
 }
 
 // GetOrderByNumber retrieves an order by order number
-func (s *OrderService) GetOrderByNumber(ctx context.Context, orderNumber string) (*model.ServiceOrderResponse, error) {
+func (s *OrderService) GetOrderByNumber(ctx context.Context, orderNumber string) (*orderDto.ServiceOrderResponse, error) {
 	order, err := s.orderRepo.GetByOrderNumber(ctx, orderNumber)
 	if err != nil {
 		return nil, model.ErrOrderNotFound
 	}
 
-	response := order.ToResponse()
+	response := orderDto.ToServiceOrderResponse(order)
 	return &response, nil
 }
 
 // UpdateOrderStatus updates the status of an order
-func (s *OrderService) UpdateOrderStatus(ctx context.Context, id uuid.UUID, req *model.UpdateOrderStatusRequest) (*model.ServiceOrderResponse, error) {
+func (s *OrderService) UpdateOrderStatus(ctx context.Context, id uuid.UUID, req *orderDto.UpdateOrderStatusRequest) (*orderDto.ServiceOrderResponse, error) {
 	// Get existing order
 	order, err := s.orderRepo.GetByID(ctx, id)
 	if err != nil {
@@ -130,12 +132,12 @@ func (s *OrderService) UpdateOrderStatus(ctx context.Context, id uuid.UUID, req 
 		return nil, err
 	}
 
-	response := order.ToResponse()
+	response := orderDto.ToServiceOrderResponse(order)
 	return &response, nil
 }
 
 // AssignTechnician assigns a technician to an order
-func (s *OrderService) AssignTechnician(ctx context.Context, orderID, technicianID uuid.UUID) (*model.ServiceOrderResponse, error) {
+func (s *OrderService) AssignTechnician(ctx context.Context, orderID, technicianID uuid.UUID) (*orderDto.ServiceOrderResponse, error) {
 	// Validate technician exists and has correct role
 	technician, err := s.userRepo.GetByID(ctx, technicianID)
 	if err != nil {
@@ -163,12 +165,12 @@ func (s *OrderService) AssignTechnician(ctx context.Context, orderID, technician
 		s.orderRepo.Update(ctx, order)
 	}
 
-	response := order.ToResponse()
+	response := orderDto.ToServiceOrderResponse(order)
 	return &response, nil
 }
 
 // AssignCourier assigns a courier to an order
-func (s *OrderService) AssignCourier(ctx context.Context, orderID, courierID uuid.UUID) (*model.ServiceOrderResponse, error) {
+func (s *OrderService) AssignCourier(ctx context.Context, orderID, courierID uuid.UUID) (*orderDto.ServiceOrderResponse, error) {
 	// Validate courier exists and has correct role
 	courier, err := s.userRepo.GetByID(ctx, courierID)
 	if err != nil {
@@ -190,7 +192,7 @@ func (s *OrderService) AssignCourier(ctx context.Context, orderID, courierID uui
 		return nil, err
 	}
 
-	response := order.ToResponse()
+	response := orderDto.ToServiceOrderResponse(order)
 	return &response, nil
 }
 
@@ -204,7 +206,7 @@ func (s *OrderService) ListOrders(ctx context.Context, page, limit int, filters 
 	}
 
 	// Convert to response format
-	var responses []model.ServiceOrderResponse
+	var responses []orderDto.ServiceOrderResponse
 	for _, order := range orders {
 		responses = append(responses, order.ToResponse())
 	}
@@ -228,13 +230,13 @@ func (s *OrderService) ListOrders(ctx context.Context, page, limit int, filters 
 }
 
 // GetOrdersByCustomer retrieves orders for a specific customer
-func (s *OrderService) GetOrdersByCustomer(ctx context.Context, customerID uuid.UUID) ([]model.ServiceOrderResponse, error) {
+func (s *OrderService) GetOrdersByCustomer(ctx context.Context, customerID uuid.UUID) ([]orderDto.ServiceOrderResponse, error) {
 	orders, err := s.orderRepo.GetByCustomerID(ctx, customerID)
 	if err != nil {
 		return nil, err
 	}
 
-	var responses []model.ServiceOrderResponse
+	var responses []orderDto.ServiceOrderResponse
 	for _, order := range orders {
 		responses = append(responses, order.ToResponse())
 	}
@@ -243,14 +245,14 @@ func (s *OrderService) GetOrdersByCustomer(ctx context.Context, customerID uuid.
 }
 
 // GetOrdersByBranch retrieves orders for a specific branch with pagination
-func (s *OrderService) GetOrdersByBranch(ctx context.Context, branchID uuid.UUID, page, limit int) ([]model.ServiceOrderResponse, int64, error) {
+func (s *OrderService) GetOrdersByBranch(ctx context.Context, branchID uuid.UUID, page, limit int) ([]orderDto.ServiceOrderResponse, int64, error) {
 	offset := (page - 1) * limit
 	orders, total, err := s.orderRepo.List(ctx, offset, limit, &repository.ServiceOrderFilters{BranchID: &branchID})
 	if err != nil {
 		return nil, 0, err
 	}
 
-	var responses []model.ServiceOrderResponse
+	var responses []orderDto.ServiceOrderResponse
 	for _, order := range orders {
 		responses = append(responses, order.ToResponse())
 	}
@@ -259,13 +261,13 @@ func (s *OrderService) GetOrdersByBranch(ctx context.Context, branchID uuid.UUID
 }
 
 // GetOrdersByStatus retrieves orders by status
-func (s *OrderService) GetOrdersByStatus(ctx context.Context, status model.OrderStatus) ([]model.ServiceOrderResponse, error) {
+func (s *OrderService) GetOrdersByStatus(ctx context.Context, status orderEntity.OrderStatus) ([]orderDto.ServiceOrderResponse, error) {
 	orders, err := s.orderRepo.GetByStatus(ctx, status)
 	if err != nil {
 		return nil, err
 	}
 
-	var responses []model.ServiceOrderResponse
+	var responses []orderDto.ServiceOrderResponse
 	for _, order := range orders {
 		responses = append(responses, order.ToResponse())
 	}
@@ -274,14 +276,14 @@ func (s *OrderService) GetOrdersByStatus(ctx context.Context, status model.Order
 }
 
 // GetOrdersByTechnician retrieves orders assigned to a technician with pagination
-func (s *OrderService) GetOrdersByTechnician(ctx context.Context, technicianID uuid.UUID, page, limit int) ([]model.ServiceOrderResponse, int64, error) {
+func (s *OrderService) GetOrdersByTechnician(ctx context.Context, technicianID uuid.UUID, page, limit int) ([]orderDto.ServiceOrderResponse, int64, error) {
 	offset := (page - 1) * limit
 	orders, total, err := s.orderRepo.List(ctx, offset, limit, &repository.ServiceOrderFilters{TechnicianID: &technicianID})
 	if err != nil {
 		return nil, 0, err
 	}
 
-	var responses []model.ServiceOrderResponse
+	var responses []orderDto.ServiceOrderResponse
 	for _, order := range orders {
 		responses = append(responses, order.ToResponse())
 	}
@@ -290,14 +292,14 @@ func (s *OrderService) GetOrdersByTechnician(ctx context.Context, technicianID u
 }
 
 // GetOrdersByCourier retrieves orders assigned to a courier with pagination
-func (s *OrderService) GetOrdersByCourier(ctx context.Context, courierID uuid.UUID, page, limit int) ([]model.ServiceOrderResponse, int64, error) {
+func (s *OrderService) GetOrdersByCourier(ctx context.Context, courierID uuid.UUID, page, limit int) ([]orderDto.ServiceOrderResponse, int64, error) {
 	offset := (page - 1) * limit
 	orders, total, err := s.orderRepo.List(ctx, offset, limit, &repository.ServiceOrderFilters{CourierID: &courierID})
 	if err != nil {
 		return nil, 0, err
 	}
 
-	var responses []model.ServiceOrderResponse
+	var responses []orderDto.ServiceOrderResponse
 	for _, order := range orders {
 		responses = append(responses, order.ToResponse())
 	}
@@ -306,11 +308,11 @@ func (s *OrderService) GetOrdersByCourier(ctx context.Context, courierID uuid.UU
 }
 
 // GetOrders retrieves orders for a user with pagination and optional filters
-func (s *OrderService) GetOrders(ctx context.Context, userID uuid.UUID, page, limit int, status string, branchID *uuid.UUID) ([]model.ServiceOrderResponse, int64, error) {
+func (s *OrderService) GetOrders(ctx context.Context, userID uuid.UUID, page, limit int, status string, branchID *uuid.UUID) ([]orderDto.ServiceOrderResponse, int64, error) {
 	offset := (page - 1) * limit
 	filters := &repository.ServiceOrderFilters{}
 	if status != "" {
-		st := model.OrderStatus(status)
+		st := orderEntity.OrderStatus(status)
 		filters.Status = &st
 	}
 	if branchID != nil {
@@ -327,7 +329,7 @@ func (s *OrderService) GetOrders(ctx context.Context, userID uuid.UUID, page, li
 		return nil, 0, err
 	}
 
-	var responses []model.ServiceOrderResponse
+	var responses []orderDto.ServiceOrderResponse
 	for _, o := range orders {
 		responses = append(responses, o.ToResponse())
 	}
@@ -336,11 +338,11 @@ func (s *OrderService) GetOrders(ctx context.Context, userID uuid.UUID, page, li
 }
 
 // GetAllOrders retrieves all orders (admin) with pagination and optional filters
-func (s *OrderService) GetAllOrders(ctx context.Context, page, limit int, status string, branchID *uuid.UUID) ([]model.ServiceOrderResponse, int64, error) {
+func (s *OrderService) GetAllOrders(ctx context.Context, page, limit int, status string, branchID *uuid.UUID) ([]orderDto.ServiceOrderResponse, int64, error) {
 	offset := (page - 1) * limit
 	filters := &repository.ServiceOrderFilters{}
 	if status != "" {
-		st := model.OrderStatus(status)
+		st := orderEntity.OrderStatus(status)
 		filters.Status = &st
 	}
 	if branchID != nil {
@@ -352,7 +354,7 @@ func (s *OrderService) GetAllOrders(ctx context.Context, page, limit int, status
 		return nil, 0, err
 	}
 
-	var responses []model.ServiceOrderResponse
+	var responses []orderDto.ServiceOrderResponse
 	for _, o := range orders {
 		responses = append(responses, o.ToResponse())
 	}
@@ -361,7 +363,7 @@ func (s *OrderService) GetAllOrders(ctx context.Context, page, limit int, status
 }
 
 // UpdateOrder updates an order's details (admin)
-func (s *OrderService) UpdateOrder(ctx context.Context, id uuid.UUID, req *model.ServiceOrderRequest) (*model.ServiceOrderResponse, error) {
+func (s *OrderService) UpdateOrder(ctx context.Context, id uuid.UUID, req *orderDto.ServiceOrderRequest) (*orderDto.ServiceOrderResponse, error) {
 	order, err := s.orderRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, model.ErrOrderNotFound
@@ -405,13 +407,13 @@ func (s *OrderService) DeleteOrder(ctx context.Context, id uuid.UUID) error {
 }
 
 // GetOrdersByBranchID retrieves orders for a specific branch with pagination
-func (s *OrderService) GetOrdersByBranchID(ctx context.Context, branchID uuid.UUID, page, limit int) ([]model.ServiceOrderResponse, int64, error) {
+func (s *OrderService) GetOrdersByBranchID(ctx context.Context, branchID uuid.UUID, page, limit int) ([]orderDto.ServiceOrderResponse, int64, error) {
 	offset := (page - 1) * limit
 	orders, total, err := s.orderRepo.List(ctx, offset, limit, &repository.ServiceOrderFilters{BranchID: &branchID})
 	if err != nil {
 		return nil, 0, err
 	}
-	var responses []model.ServiceOrderResponse
+	var responses []orderDto.ServiceOrderResponse
 	for _, o := range orders {
 		responses = append(responses, o.ToResponse())
 	}
@@ -419,14 +421,14 @@ func (s *OrderService) GetOrdersByBranchID(ctx context.Context, branchID uuid.UU
 }
 
 // GetAvailableJobs returns orders which are available for couriers (pending and not assigned)
-func (s *OrderService) GetAvailableJobs(ctx context.Context, page, limit int) ([]model.ServiceOrderResponse, int64, error) {
+func (s *OrderService) GetAvailableJobs(ctx context.Context, page, limit int) ([]orderDto.ServiceOrderResponse, int64, error) {
 	offset := (page - 1) * limit
 	status := model.StatusPendingPickup
 	orders, total, err := s.orderRepo.List(ctx, offset, limit, &repository.ServiceOrderFilters{Status: &status})
 	if err != nil {
 		return nil, 0, err
 	}
-	var responses []model.ServiceOrderResponse
+	var responses []orderDto.ServiceOrderResponse
 	for _, o := range orders {
 		if o.CourierID == nil {
 			responses = append(responses, o.ToResponse())
@@ -436,7 +438,7 @@ func (s *OrderService) GetAvailableJobs(ctx context.Context, page, limit int) ([
 }
 
 // UpdateOrderCost updates the cost information of an order
-func (s *OrderService) UpdateOrderCost(ctx context.Context, id uuid.UUID, estimatedCost, actualCost float64, estimatedDuration, actualDuration int) (*model.ServiceOrderResponse, error) {
+func (s *OrderService) UpdateOrderCost(ctx context.Context, id uuid.UUID, estimatedCost, actualCost float64, estimatedDuration, actualDuration int) (*orderDto.ServiceOrderResponse, error) {
 	// Get existing order
 	order, err := s.orderRepo.GetByID(ctx, id)
 	if err != nil {
@@ -454,6 +456,6 @@ func (s *OrderService) UpdateOrderCost(ctx context.Context, id uuid.UUID, estima
 		return nil, err
 	}
 
-	response := order.ToResponse()
+	response := orderDto.ToServiceOrderResponse(order)
 	return &response, nil
 }

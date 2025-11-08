@@ -6,6 +6,9 @@ import (
 	"service/internal/modules/orders/service"
 	userRepo "service/internal/modules/users/repository"
 	"service/internal/shared/model"
+	orderDto "service-go/internal/modules/orders/dto"
+	orderEntity "service-go/internal/modules/orders/entity"
+	userEntity "service-go/internal/modules/users/entity"
 	"service/internal/shared/utils"
 	"strconv"
 
@@ -58,7 +61,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		// try to find any registered customer (use repository directly)
 		userRepoInstance := userRepo.NewUserRepository()
 		roleVal := string(model.RolePelanggan)
-		var role model.UserRole = model.UserRole(roleVal)
+		var role userEntity.UserRole = userEntity.UserRole(roleVal)
 		users, _, err := userRepoInstance.List(c.Request.Context(), 0, 1, &role, nil)
 		if err == nil && len(users) > 0 {
 			customerUUID = users[0].ID
@@ -72,7 +75,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		}
 	}
 
-	var req model.ServiceOrderRequest
+	var req orderDto.ServiceOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -103,7 +106,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		req.PickupAddress = req.PickupLocation
 	}
 	if req.ServiceType == "" {
-		req.ServiceType = model.ServiceTypeOther
+		req.ServiceType = orderEntity.ServiceTypeOther
 	}
 
 	// Skip strict validation in test mode to keep tests lightweight
@@ -446,12 +449,12 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 	}
 
 	if statusStr := c.Query("status"); statusStr != "" {
-		status := model.OrderStatus(statusStr)
+		status := orderEntity.OrderStatus(statusStr)
 		filters.Status = &status
 	}
 
 	if serviceTypeStr := c.Query("service_type"); serviceTypeStr != "" {
-		serviceType := model.ServiceType(serviceTypeStr)
+		serviceType := orderEntity.ServiceType(serviceTypeStr)
 		filters.ServiceType = &serviceType
 	}
 
@@ -684,7 +687,7 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 		return
 	}
 
-	var req model.ServiceOrderRequest
+	var req orderDto.ServiceOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",

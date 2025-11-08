@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"service/internal/modules/membership/service"
 	"service/internal/shared/model"
+	membershipDto "service-go/internal/modules/membership/dto"
+	membershipEntity "service-go/internal/modules/membership/entity"
 	"service/internal/shared/utils"
 	"strconv"
 
@@ -37,7 +39,7 @@ func NewMembershipHandler() *MembershipHandler {
 // @Failure 500 {object} model.ErrorResponse
 // @Router /membership [post]
 func (h *MembershipHandler) CreateMembership(c *gin.Context) {
-	var req model.MembershipRequest
+	var req membershipDto.MembershipRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -78,7 +80,7 @@ func (h *MembershipHandler) CreateMembership(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, model.SuccessResponse(membership.ToResponse(), "Membership created successfully"))
+	c.JSON(http.StatusCreated, model.SuccessResponse(membershipDto.ToMembershipResponse(membership), "Membership created successfully"))
 }
 
 // GetMembership godoc
@@ -115,7 +117,7 @@ func (h *MembershipHandler) GetMembership(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, model.SuccessResponse(membership.ToResponse(), "Membership retrieved successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(membershipDto.ToMembershipResponse(membership), "Membership retrieved successfully"))
 }
 
 // UpdateMembership godoc
@@ -133,7 +135,7 @@ func (h *MembershipHandler) GetMembership(c *gin.Context) {
 // @Failure 500 {object} model.ErrorResponse
 // @Router /membership [put]
 func (h *MembershipHandler) UpdateMembership(c *gin.Context) {
-	var req model.MembershipRequest
+	var req membershipDto.MembershipRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -174,7 +176,7 @@ func (h *MembershipHandler) UpdateMembership(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, model.SuccessResponse(membership.ToResponse(), "Membership updated successfully"))
+	c.JSON(http.StatusOK, model.SuccessResponse(membershipDto.ToMembershipResponse(membership), "Membership updated successfully"))
 }
 
 // ListMemberships godoc
@@ -211,14 +213,14 @@ func (h *MembershipHandler) ListMemberships(c *gin.Context) {
 	}
 
 	// Set filter pointers
-	var tierPtr *model.MembershipTier
-	var statusPtr *model.MembershipStatus
+	var tierPtr *membershipEntity.MembershipTier
+	var statusPtr *membershipEntity.MembershipStatus
 	if tierStr != "" {
-		tier := model.MembershipTier(tierStr)
+		tier := membershipEntity.MembershipTier(tierStr)
 		tierPtr = &tier
 	}
 	if statusStr != "" {
-		status := model.MembershipStatus(statusStr)
+		status := membershipEntity.MembershipStatus(statusStr)
 		statusPtr = &status
 	}
 
@@ -233,9 +235,9 @@ func (h *MembershipHandler) ListMemberships(c *gin.Context) {
 	}
 
 	// Convert to response format
-	var responses []model.MembershipResponse
+	var responses []membershipDto.MembershipResponse
 	for _, membership := range memberships {
-		responses = append(responses, membership.ToResponse())
+		responses = append(responses, membershipDto.ToMembershipResponse(membership))
 	}
 
 	// Create paginated response
@@ -311,9 +313,9 @@ func (h *MembershipHandler) GetTopSpenders(c *gin.Context) {
 	}
 
 	// Convert to response format
-	var responses []model.MembershipResponse
+	var responses []membershipDto.MembershipResponse
 	for _, membership := range memberships {
-		responses = append(responses, membership.ToResponse())
+		responses = append(responses, membershipDto.ToMembershipResponse(membership))
 	}
 
 	c.JSON(http.StatusOK, model.SuccessResponse(responses, "Top spenders retrieved successfully"))
@@ -507,9 +509,9 @@ func (h *MembershipHandler) StartTrial(c *gin.Context) {
 		return
 	}
 
-	tier := model.MembershipTier(tierStr)
-	if tier != model.MembershipTierBasic && tier != model.MembershipTierPremium &&
-		tier != model.MembershipTierVIP && tier != model.MembershipTierElite {
+	tier := membershipEntity.MembershipTier(tierStr)
+	if tier != membershipEntity.MembershipTierBasic && tier != membershipEntity.MembershipTierPremium &&
+		tier != membershipEntity.MembershipTierVIP && tier != membershipEntity.MembershipTierElite {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid tier. Must be one of: basic, premium, vip, elite",
@@ -539,7 +541,7 @@ func (h *MembershipHandler) StartTrial(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, model.SuccessResponse(membership.ToResponse(), "Trial started successfully"))
+	c.JSON(http.StatusCreated, model.SuccessResponse(membershipDto.ToMembershipResponse(membership), "Trial started successfully"))
 }
 
 // GetMembershipTiers godoc
@@ -582,11 +584,11 @@ func (h *MembershipHandler) UpgradeMembership(c *gin.Context) {
 		return
 	}
 
-	tier := model.MembershipTier(tierStr)
-	subscriptionType := model.SubscriptionType(subscriptionTypeStr)
+	tier := membershipEntity.MembershipTier(tierStr)
+	subscriptionType := membershipDto.SubscriptionType(subscriptionTypeStr)
 
-	if tier != model.MembershipTierBasic && tier != model.MembershipTierPremium &&
-		tier != model.MembershipTierVIP && tier != model.MembershipTierElite {
+	if tier != membershipEntity.MembershipTierBasic && tier != membershipEntity.MembershipTierPremium &&
+		tier != membershipEntity.MembershipTierVIP && tier != membershipEntity.MembershipTierElite {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
 			"Invalid tier. Must be one of: basic, premium, vip, elite",

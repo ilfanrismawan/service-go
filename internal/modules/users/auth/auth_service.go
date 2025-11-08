@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"service/internal/modules/users/repository"
 	"service/internal/shared/model"
+	userEntity "service-go/internal/modules/users/entity"
+	userDto "service-go/internal/modules/users/dto"
 	"service/internal/shared/utils"
 	"time"
 
@@ -26,7 +28,7 @@ func NewAuthService() *AuthService {
 }
 
 // Register registers a new user
-func (s *AuthService) Register(ctx context.Context, req *model.UserRequest) (*model.UserResponse, error) {
+func (s *AuthService) Register(ctx context.Context, req *userDto.UserRequest) (*userDto.UserResponse, error) {
 	// Check if email already exists
 	emailExists, err := s.userRepo.CheckEmailExists(ctx, req.Email, nil)
 	if err != nil {
@@ -52,7 +54,7 @@ func (s *AuthService) Register(ctx context.Context, req *model.UserRequest) (*mo
 	}
 
 	// Create user
-	user := &model.User{
+	user := &userEntity.User{
 		Email:    req.Email,
 		Password: string(hashedPassword),
 		FullName: req.FullName,
@@ -99,7 +101,7 @@ func (s *AuthService) Login(ctx context.Context, req *model.LoginRequest) (*mode
 	}
 
 	// Generate JWT tokens
-	accessToken, err := utils.GenerateAccessToken(user.ID, model.UserRole(user.Role))
+	accessToken, err := utils.GenerateAccessToken(user.ID, userEntity.UserRole(user.Role))
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +115,7 @@ func (s *AuthService) Login(ctx context.Context, req *model.LoginRequest) (*mode
 	response := &model.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		User:         user.ToResponse(),
+		User:         userDto.ToUserResponse(user),
 		ExpiresIn:    int64(24 * time.Hour.Seconds()), // 24 hours
 	}
 
@@ -145,7 +147,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *model.RefreshTokenR
 	}
 
 	// Generate new access token
-	accessToken, err := utils.GenerateAccessToken(user.ID, model.UserRole(user.Role))
+	accessToken, err := utils.GenerateAccessToken(user.ID, userEntity.UserRole(user.Role))
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +167,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *model.RefreshTokenR
 	response := &model.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		User:         user.ToResponse(),
+		User:         userDto.ToUserResponse(user),
 		ExpiresIn:    int64(24 * time.Hour.Seconds()), // 24 hours
 	}
 
@@ -261,18 +263,18 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *model.ResetPasswor
 }
 
 // GetProfile retrieves user profile
-func (s *AuthService) GetProfile(ctx context.Context, userID uuid.UUID) (*model.UserResponse, error) {
+func (s *AuthService) GetProfile(ctx context.Context, userID uuid.UUID) (*userDto.UserResponse, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, model.ErrUserNotFound
 	}
 
-	response := user.ToResponse()
+	response := userDto.ToUserResponse(user)
 	return &response, nil
 }
 
 // UpdateProfile updates user profile
-func (s *AuthService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *model.UserRequest) (*model.UserResponse, error) {
+func (s *AuthService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *userDto.UserRequest) (*userDto.UserResponse, error) {
 	// Get user by ID
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -318,32 +320,32 @@ func (s *AuthService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 	}
 
 	// Return user response
-	response := user.ToResponse()
+	response := userDto.ToUserResponse(user)
 	return &response, nil
 }
 
 // ListUsers lists users with pagination and optional filters (admin)
-func (s *AuthService) ListUsers(ctx context.Context, page, limit int, role *model.UserRole, branchID *uuid.UUID) ([]*model.User, int64, error) {
-	var dtoRole *model.UserRole
+func (s *AuthService) ListUsers(ctx context.Context, page, limit int, role *userEntity.UserRole, branchID *uuid.UUID) ([]*userEntity.User, int64, error) {
+	var dtoRole *userEntity.UserRole
 	if role != nil {
-		r := model.UserRole(*role)
+		r := userEntity.UserRole(*role)
 		dtoRole = &r
 	}
 	return s.userRepo.List(ctx, (page-1)*limit, limit, dtoRole, branchID)
 }
 
 // GetUser retrieves user by ID (admin)
-func (s *AuthService) GetUser(ctx context.Context, id uuid.UUID) (*model.UserResponse, error) {
+func (s *AuthService) GetUser(ctx context.Context, id uuid.UUID) (*userDto.UserResponse, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, model.ErrUserNotFound
 	}
-	resp := user.ToResponse()
+	resp := userDto.ToUserResponse(user)
 	return &resp, nil
 }
 
 // UpdateUser updates a user by ID (admin)
-func (s *AuthService) UpdateUser(ctx context.Context, id uuid.UUID, req *model.UserRequest) (*model.UserResponse, error) {
+func (s *AuthService) UpdateUser(ctx context.Context, id uuid.UUID, req *userDto.UserRequest) (*userDto.UserResponse, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, model.ErrUserNotFound
@@ -381,7 +383,7 @@ func (s *AuthService) UpdateUser(ctx context.Context, id uuid.UUID, req *model.U
 		return nil, err
 	}
 
-	resp := user.ToResponse()
+	resp := userDto.ToUserResponse(user)
 	return &resp, nil
 }
 

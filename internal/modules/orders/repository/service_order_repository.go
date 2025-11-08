@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"service/internal/shared/database"
-	"service/internal/shared/model"
+	orderEntity "service-go/internal/modules/orders/entity"
 	"sort"
 	"sync"
 	"time"
@@ -17,13 +17,13 @@ type ServiceOrderRepository struct {
 	db       *gorm.DB
 	inMemory bool
 	mu       sync.RWMutex
-	orders   map[uuid.UUID]*model.ServiceOrder
+	orders   map[uuid.UUID]*orderEntity.ServiceOrder
 }
 
 // NewServiceOrderRepository creates a new service order repository
 func NewServiceOrderRepository() *ServiceOrderRepository {
 	if database.DB == nil {
-		m := make(map[uuid.UUID]*model.ServiceOrder)
+		m := make(map[uuid.UUID]*orderEntity.ServiceOrder)
 		// seed a default test order (so tests referencing a fixed order ID will work)
 		if id, err := uuid.Parse("550e8400-e29b-41d4-a716-446655440000"); err == nil {
 			// determine a customer id: use any existing shared user if available
@@ -35,7 +35,7 @@ func NewServiceOrderRepository() *ServiceOrderRepository {
 			now := time.Now()
 			// create a lightweight order using the test branch id
 			branchID, _ := uuid.Parse("550e8400-e29b-41d4-a716-446655440000")
-			m[id] = &model.ServiceOrder{
+			m[id] = &orderEntity.ServiceOrder{
 				ID:              id,
 				OrderNumber:     "ORD-TEST-000001",
 				CustomerID:      customerID,
@@ -43,12 +43,12 @@ func NewServiceOrderRepository() *ServiceOrderRepository {
 				IPhoneModel:     "TestModel",
 				IPhoneColor:     "Black",
 				IPhoneIMEI:      "0000",
-				ServiceType:     model.ServiceTypeOther,
+				ServiceType:     orderEntity.ServiceTypeOther,
 				Description:     "Test order",
 				PickupAddress:   "Test Address",
 				PickupLatitude:  0,
 				PickupLongitude: 0,
-				Status:          model.StatusPendingPickup,
+				Status:          orderEntity.StatusPendingPickup,
 				CreatedAt:       now,
 				UpdatedAt:       now,
 			}
@@ -65,7 +65,7 @@ func NewServiceOrderRepository() *ServiceOrderRepository {
 }
 
 // Create creates a new service order
-func (r *ServiceOrderRepository) Create(ctx context.Context, order *model.ServiceOrder) error {
+func (r *ServiceOrderRepository) Create(ctx context.Context, order *orderEntity.ServiceOrder) error {
 	if r.inMemory {
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -82,7 +82,7 @@ func (r *ServiceOrderRepository) Create(ctx context.Context, order *model.Servic
 }
 
 // GetByID retrieves a service order by ID
-func (r *ServiceOrderRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.ServiceOrder, error) {
+func (r *ServiceOrderRepository) GetByID(ctx context.Context, id uuid.UUID) (*orderEntity.ServiceOrder, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
@@ -92,7 +92,7 @@ func (r *ServiceOrderRepository) GetByID(ctx context.Context, id uuid.UUID) (*mo
 		}
 		return o, nil
 	}
-	var order model.ServiceOrder
+	var order orderEntity.ServiceOrder
 	err := r.db.WithContext(ctx).
 		Preload("Customer").
 		Preload("Branch").
@@ -106,7 +106,7 @@ func (r *ServiceOrderRepository) GetByID(ctx context.Context, id uuid.UUID) (*mo
 }
 
 // GetByOrderNumber retrieves a service order by order number
-func (r *ServiceOrderRepository) GetByOrderNumber(ctx context.Context, orderNumber string) (*model.ServiceOrder, error) {
+func (r *ServiceOrderRepository) GetByOrderNumber(ctx context.Context, orderNumber string) (*orderEntity.ServiceOrder, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
@@ -117,7 +117,7 @@ func (r *ServiceOrderRepository) GetByOrderNumber(ctx context.Context, orderNumb
 		}
 		return nil, gorm.ErrRecordNotFound
 	}
-	var order model.ServiceOrder
+	var order orderEntity.ServiceOrder
 	err := r.db.WithContext(ctx).
 		Preload("Customer").
 		Preload("Branch").
@@ -131,7 +131,7 @@ func (r *ServiceOrderRepository) GetByOrderNumber(ctx context.Context, orderNumb
 }
 
 // Update updates a service order
-func (r *ServiceOrderRepository) Update(ctx context.Context, order *model.ServiceOrder) error {
+func (r *ServiceOrderRepository) Update(ctx context.Context, order *orderEntity.ServiceOrder) error {
 	if r.inMemory {
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -156,15 +156,15 @@ func (r *ServiceOrderRepository) Delete(ctx context.Context, id uuid.UUID) error
 		delete(r.orders, id)
 		return nil
 	}
-	return r.db.WithContext(ctx).Delete(&model.ServiceOrder{}, "id = ?", id).Error
+	return r.db.WithContext(ctx).Delete(&orderEntity.ServiceOrder{}, "id = ?", id).Error
 }
 
 // List retrieves service orders with pagination
-func (r *ServiceOrderRepository) List(ctx context.Context, offset, limit int, filters *ServiceOrderFilters) ([]*model.ServiceOrder, int64, error) {
+func (r *ServiceOrderRepository) List(ctx context.Context, offset, limit int, filters *ServiceOrderFilters) ([]*orderEntity.ServiceOrder, int64, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		var list []*model.ServiceOrder
+		var list []*orderEntity.ServiceOrder
 		for _, o := range r.orders {
 			if filters != nil {
 				if filters.CustomerID != nil && o.CustomerID != *filters.CustomerID {
@@ -196,7 +196,7 @@ func (r *ServiceOrderRepository) List(ctx context.Context, offset, limit int, fi
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		total := int64(len(list))
 		if offset > len(list) {
-			return []*model.ServiceOrder{}, total, nil
+			return []*orderEntity.ServiceOrder{}, total, nil
 		}
 		end := offset + limit
 		if end > len(list) {
@@ -204,10 +204,10 @@ func (r *ServiceOrderRepository) List(ctx context.Context, offset, limit int, fi
 		}
 		return list[offset:end], total, nil
 	}
-	var orders []*model.ServiceOrder
+	var orders []*orderEntity.ServiceOrder
 	var total int64
 
-	query := r.db.WithContext(ctx).Model(&model.ServiceOrder{})
+	query := r.db.WithContext(ctx).Model(&orderEntity.ServiceOrder{})
 
 	if filters != nil {
 		if filters.CustomerID != nil {
@@ -255,11 +255,11 @@ func (r *ServiceOrderRepository) List(ctx context.Context, offset, limit int, fi
 }
 
 // GetByCustomerID retrieves service orders by customer ID
-func (r *ServiceOrderRepository) GetByCustomerID(ctx context.Context, customerID uuid.UUID) ([]*model.ServiceOrder, error) {
+func (r *ServiceOrderRepository) GetByCustomerID(ctx context.Context, customerID uuid.UUID) ([]*orderEntity.ServiceOrder, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		var list []*model.ServiceOrder
+		var list []*orderEntity.ServiceOrder
 		for _, o := range r.orders {
 			if o.CustomerID == customerID {
 				list = append(list, o)
@@ -268,7 +268,7 @@ func (r *ServiceOrderRepository) GetByCustomerID(ctx context.Context, customerID
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		return list, nil
 	}
-	var orders []*model.ServiceOrder
+	var orders []*orderEntity.ServiceOrder
 	err := r.db.WithContext(ctx).
 		Preload("Customer").
 		Preload("Branch").
@@ -281,11 +281,11 @@ func (r *ServiceOrderRepository) GetByCustomerID(ctx context.Context, customerID
 }
 
 // GetByBranchID retrieves service orders by branch ID
-func (r *ServiceOrderRepository) GetByBranchID(ctx context.Context, branchID uuid.UUID) ([]*model.ServiceOrder, error) {
+func (r *ServiceOrderRepository) GetByBranchID(ctx context.Context, branchID uuid.UUID) ([]*orderEntity.ServiceOrder, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		var list []*model.ServiceOrder
+		var list []*orderEntity.ServiceOrder
 		for _, o := range r.orders {
 			if o.BranchID == branchID {
 				list = append(list, o)
@@ -294,7 +294,7 @@ func (r *ServiceOrderRepository) GetByBranchID(ctx context.Context, branchID uui
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		return list, nil
 	}
-	var orders []*model.ServiceOrder
+	var orders []*orderEntity.ServiceOrder
 	err := r.db.WithContext(ctx).
 		Preload("Customer").
 		Preload("Branch").
@@ -307,11 +307,11 @@ func (r *ServiceOrderRepository) GetByBranchID(ctx context.Context, branchID uui
 }
 
 // GetByStatus retrieves service orders by status
-func (r *ServiceOrderRepository) GetByStatus(ctx context.Context, status model.OrderStatus) ([]*model.ServiceOrder, error) {
+func (r *ServiceOrderRepository) GetByStatus(ctx context.Context, status orderEntity.OrderStatus) ([]*orderEntity.ServiceOrder, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		var list []*model.ServiceOrder
+		var list []*orderEntity.ServiceOrder
 		for _, o := range r.orders {
 			if o.Status == status {
 				list = append(list, o)
@@ -320,7 +320,7 @@ func (r *ServiceOrderRepository) GetByStatus(ctx context.Context, status model.O
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		return list, nil
 	}
-	var orders []*model.ServiceOrder
+	var orders []*orderEntity.ServiceOrder
 	err := r.db.WithContext(ctx).
 		Preload("Customer").
 		Preload("Branch").
@@ -333,11 +333,11 @@ func (r *ServiceOrderRepository) GetByStatus(ctx context.Context, status model.O
 }
 
 // GetByTechnicianID retrieves service orders by technician ID
-func (r *ServiceOrderRepository) GetByTechnicianID(ctx context.Context, technicianID uuid.UUID) ([]*model.ServiceOrder, error) {
+func (r *ServiceOrderRepository) GetByTechnicianID(ctx context.Context, technicianID uuid.UUID) ([]*orderEntity.ServiceOrder, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		var list []*model.ServiceOrder
+		var list []*orderEntity.ServiceOrder
 		for _, o := range r.orders {
 			if o.TechnicianID != nil && *o.TechnicianID == technicianID {
 				list = append(list, o)
@@ -346,7 +346,7 @@ func (r *ServiceOrderRepository) GetByTechnicianID(ctx context.Context, technici
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		return list, nil
 	}
-	var orders []*model.ServiceOrder
+	var orders []*orderEntity.ServiceOrder
 	err := r.db.WithContext(ctx).
 		Preload("Customer").
 		Preload("Branch").
@@ -359,11 +359,11 @@ func (r *ServiceOrderRepository) GetByTechnicianID(ctx context.Context, technici
 }
 
 // GetByCourierID retrieves service orders by courier ID
-func (r *ServiceOrderRepository) GetByCourierID(ctx context.Context, courierID uuid.UUID) ([]*model.ServiceOrder, error) {
+func (r *ServiceOrderRepository) GetByCourierID(ctx context.Context, courierID uuid.UUID) ([]*orderEntity.ServiceOrder, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		var list []*model.ServiceOrder
+		var list []*orderEntity.ServiceOrder
 		for _, o := range r.orders {
 			if o.CourierID != nil && *o.CourierID == courierID {
 				list = append(list, o)
@@ -372,7 +372,7 @@ func (r *ServiceOrderRepository) GetByCourierID(ctx context.Context, courierID u
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		return list, nil
 	}
-	var orders []*model.ServiceOrder
+	var orders []*orderEntity.ServiceOrder
 	err := r.db.WithContext(ctx).
 		Preload("Customer").
 		Preload("Branch").
@@ -385,7 +385,7 @@ func (r *ServiceOrderRepository) GetByCourierID(ctx context.Context, courierID u
 }
 
 // UpdateStatus updates the status of a service order
-func (r *ServiceOrderRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status model.OrderStatus, notes string) error {
+func (r *ServiceOrderRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status orderEntity.OrderStatus, notes string) error {
 	if r.inMemory {
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -400,7 +400,7 @@ func (r *ServiceOrderRepository) UpdateStatus(ctx context.Context, id uuid.UUID,
 		return nil
 	}
 	return r.db.WithContext(ctx).
-		Model(&model.ServiceOrder{}).
+		Model(&orderEntity.ServiceOrder{}).
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
 			"status": status,
@@ -423,7 +423,7 @@ func (r *ServiceOrderRepository) AssignTechnician(ctx context.Context, id uuid.U
 		return nil
 	}
 	return r.db.WithContext(ctx).
-		Model(&model.ServiceOrder{}).
+		Model(&orderEntity.ServiceOrder{}).
 		Where("id = ?", id).
 		Update("technician_id", technicianID).Error
 }
@@ -443,7 +443,7 @@ func (r *ServiceOrderRepository) AssignCourier(ctx context.Context, id uuid.UUID
 		return nil
 	}
 	return r.db.WithContext(ctx).
-		Model(&model.ServiceOrder{}).
+		Model(&orderEntity.ServiceOrder{}).
 		Where("id = ?", id).
 		Update("courier_id", courierID).Error
 }
@@ -464,7 +464,7 @@ func (r *ServiceOrderRepository) CheckOrderNumberExists(ctx context.Context, ord
 		return false, nil
 	}
 	var count int64
-	query := r.db.WithContext(ctx).Model(&model.ServiceOrder{}).Where("order_number = ?", orderNumber)
+	query := r.db.WithContext(ctx).Model(&orderEntity.ServiceOrder{}).Where("order_number = ?", orderNumber)
 
 	if excludeID != nil {
 		query = query.Where("id != ?", *excludeID)
@@ -488,7 +488,7 @@ func (r *ServiceOrderRepository) CountOrdersByDateRange(ctx context.Context, sta
 		return count, nil
 	}
 	var count int64
-	err := r.db.WithContext(ctx).Model(&model.ServiceOrder{}).
+	err := r.db.WithContext(ctx).Model(&orderEntity.ServiceOrder{}).
 		Where("created_at >= ? AND created_at <= ?", startDate, endDate).
 		Count(&count).Error
 	return count, err
@@ -512,7 +512,7 @@ func (r *ServiceOrderRepository) GetOrdersByStatusInDateRange(ctx context.Contex
 		return m, nil
 	}
 
-	err := r.db.WithContext(ctx).Model(&model.ServiceOrder{}).
+	err := r.db.WithContext(ctx).Model(&orderEntity.ServiceOrder{}).
 		Select("status, COUNT(*) as count").
 		Where("created_at >= ? AND created_at <= ?", startDate, endDate).
 		Group("status").
@@ -548,7 +548,7 @@ func (r *ServiceOrderRepository) GetOrdersByBranchInDateRange(ctx context.Contex
 		return m, nil
 	}
 
-	err := r.db.WithContext(ctx).Model(&model.ServiceOrder{}).
+	err := r.db.WithContext(ctx).Model(&orderEntity.ServiceOrder{}).
 		Select("branch_id, COUNT(*) as count").
 		Where("created_at >= ? AND created_at <= ?", startDate, endDate).
 		Group("branch_id").
@@ -584,7 +584,7 @@ func (r *ServiceOrderRepository) GetOrdersByServiceTypeInDateRange(ctx context.C
 		return m, nil
 	}
 
-	err := r.db.WithContext(ctx).Model(&model.ServiceOrder{}).
+	err := r.db.WithContext(ctx).Model(&orderEntity.ServiceOrder{}).
 		Select("service_type, COUNT(*) as count").
 		Where("created_at >= ? AND created_at <= ?", startDate, endDate).
 		Group("service_type").
@@ -603,8 +603,8 @@ func (r *ServiceOrderRepository) GetOrdersByServiceTypeInDateRange(ctx context.C
 }
 
 // GetTopServiceTypesInDateRange gets top service types by order count within a date range
-func (r *ServiceOrderRepository) GetTopServiceTypesInDateRange(ctx context.Context, startDate, endDate time.Time, limit int) ([]model.ServiceTypeStats, error) {
-	var results []model.ServiceTypeStats
+func (r *ServiceOrderRepository) GetTopServiceTypesInDateRange(ctx context.Context, startDate, endDate time.Time, limit int) ([]orderEntity.ServiceTypeStats, error) {
+	var results []orderEntity.ServiceTypeStats
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
@@ -615,9 +615,9 @@ func (r *ServiceOrderRepository) GetTopServiceTypesInDateRange(ctx context.Conte
 			}
 		}
 		// convert to slice
-		var stats []model.ServiceTypeStats
+		var stats []orderEntity.ServiceTypeStats
 		for k, v := range counts {
-			stats = append(stats, model.ServiceTypeStats{ServiceType: k, Count: v})
+			stats = append(stats, orderEntity.ServiceTypeStats{ServiceType: k, Count: v})
 		}
 		// sort desc
 		sort.Slice(stats, func(i, j int) bool { return stats[i].Count > stats[j].Count })
@@ -627,7 +627,7 @@ func (r *ServiceOrderRepository) GetTopServiceTypesInDateRange(ctx context.Conte
 		return stats, nil
 	}
 
-	err := r.db.WithContext(ctx).Model(&model.ServiceOrder{}).
+	err := r.db.WithContext(ctx).Model(&orderEntity.ServiceOrder{}).
 		Select("service_type, COUNT(*) as order_count").
 		Where("created_at >= ? AND created_at <= ?", startDate, endDate).
 		Group("service_type").
@@ -644,8 +644,8 @@ type ServiceOrderFilters struct {
 	BranchID     *uuid.UUID
 	TechnicianID *uuid.UUID
 	CourierID    *uuid.UUID
-	Status       *model.OrderStatus
-	ServiceType  *model.ServiceType
+	Status       *orderEntity.OrderStatus
+	ServiceType  *orderEntity.ServiceType
 	DateFrom     *string
 	DateTo       *string
 }

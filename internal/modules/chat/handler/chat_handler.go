@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"service/internal/modules/chat/service"
 	"service/internal/shared/model"
+	chatDto "service-go/internal/modules/chat/dto"
 	"service/internal/shared/utils"
 	"strconv"
 
@@ -58,7 +59,7 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
-	var req model.ChatMessageRequest
+	var req chatDto.ChatMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",

@@ -5,6 +5,8 @@ import (
 	"service/internal/modules/payments/service"
 	"service/internal/shared/config"
 	"service/internal/shared/model"
+	paymentDto "service-go/internal/modules/payments/dto"
+	paymentEntity "service-go/internal/modules/payments/entity"
 	"service/internal/shared/utils"
 	"strconv"
 
@@ -36,7 +38,7 @@ func NewPaymentHandler() *PaymentHandler {
 // @Failure 500 {object} model.ErrorResponse
 // @Router /payments/midtrans/callback [post]
 func (h *PaymentHandler) MidtransCallback(c *gin.Context) {
-	var payload model.MidtransCallbackPayload
+	var payload paymentDto.MidtransCallbackPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -77,7 +79,7 @@ func (h *PaymentHandler) MidtransCallback(c *gin.Context) {
 // @Failure 500 {object} model.ErrorResponse
 // @Router /payments [post]
 func (h *PaymentHandler) CreatePayment(c *gin.Context) {
-	var req model.PaymentRequest
+	var req paymentDto.PaymentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -219,15 +221,15 @@ func (h *PaymentHandler) UpdatePaymentStatus(c *gin.Context) {
 	}
 
 	statusStr := c.Query("status")
-	status := model.PaymentStatus(statusStr)
+	status := paymentEntity.PaymentStatus(statusStr)
 
 	// Validate status
-	validStatuses := []model.PaymentStatus{
-		model.PaymentStatusPending,
-		model.PaymentStatusPaid,
-		model.PaymentStatusFailed,
-		model.PaymentStatusCancelled,
-		model.PaymentStatusRefunded,
+	validStatuses := []paymentEntity.PaymentStatus{
+		paymentEntity.PaymentStatusPending,
+		paymentEntity.PaymentStatusPaid,
+		paymentEntity.PaymentStatusFailed,
+		paymentEntity.PaymentStatusCancelled,
+		paymentEntity.PaymentStatusRefunded,
 	}
 
 	valid := false
@@ -360,12 +362,12 @@ func (h *PaymentHandler) ListPayments(c *gin.Context) {
 	}
 
 	if statusStr := c.Query("status"); statusStr != "" {
-		status := model.PaymentStatus(statusStr)
+		status := paymentEntity.PaymentStatus(statusStr)
 		filters.Status = &status
 	}
 
 	if paymentMethodStr := c.Query("payment_method"); paymentMethodStr != "" {
-		paymentMethod := model.PaymentMethod(paymentMethodStr)
+		paymentMethod := paymentEntity.PaymentMethod(paymentMethodStr)
 		filters.PaymentMethod = &paymentMethod
 	}
 
@@ -384,7 +386,7 @@ func (h *PaymentHandler) ListPayments(c *gin.Context) {
 
 // CreateInvoice is an alias to CreatePayment for compatibility
 func (h *PaymentHandler) CreateInvoice(c *gin.Context) {
-	var req model.PaymentRequest
+	var req paymentDto.PaymentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -483,7 +485,7 @@ func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 	}
 
 	statusStr := c.Query("status")
-	status := model.PaymentStatus(statusStr)
+	status := paymentEntity.PaymentStatus(statusStr)
 
 	transactionID := c.Query("transaction_id")
 

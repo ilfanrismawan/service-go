@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"service/internal/shared/database"
-	"service/internal/shared/model"
+	notificationEntity "service-go/internal/modules/notification/entity"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -22,13 +22,13 @@ func NewNotificationRepository() *NotificationRepository {
 }
 
 // Create creates a new notification
-func (r *NotificationRepository) Create(ctx context.Context, notification *model.Notification) error {
+func (r *NotificationRepository) Create(ctx context.Context, notification *notificationEntity.Notification) error {
 	return r.db.WithContext(ctx).Create(notification).Error
 }
 
 // GetByID retrieves a notification by ID
-func (r *NotificationRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Notification, error) {
-	var notification model.Notification
+func (r *NotificationRepository) GetByID(ctx context.Context, id uuid.UUID) (*notificationEntity.Notification, error) {
+	var notification notificationEntity.Notification
 	err := r.db.WithContext(ctx).
 		Preload("User").
 		Preload("Order").
@@ -40,21 +40,21 @@ func (r *NotificationRepository) GetByID(ctx context.Context, id uuid.UUID) (*mo
 }
 
 // Update updates a notification
-func (r *NotificationRepository) Update(ctx context.Context, notification *model.Notification) error {
+func (r *NotificationRepository) Update(ctx context.Context, notification *notificationEntity.Notification) error {
 	return r.db.WithContext(ctx).Save(notification).Error
 }
 
 // Delete soft deletes a notification
 func (r *NotificationRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Delete(&model.Notification{}, "id = ?", id).Error
+	return r.db.WithContext(ctx).Delete(&notificationEntity.Notification{}, "id = ?", id).Error
 }
 
 // ListByUserID retrieves notifications for a specific user with pagination
-func (r *NotificationRepository) ListByUserID(ctx context.Context, userID uuid.UUID, offset, limit int) ([]*model.Notification, int64, error) {
-	var notifications []*model.Notification
+func (r *NotificationRepository) ListByUserID(ctx context.Context, userID uuid.UUID, offset, limit int) ([]*notificationEntity.Notification, int64, error) {
+	var notifications []*notificationEntity.Notification
 	var total int64
 
-	query := r.db.WithContext(ctx).Model(&model.Notification{}).Where("user_id = ?", userID)
+	query := r.db.WithContext(ctx).Model(&notificationEntity.Notification{}).Where("user_id = ?", userID)
 
 	// Get total count
 	if err := query.Count(&total).Error; err != nil {
@@ -73,11 +73,11 @@ func (r *NotificationRepository) ListByUserID(ctx context.Context, userID uuid.U
 }
 
 // List retrieves notifications with pagination and filters
-func (r *NotificationRepository) List(ctx context.Context, offset, limit int, filters *NotificationFilters) ([]*model.Notification, int64, error) {
-	var notifications []*model.Notification
+func (r *NotificationRepository) List(ctx context.Context, offset, limit int, filters *NotificationFilters) ([]*notificationEntity.Notification, int64, error) {
+	var notifications []*notificationEntity.Notification
 	var total int64
 
-	query := r.db.WithContext(ctx).Model(&model.Notification{})
+	query := r.db.WithContext(ctx).Model(&notificationEntity.Notification{})
 
 	if filters != nil {
 		if filters.UserID != nil {
@@ -117,8 +117,8 @@ func (r *NotificationRepository) List(ctx context.Context, offset, limit int, fi
 }
 
 // GetByUserID retrieves notifications by user ID
-func (r *NotificationRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*model.Notification, error) {
-	var notifications []*model.Notification
+func (r *NotificationRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*notificationEntity.Notification, error) {
+	var notifications []*notificationEntity.Notification
 	err := r.db.WithContext(ctx).
 		Preload("User").
 		Preload("Order").
@@ -129,8 +129,8 @@ func (r *NotificationRepository) GetByUserID(ctx context.Context, userID uuid.UU
 }
 
 // GetByOrderID retrieves notifications by order ID
-func (r *NotificationRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID) ([]*model.Notification, error) {
-	var notifications []*model.Notification
+func (r *NotificationRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID) ([]*notificationEntity.Notification, error) {
+	var notifications []*notificationEntity.Notification
 	err := r.db.WithContext(ctx).
 		Preload("User").
 		Preload("Order").
@@ -141,8 +141,8 @@ func (r *NotificationRepository) GetByOrderID(ctx context.Context, orderID uuid.
 }
 
 // GetByStatus retrieves notifications by status
-func (r *NotificationRepository) GetByStatus(ctx context.Context, status model.NotificationStatus) ([]*model.Notification, error) {
-	var notifications []*model.Notification
+func (r *NotificationRepository) GetByStatus(ctx context.Context, status notificationEntity.NotificationStatus) ([]*notificationEntity.Notification, error) {
+	var notifications []*notificationEntity.Notification
 	err := r.db.WithContext(ctx).
 		Preload("User").
 		Preload("Order").
@@ -153,8 +153,8 @@ func (r *NotificationRepository) GetByStatus(ctx context.Context, status model.N
 }
 
 // GetByType retrieves notifications by type
-func (r *NotificationRepository) GetByType(ctx context.Context, notificationType model.NotificationType) ([]*model.Notification, error) {
-	var notifications []*model.Notification
+func (r *NotificationRepository) GetByType(ctx context.Context, notificationType notificationEntity.NotificationType) ([]*notificationEntity.Notification, error) {
+	var notifications []*notificationEntity.Notification
 	err := r.db.WithContext(ctx).
 		Preload("User").
 		Preload("Order").
@@ -167,25 +167,25 @@ func (r *NotificationRepository) GetByType(ctx context.Context, notificationType
 // MarkAsSent marks a notification as sent
 func (r *NotificationRepository) MarkAsSent(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).
-		Model(&model.Notification{}).
+		Model(&notificationEntity.Notification{}).
 		Where("id = ?", id).
-		Update("status", model.NotificationStatusSent).Error
+		Update("status", notificationEntity.NotificationStatusSent).Error
 }
 
 // MarkAsFailed marks a notification as failed
 func (r *NotificationRepository) MarkAsFailed(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).
-		Model(&model.Notification{}).
+		Model(&notificationEntity.Notification{}).
 		Where("id = ?", id).
-		Update("status", model.NotificationStatusFailed).Error
+		Update("status", notificationEntity.NotificationStatusFailed).Error
 }
 
 // NotificationFilters represents filters for notification queries
 type NotificationFilters struct {
 	UserID   *uuid.UUID
 	OrderID  *uuid.UUID
-	Type     *model.NotificationType
-	Status   *model.NotificationStatus
+	Type     *notificationEntity.NotificationType
+	Status   *notificationEntity.NotificationStatus
 	DateFrom *string
 	DateTo   *string
 }

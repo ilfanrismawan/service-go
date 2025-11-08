@@ -5,6 +5,7 @@ import (
 	"service/internal/modules/orders/repository"
 	"service/internal/modules/orders/service"
 	"service/internal/shared/model"
+	orderDto "service-go/internal/modules/orders/dto"
 	"service/internal/shared/utils"
 	"strconv"
 
@@ -59,7 +60,7 @@ func (h *RatingHandler) CreateRating(c *gin.Context) {
 		return
 	}
 
-	var req model.RatingRequest
+	var req orderDto.RatingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_request",
@@ -244,7 +245,7 @@ func (h *RatingHandler) UpdateRating(c *gin.Context) {
 		return
 	}
 
-	var req model.RatingRequest
+	var req orderDto.RatingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"invalid_request",

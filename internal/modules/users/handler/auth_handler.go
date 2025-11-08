@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"service/internal/modules/users/auth"
 	"service/internal/shared/model"
+	userDto "service-go/internal/modules/users/dto"
+	userEntity "service-go/internal/modules/users/entity"
 	"service/internal/shared/utils"
 	"strconv"
 
@@ -36,7 +38,7 @@ func NewAuthHandler() *AuthHandler {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
-	var req model.UserRequest
+	var req userDto.UserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -367,7 +369,7 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	var req model.UserRequest
+	var req userDto.UserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -607,7 +609,7 @@ func (h *AuthHandler) GetUsers(c *gin.Context) {
 		limit = 10
 	}
 
-	var role *model.UserRole
+	var role *userEntity.UserRole
 	if roleStr := c.Query("role"); roleStr != "" {
 		r := model.UserRole(roleStr)
 		role = &r
@@ -630,7 +632,7 @@ func (h *AuthHandler) GetUsers(c *gin.Context) {
 		return
 	}
 
-	var responses []model.UserResponse
+	var responses []userDto.UserResponse
 	for _, u := range users {
 		responses = append(responses, u.ToResponse())
 	}
@@ -709,7 +711,7 @@ func (h *AuthHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	var req model.UserRequest
+	var req userDto.UserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",

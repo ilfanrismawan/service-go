@@ -6,6 +6,8 @@ import (
 	ordersRepository "service/internal/modules/orders/repository"
 	userRepository "service/internal/modules/users/repository"
 	"service/internal/shared/model"
+	chatEntity "service-go/internal/modules/chat/entity"
+	chatDto "service-go/internal/modules/chat/dto"
 
 	"github.com/google/uuid"
 )
@@ -27,7 +29,7 @@ func NewChatService() *ChatService {
 }
 
 // SendMessage sends a chat message
-func (s *ChatService) SendMessage(ctx context.Context, senderID uuid.UUID, req *model.ChatMessageRequest) (*model.ChatMessageResponse, error) {
+func (s *ChatService) SendMessage(ctx context.Context, senderID uuid.UUID, req *chatDto.ChatMessageRequest) (*chatDto.ChatMessageResponse, error) {
 	// Validate order exists
 	orderID, err := uuid.Parse(req.OrderID)
 	if err != nil {
@@ -51,7 +53,7 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID uuid.UUID, req *
 	}
 
 	// Create chat message entity
-	message := &model.ChatMessage{
+	message := &chatEntity.ChatMessage{
 		OrderID:    orderID,
 		SenderID:   senderID,
 		ReceiverID: receiverID,
@@ -64,7 +66,7 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID uuid.UUID, req *
 		return nil, err
 	}
 
-	response := message.ToResponse()
+	response := chatDto.ToChatMessageResponse(message)
 	return &response, nil
 }
 
@@ -78,9 +80,9 @@ func (s *ChatService) GetChatMessages(ctx context.Context, orderID uuid.UUID, pa
 	}
 
 	// Convert to response format
-	var responses []model.ChatMessageResponse
+	var responses []chatDto.ChatMessageResponse
 	for _, message := range messages {
-		responses = append(responses, message.ToResponse())
+		responses = append(responses, chatDto.ToChatMessageResponse(message))
 	}
 
 	// Calculate pagination
@@ -102,15 +104,15 @@ func (s *ChatService) GetChatMessages(ctx context.Context, orderID uuid.UUID, pa
 }
 
 // GetUserChats retrieves all chat conversations for a user
-func (s *ChatService) GetUserChats(ctx context.Context, userID uuid.UUID) ([]model.ChatMessageResponse, error) {
+func (s *ChatService) GetUserChats(ctx context.Context, userID uuid.UUID) ([]chatDto.ChatMessageResponse, error) {
 	messages, err := s.chatRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	var responses []model.ChatMessageResponse
+	var responses []chatDto.ChatMessageResponse
 	for _, message := range messages {
-		responses = append(responses, message.ToResponse())
+		responses = append(responses, chatDto.ToChatMessageResponse(message))
 	}
 
 	return responses, nil

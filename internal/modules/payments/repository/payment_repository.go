@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"service/internal/shared/database"
-	"service/internal/shared/model"
+	paymentEntity "service-go/internal/modules/payments/entity"
 	"sort"
 	"sync"
 	"time"
@@ -17,13 +17,13 @@ type PaymentRepository struct {
 	db       *gorm.DB
 	inMemory bool
 	mu       sync.RWMutex
-	payments map[uuid.UUID]*model.Payment
+	payments map[uuid.UUID]*paymentEntity.Payment
 }
 
 // NewPaymentRepository creates a new payment repository
 func NewPaymentRepository() *PaymentRepository {
 	if database.DB == nil {
-		m := make(map[uuid.UUID]*model.Payment)
+		m := make(map[uuid.UUID]*paymentEntity.Payment)
 		return &PaymentRepository{
 			db:       nil,
 			inMemory: true,
@@ -36,7 +36,7 @@ func NewPaymentRepository() *PaymentRepository {
 }
 
 // Create creates a new payment
-func (r *PaymentRepository) Create(ctx context.Context, payment *model.Payment) error {
+func (r *PaymentRepository) Create(ctx context.Context, payment *paymentEntity.Payment) error {
 	if r.inMemory {
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -53,7 +53,7 @@ func (r *PaymentRepository) Create(ctx context.Context, payment *model.Payment) 
 }
 
 // GetByID retrieves a payment by ID
-func (r *PaymentRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Payment, error) {
+func (r *PaymentRepository) GetByID(ctx context.Context, id uuid.UUID) (*paymentEntity.Payment, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
@@ -63,7 +63,7 @@ func (r *PaymentRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.P
 		}
 		return p, nil
 	}
-	var payment model.Payment
+	var payment paymentEntity.Payment
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Order.Customer").
@@ -76,7 +76,7 @@ func (r *PaymentRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.P
 }
 
 // GetByInvoiceNumber retrieves a payment by invoice number
-func (r *PaymentRepository) GetByInvoiceNumber(ctx context.Context, invoiceNumber string) (*model.Payment, error) {
+func (r *PaymentRepository) GetByInvoiceNumber(ctx context.Context, invoiceNumber string) (*paymentEntity.Payment, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
@@ -87,7 +87,7 @@ func (r *PaymentRepository) GetByInvoiceNumber(ctx context.Context, invoiceNumbe
 		}
 		return nil, gorm.ErrRecordNotFound
 	}
-	var payment model.Payment
+	var payment paymentEntity.Payment
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Order.Customer").
@@ -100,7 +100,7 @@ func (r *PaymentRepository) GetByInvoiceNumber(ctx context.Context, invoiceNumbe
 }
 
 // GetByTransactionID retrieves a payment by its transaction ID
-func (r *PaymentRepository) GetByTransactionID(ctx context.Context, transactionID string) (*model.Payment, error) {
+func (r *PaymentRepository) GetByTransactionID(ctx context.Context, transactionID string) (*paymentEntity.Payment, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
@@ -111,7 +111,7 @@ func (r *PaymentRepository) GetByTransactionID(ctx context.Context, transactionI
 		}
 		return nil, gorm.ErrRecordNotFound
 	}
-	var payment model.Payment
+	var payment paymentEntity.Payment
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Order.Customer").
@@ -124,7 +124,7 @@ func (r *PaymentRepository) GetByTransactionID(ctx context.Context, transactionI
 }
 
 // Update updates a payment
-func (r *PaymentRepository) Update(ctx context.Context, payment *model.Payment) error {
+func (r *PaymentRepository) Update(ctx context.Context, payment *paymentEntity.Payment) error {
 	if r.inMemory {
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -149,15 +149,15 @@ func (r *PaymentRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		delete(r.payments, id)
 		return nil
 	}
-	return r.db.WithContext(ctx).Delete(&model.Payment{}, "id = ?", id).Error
+	return r.db.WithContext(ctx).Delete(&paymentEntity.Payment{}, "id = ?", id).Error
 }
 
 // List retrieves payments with pagination
-func (r *PaymentRepository) List(ctx context.Context, offset, limit int, filters *PaymentFilters) ([]*model.Payment, int64, error) {
+func (r *PaymentRepository) List(ctx context.Context, offset, limit int, filters *PaymentFilters) ([]*paymentEntity.Payment, int64, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		var list []*model.Payment
+		var list []*paymentEntity.Payment
 		for _, p := range r.payments {
 			if filters != nil {
 				if filters.OrderID != nil && p.OrderID != *filters.OrderID {
@@ -175,7 +175,7 @@ func (r *PaymentRepository) List(ctx context.Context, offset, limit int, filters
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		total := int64(len(list))
 		if offset > len(list) {
-			return []*model.Payment{}, total, nil
+			return []*paymentEntity.Payment{}, total, nil
 		}
 		end := offset + limit
 		if end > len(list) {
@@ -183,10 +183,10 @@ func (r *PaymentRepository) List(ctx context.Context, offset, limit int, filters
 		}
 		return list[offset:end], total, nil
 	}
-	var payments []*model.Payment
+	var payments []*paymentEntity.Payment
 	var total int64
 
-	query := r.db.WithContext(ctx).Model(&model.Payment{})
+	query := r.db.WithContext(ctx).Model(&paymentEntity.Payment{})
 
 	if filters != nil {
 		if filters.OrderID != nil {
@@ -224,11 +224,11 @@ func (r *PaymentRepository) List(ctx context.Context, offset, limit int, filters
 }
 
 // GetByOrderID retrieves payments by order ID
-func (r *PaymentRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID) ([]*model.Payment, error) {
+func (r *PaymentRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID) ([]*paymentEntity.Payment, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		var list []*model.Payment
+		var list []*paymentEntity.Payment
 		for _, p := range r.payments {
 			if p.OrderID == orderID {
 				list = append(list, p)
@@ -237,7 +237,7 @@ func (r *PaymentRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID)
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		return list, nil
 	}
-	var payments []*model.Payment
+	var payments []*paymentEntity.Payment
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Order.Customer").
@@ -249,11 +249,11 @@ func (r *PaymentRepository) GetByOrderID(ctx context.Context, orderID uuid.UUID)
 }
 
 // GetByStatus retrieves payments by status
-func (r *PaymentRepository) GetByStatus(ctx context.Context, status model.PaymentStatus) ([]*model.Payment, error) {
+func (r *PaymentRepository) GetByStatus(ctx context.Context, status paymentEntity.PaymentStatus) ([]*paymentEntity.Payment, error) {
 	if r.inMemory {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		var list []*model.Payment
+		var list []*paymentEntity.Payment
 		for _, p := range r.payments {
 			if p.Status == status {
 				list = append(list, p)
@@ -262,7 +262,7 @@ func (r *PaymentRepository) GetByStatus(ctx context.Context, status model.Paymen
 		sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
 		return list, nil
 	}
-	var payments []*model.Payment
+	var payments []*paymentEntity.Payment
 	err := r.db.WithContext(ctx).
 		Preload("Order").
 		Preload("Order.Customer").
@@ -289,7 +289,7 @@ func (r *PaymentRepository) CheckInvoiceExists(ctx context.Context, invoiceNumbe
 		return false, nil
 	}
 	var count int64
-	query := r.db.WithContext(ctx).Model(&model.Payment{}).Where("invoice_number = ?", invoiceNumber)
+	query := r.db.WithContext(ctx).Model(&paymentEntity.Payment{}).Where("invoice_number = ?", invoiceNumber)
 
 	if excludeID != nil {
 		query = query.Where("id != ?", *excludeID)
@@ -306,16 +306,16 @@ func (r *PaymentRepository) GetTotalRevenueByDateRange(ctx context.Context, star
 		defer r.mu.RUnlock()
 		var total float64
 		for _, p := range r.payments {
-			if !p.CreatedAt.Before(startDate) && !p.CreatedAt.After(endDate) && p.Status == model.PaymentStatusPaid {
+			if !p.CreatedAt.Before(startDate) && !p.CreatedAt.After(endDate) && p.Status == paymentEntity.PaymentStatusPaid {
 				total += p.Amount
 			}
 		}
 		return total, nil
 	}
 	var total float64
-	err := r.db.WithContext(ctx).Model(&model.Payment{}).
+	err := r.db.WithContext(ctx).Model(&paymentEntity.Payment{}).
 		Select("COALESCE(SUM(amount), 0)").
-		Where("created_at >= ? AND created_at <= ? AND status = ?", startDate, endDate, model.PaymentStatusPaid).
+		Where("created_at >= ? AND created_at <= ? AND status = ?", startDate, endDate, paymentEntity.PaymentStatusPaid).
 		Scan(&total).Error
 	return total, err
 }
@@ -331,17 +331,17 @@ func (r *PaymentRepository) GetRevenueByBranchInDateRange(ctx context.Context, s
 		defer r.mu.RUnlock()
 		m := make(map[string]float64)
 		for _, p := range r.payments {
-			if !p.CreatedAt.Before(startDate) && !p.CreatedAt.After(endDate) && p.Status == model.PaymentStatusPaid {
+			if !p.CreatedAt.Before(startDate) && !p.CreatedAt.After(endDate) && p.Status == paymentEntity.PaymentStatusPaid {
 				m[p.OrderID.String()] += p.Amount
 			}
 		}
 		return m, nil
 	}
 
-	err := r.db.WithContext(ctx).Model(&model.Payment{}).
+	err := r.db.WithContext(ctx).Model(&paymentEntity.Payment{}).
 		Select("o.branch_id, COALESCE(SUM(p.amount), 0) as revenue").
 		Joins("JOIN service_orders o ON p.order_id = o.id").
-		Where("p.created_at >= ? AND p.created_at <= ? AND p.status = ?", startDate, endDate, model.PaymentStatusPaid).
+		Where("p.created_at >= ? AND p.created_at <= ? AND p.status = ?", startDate, endDate, paymentEntity.PaymentStatusPaid).
 		Group("o.branch_id").
 		Scan(&results).Error
 
@@ -368,16 +368,16 @@ func (r *PaymentRepository) GetRevenueByPaymentMethodInDateRange(ctx context.Con
 		defer r.mu.RUnlock()
 		m := make(map[string]float64)
 		for _, p := range r.payments {
-			if !p.CreatedAt.Before(startDate) && !p.CreatedAt.After(endDate) && p.Status == model.PaymentStatusPaid {
+			if !p.CreatedAt.Before(startDate) && !p.CreatedAt.After(endDate) && p.Status == paymentEntity.PaymentStatusPaid {
 				m[string(p.PaymentMethod)] += p.Amount
 			}
 		}
 		return m, nil
 	}
 
-	err := r.db.WithContext(ctx).Model(&model.Payment{}).
+	err := r.db.WithContext(ctx).Model(&paymentEntity.Payment{}).
 		Select("payment_method, COALESCE(SUM(amount), 0) as revenue").
-		Where("created_at >= ? AND created_at <= ? AND status = ?", startDate, endDate, model.PaymentStatusPaid).
+		Where("created_at >= ? AND created_at <= ? AND status = ?", startDate, endDate, paymentEntity.PaymentStatusPaid).
 		Group("payment_method").
 		Scan(&results).Error
 
@@ -396,8 +396,8 @@ func (r *PaymentRepository) GetRevenueByPaymentMethodInDateRange(ctx context.Con
 // PaymentFilters represents filters for payment queries
 type PaymentFilters struct {
 	OrderID       *uuid.UUID
-	Status        *model.PaymentStatus
-	PaymentMethod *model.PaymentMethod
+	Status        *paymentEntity.PaymentStatus
+	PaymentMethod *paymentEntity.PaymentMethod
 	DateFrom      *string
 	DateTo        *string
 }

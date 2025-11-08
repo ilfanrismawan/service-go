@@ -4,6 +4,9 @@ import (
 	"net/http"
 	"service/internal/modules/notification/service"
 	"service/internal/shared/model"
+	notificationDto "service-go/internal/modules/notification/dto"
+	orderEntity "service-go/internal/modules/orders/entity"
+	paymentEntity "service-go/internal/modules/payments/entity"
 	"service/internal/shared/utils"
 	"strconv"
 
@@ -37,7 +40,7 @@ func NewNotificationHandler() *NotificationHandler {
 // @Failure 500 {object} model.ErrorResponse
 // @Router /notifications [post]
 func (h *NotificationHandler) SendNotification(c *gin.Context) {
-	var req model.NotificationRequest
+	var req notificationDto.NotificationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
 			"validation_error",
@@ -202,17 +205,17 @@ func (h *NotificationHandler) SendOrderStatusNotification(c *gin.Context) {
 	}
 
 	statusStr := c.Query("status")
-	status := model.OrderStatus(statusStr)
+	status := orderEntity.OrderStatus(statusStr)
 
 	// Validate status
-	validStatuses := []model.OrderStatus{
-		model.StatusPendingPickup,
-		model.StatusOnPickup,
-		model.StatusInService,
-		model.StatusReady,
-		model.StatusDelivered,
-		model.StatusCompleted,
-		model.StatusCancelled,
+	validStatuses := []orderEntity.OrderStatus{
+		orderEntity.StatusPendingPickup,
+		orderEntity.StatusOnPickup,
+		orderEntity.StatusInService,
+		orderEntity.StatusReady,
+		orderEntity.StatusDelivered,
+		orderEntity.StatusCompleted,
+		orderEntity.StatusCancelled,
 	}
 
 	valid := false
@@ -272,15 +275,15 @@ func (h *NotificationHandler) SendPaymentNotification(c *gin.Context) {
 	}
 
 	statusStr := c.Query("status")
-	status := model.PaymentStatus(statusStr)
+	status := paymentEntity.PaymentStatus(statusStr)
 
 	// Validate status
-	validStatuses := []model.PaymentStatus{
-		model.PaymentStatusPending,
-		model.PaymentStatusPaid,
-		model.PaymentStatusFailed,
-		model.PaymentStatusCancelled,
-		model.PaymentStatusRefunded,
+	validStatuses := []paymentEntity.PaymentStatus{
+		paymentEntity.PaymentStatusPending,
+		paymentEntity.PaymentStatusPaid,
+		paymentEntity.PaymentStatusFailed,
+		paymentEntity.PaymentStatusCancelled,
+		paymentEntity.PaymentStatusRefunded,
 	}
 
 	valid := false
