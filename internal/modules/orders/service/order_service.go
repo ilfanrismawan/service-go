@@ -1,7 +1,8 @@
-package service
+gpackage service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 	branchRepo "service/internal/modules/branches/repository"
