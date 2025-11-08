@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"net/http"
-	"service/internal/modules/admin/service"
-	"service/internal/shared/model"
+	"service-go/internal/modules/admin/service"
+	"service-go/internal/shared/model"
 	"strconv"
 
 	"github.com/gin-gonic/gin"

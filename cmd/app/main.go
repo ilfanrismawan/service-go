@@ -28,14 +28,14 @@ import (
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	docs "service/docs" // Swagger docs
-	svc "service/internal/domain/payments/service"
-	"service/internal/router"
-	"service/internal/shared/config"
-	"service/internal/shared/database"
-	"service/internal/shared/middleware"
-	"service/internal/shared/monitoring"
-	"service/internal/shared/utils"
+	docs "service-go/docs" // Swagger docs
+	svc "service-go/internal/modules/payments/service"
+	"service-go/internal/router"
+	"service-go/internal/shared/config"
+	"service-go/internal/shared/database"
+	"service-go/internal/shared/middleware"
+	"service-go/internal/shared/monitoring"
+	"service-go/internal/shared/utils"
 
 	"github.com/gin-gonic/gin"
 )

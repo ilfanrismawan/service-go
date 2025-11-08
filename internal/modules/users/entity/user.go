@@ -44,12 +44,12 @@ type User struct {
 	Status      UserStatus           `json:"status" gorm:"type:varchar(50);default:'active'"`
 	LastLoginAt *time.Time           `json:"last_login_at"`
 	BranchID    *uuid.UUID           `gorm:"type:uuid;references:id"`
-	Branch      *branchEntity.Branch  `gorm:"foreignKey:BranchID"`
+	Branch      *branchEntity.Branch `gorm:"foreignKey:BranchID"`
 	IsActive    bool                 `gorm:"default:true"`
 	FCMToken    string               `json:"fcm_token,omitempty" gorm:"type:text"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt       `gorm:"index"`
+	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
 // TableName overrides the table name
@@ -61,4 +61,3 @@ func (User) TableName() string {
 func (u *User) SetName() {
 	u.Name = u.FullName
 }
-

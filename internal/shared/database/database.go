@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"log"
-	"service/internal/shared/config"
+	"service-go/internal/shared/config"
 	"time"
 
 	"github.com/redis/go-redis/v9"

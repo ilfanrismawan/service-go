@@ -2,9 +2,17 @@ package main
 
 import (
 	"log"
-	"service/internal/shared/config/config"
-	"service/internal/shared/database"
-	"service/internal/shared/model"
+	branchEntity "service-go/internal/modules/branches/entity"
+	chatEntity "service-go/internal/modules/chat/entity"
+	sparepartEntity "service-go/internal/modules/inventory/entity"
+	membersiphEntity "service-go/internal/modules/membership/entity"
+	notificationEntity "service-go/internal/modules/notification/entity"
+	orderhEntity "service-go/internal/modules/orders/entity"
+	paymentEntity "service-go/internal/modules/payments/entity"
+	userEntity "service-go/internal/modules/users/entity"
+	"service-go/internal/shared/config/config"
+	"service-go/internal/shared/database"
+	"service-go/internal/shared/model"
 
 	"gorm.io/gorm"
 )
@@ -26,67 +34,67 @@ func runMigrations() {
 	log.Println("Running migrations...")
 
 	// Step 1: Create Branch table first since it has no dependencies
-	if err := db.AutoMigrate(&model.Branch{}); err != nil {
+	if err := db.AutoMigrate(&branchEntity.Branch{}); err != nil {
 		log.Fatalf("Failed to migrate Branch table: %v", err)
 	}
 	log.Println("✓ Branch table migrated")
 
 	// Step 2: Create User table which depends on Branch
-	if err := db.AutoMigrate(&model.User{}); err != nil {
+	if err := db.AutoMigrate(&userEntity.User{}); err != nil {
 		log.Fatalf("Failed to migrate User table: %v", err)
 	}
 	log.Println("✓ User table migrated")
 
 	// Step 3: Create ServiceOrder table which depends on User and Branch
-	if err := db.AutoMigrate(&model.ServiceOrder{}); err != nil {
+	if err := db.AutoMigrate(&orderhEntity.ServiceOrder{}); err != nil {
 		log.Fatalf("Failed to migrate ServiceOrder table: %v", err)
 	}
 	log.Println("✓ ServiceOrder table migrated")
 
 	// Step 4: Create Payment which depends on ServiceOrder
-	if err := db.AutoMigrate(&model.Payment{}); err != nil {
+	if err := db.AutoMigrate(&paymentEntity.Payment{}); err != nil {
 		log.Fatalf("Failed to migrate Payment table: %v", err)
 	}
 	log.Println("✓ Payment table migrated")
 
 	// Step 5: Create Notification which depends on User and ServiceOrder
-	if err := db.AutoMigrate(&model.Notification{}); err != nil {
+	if err := db.AutoMigrate(&notificationEntity.Notification{}); err != nil {
 		log.Fatalf("Failed to migrate Notification table: %v", err)
 	}
 	log.Println("✓ Notification table migrated")
 
 	// Step 6: Create Membership which depends on User
-	if err := db.AutoMigrate(&model.Membership{}); err != nil {
+	if err := db.AutoMigrate(&membersiphEntity.Membership{}); err != nil {
 		log.Fatalf("Failed to migrate Membership table: %v", err)
 	}
 	log.Println("✓ Membership table migrated")
 
 	// Step 7: Create ChatMessage which depends on User and ServiceOrder
-	if err := db.AutoMigrate(&model.ChatMessage{}); err != nil {
+	if err := db.AutoMigrate(&chatEntity.ChatMessage{}); err != nil {
 		log.Fatalf("Failed to migrate ChatMessage table: %v", err)
 	}
 	log.Println("✓ ChatMessage table migrated")
 
 	// Step 8: Create Queue table
-	if err := db.AutoMigrate(&model.Queue{}); err != nil {
+	if err := db.AutoMigrate(&branchEntity.Queue{}); err != nil {
 		log.Fatalf("Failed to migrate Queue table: %v", err)
 	}
 	log.Println("✓ Queue table migrated")
 
 	// Step 9: Create Warranty table
-	if err := db.AutoMigrate(&model.Warranty{}); err != nil {
+	if err := db.AutoMigrate(&orderhEntity.Warranty{}); err != nil {
 		log.Fatalf("Failed to migrate Warranty table: %v", err)
 	}
 	log.Println("✓ Warranty table migrated")
 
 	// Step 10: Create SparePartInventory table
-	if err := db.AutoMigrate(&model.SparePartInventory{}); err != nil {
+	if err := db.AutoMigrate(&sparepartEntity.SparePartInventory{}); err != nil {
 		log.Fatalf("Failed to migrate SparePartInventory table: %v", err)
 	}
 	log.Println("✓ SparePartInventory table migrated")
 
 	// Step 11: Create Rating table
-	if err := db.AutoMigrate(&model.Rating{}); err != nil {
+	if err := db.AutoMigrate(&orderhEntity.Rating{}); err != nil {
 		log.Fatalf("Failed to migrate Rating table: %v", err)
 	}
 	log.Println("✓ Rating table migrated")
@@ -182,19 +190,19 @@ func createIndexes(db *gorm.DB) {
 func seedInitialData(db *gorm.DB) {
 	// Check if data already exists
 	var userCount int64
-	db.Model(&model.User{}).Count(&userCount)
+	db.Model(&userEntity.User{}).Count(&userCount)
 	if userCount > 0 {
 		log.Println("Initial data already exists, skipping seed")
 		return
 	}
 
 	// Create default admin user
-	adminUser := &model.User{
+	adminUser := &userEntity.User{
 		FullName: "Admin",
 		Email:    "admin@iphoneservice.com",
 		Phone:    "081234567890",
 		Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-		Role:     model.RoleAdminPusat,
+		Role:     userEntity.RoleAdminPusat,
 		IsActive: true,
 	}
 
@@ -203,7 +211,7 @@ func seedInitialData(db *gorm.DB) {
 	}
 
 	// Create sample branches
-	branches := []*model.Branch{
+	branches := []*branchEntity.Branch{
 		{
 			Name:      "Jakarta Central",
 			Address:   "Jl. Sudirman No. 123",

@@ -5,9 +5,8 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-
-	userEntity "service-go/internal/modules/users/entity"
-	branchEntity "service-go/internal/modules/branches/entity"
+	// userEntity "service-go/internal/modules/users/entity"
+	// branchEntity "service-go/internal/modules/branches/entity"
 )
 
 // OrderStatus represents the status of an order
@@ -85,4 +84,3 @@ func (so *ServiceOrder) SetAliasFields() {
 	so.PickupLocation = so.PickupAddress
 	so.ServiceCost = so.ActualCost
 }
-

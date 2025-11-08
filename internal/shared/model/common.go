@@ -3,7 +3,7 @@ package model
 import (
 	"errors"
 	"math"
-	// userDTO "service/internal/users/dto"
+	userDTO "service-go/internal/modules/users/dto"
 	"time"
 )
 
@@ -49,10 +49,10 @@ type LoginRequest struct {
 
 // LoginResponse represents the login response payload
 type LoginResponse struct {
-	AccessToken  string       `json:"access_token"`
-	RefreshToken string       `json:"refresh_token"`
-	User         UserResponse `json:"user"`
-	ExpiresIn    int64        `json:"expires_in"`
+	AccessToken  string               `json:"access_token"`
+	RefreshToken string               `json:"refresh_token"`
+	User         userDTO.UserResponse `json:"user"`
+	ExpiresIn    int64                `json:"expires_in"`
 }
 
 // RefreshTokenRequest represents the refresh token request payload

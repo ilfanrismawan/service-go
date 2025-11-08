@@ -2,9 +2,13 @@ package main
 
 import (
 	"log"
-	"service/internal/shared/config/config"
-	"service/internal/shared/database"
-	"service/internal/shared/model"
+	branchEntity "service-go/internal/modules/branches/entity"
+	notificationEntity "service-go/internal/modules/notification/entity"
+	orderEntity "service-go/internal/modules/orders/entity"
+	paymentEntity "service-go/internal/modules/payments/entity"
+	userEntity "service-go/internal/modules/users/entity"
+	"service-go/internal/shared/config/config"
+	"service-go/internal/shared/database"
 	"time"
 
 	"github.com/google/uuid"
@@ -58,14 +62,14 @@ func clearData(db *gorm.DB) {
 }
 
 func seedUsers(db *gorm.DB) {
-	users := []*model.User{
+	users := []*userEntity.User{
 		{
 			ID:       uuid.New(),
 			Name:     "Admin Central",
 			Email:    "admin@iphoneservice.com",
 			Phone:    "081234567890",
 			Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-			Role:     model.RoleAdminPusat,
+			Role:     userEntity.RoleAdminPusat,
 			IsActive: true,
 		},
 		{
@@ -74,7 +78,7 @@ func seedUsers(db *gorm.DB) {
 			Email:    "admin.jakarta@iphoneservice.com",
 			Phone:    "081234567891",
 			Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-			Role:     model.RoleAdminCabang,
+			Role:     userEntity.RoleAdminCabang,
 			IsActive: true,
 		},
 		{
@@ -83,7 +87,7 @@ func seedUsers(db *gorm.DB) {
 			Email:    "cashier.jakarta@iphoneservice.com",
 			Phone:    "081234567892",
 			Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-			Role:     model.RoleKasir,
+			Role:     userEntity.RoleKasir,
 			IsActive: true,
 		},
 		{
@@ -92,7 +96,7 @@ func seedUsers(db *gorm.DB) {
 			Email:    "technician.jakarta@iphoneservice.com",
 			Phone:    "081234567893",
 			Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-			Role:     model.RoleTeknisi,
+			Role:     userEntity.RoleTeknisi,
 			IsActive: true,
 		},
 		{
@@ -101,7 +105,7 @@ func seedUsers(db *gorm.DB) {
 			Email:    "courier.jakarta@iphoneservice.com",
 			Phone:    "081234567894",
 			Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-			Role:     model.RoleKurir,
+			Role:     userEntity.RoleKurir,
 			IsActive: true,
 		},
 		{
@@ -110,7 +114,7 @@ func seedUsers(db *gorm.DB) {
 			Email:    "john.doe@example.com",
 			Phone:    "081234567895",
 			Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-			Role:     model.RolePelanggan,
+			Role:     userEntity.RolePelanggan,
 			IsActive: true,
 		},
 		{
@@ -119,7 +123,7 @@ func seedUsers(db *gorm.DB) {
 			Email:    "jane.smith@example.com",
 			Phone:    "081234567896",
 			Password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-			Role:     model.RolePelanggan,
+			Role:     userEntity.RolePelanggan,
 			IsActive: true,
 		},
 	}
@@ -134,7 +138,7 @@ func seedUsers(db *gorm.DB) {
 }
 
 func seedBranches(db *gorm.DB) {
-	branches := []*model.Branch{
+	branches := []*branchEntity.Branch{
 		{
 			ID:        uuid.New(),
 			Name:      "Jakarta Central",
@@ -203,8 +207,8 @@ func seedBranches(db *gorm.DB) {
 
 func seedServiceOrders(db *gorm.DB) {
 	// Get user and branch IDs
-	var users []model.User
-	var branches []model.Branch
+	var users []userEntity.User
+	var branches []branchEntity.Branch
 	db.Find(&users)
 	db.Find(&branches)
 
@@ -213,7 +217,7 @@ func seedServiceOrders(db *gorm.DB) {
 		return
 	}
 
-	orders := []*model.ServiceOrder{
+	orders := []*orderEntity.ServiceOrder{
 		{
 			ID:                uuid.New(),
 			CustomerID:        users[5].ID,    // John Doe
@@ -222,7 +226,7 @@ func seedServiceOrders(db *gorm.DB) {
 			IPhoneType:        "iPhone 14 Pro",
 			Complaint:         "Screen cracked, needs replacement",
 			PickupLocation:    "Jakarta Selatan",
-			Status:            model.StatusInService,
+			Status:            orderEntity.StatusInService,
 			ServiceCost:       500000,
 			EstimatedDuration: 3,
 			CreatedAt:         time.Now().AddDate(0, 0, -5),
@@ -236,7 +240,7 @@ func seedServiceOrders(db *gorm.DB) {
 			IPhoneType:        "iPhone 13",
 			Complaint:         "Battery draining fast, needs replacement",
 			PickupLocation:    "Surabaya",
-			Status:            model.StatusReady,
+			Status:            orderEntity.StatusReady,
 			ServiceCost:       300000,
 			EstimatedDuration: 2,
 			CreatedAt:         time.Now().AddDate(0, 0, -3),
@@ -250,7 +254,7 @@ func seedServiceOrders(db *gorm.DB) {
 			IPhoneType:        "iPhone 12",
 			Complaint:         "Camera not working, needs repair",
 			PickupLocation:    "Jakarta Pusat",
-			Status:            model.StatusCompleted,
+			Status:            orderEntity.StatusCompleted,
 			ServiceCost:       400000,
 			EstimatedDuration: 4,
 			CreatedAt:         time.Now().AddDate(0, 0, -7),
@@ -269,7 +273,7 @@ func seedServiceOrders(db *gorm.DB) {
 
 func seedPayments(db *gorm.DB) {
 	// Get order IDs
-	var orders []model.ServiceOrder
+	var orders []orderEntity.ServiceOrder
 	db.Find(&orders)
 
 	if len(orders) == 0 {
@@ -277,14 +281,14 @@ func seedPayments(db *gorm.DB) {
 		return
 	}
 
-	payments := []*model.Payment{
+	payments := []*paymentEntity.Payment{
 		{
 			ID:            uuid.New(),
 			OrderID:       orders[0].ID,
 			UserID:        orders[0].CustomerID,
 			Amount:        orders[0].ServiceCost,
-			PaymentMethod: model.PaymentMethodMidtrans,
-			Status:        model.PaymentStatusPaid,
+			PaymentMethod: paymentEntity.PaymentMethodMidtrans,
+			Status:        paymentEntity.PaymentStatusPaid,
 			TransactionID: "TXN-001",
 			InvoiceNumber: "INV-20240101-001",
 			PaidAt:        &time.Time{},
@@ -296,8 +300,8 @@ func seedPayments(db *gorm.DB) {
 			OrderID:       orders[1].ID,
 			UserID:        orders[1].CustomerID,
 			Amount:        orders[1].ServiceCost,
-			PaymentMethod: model.PaymentMethodGopay,
-			Status:        model.PaymentStatusPaid,
+			PaymentMethod: paymentEntity.PaymentMethodGopay,
+			Status:        paymentEntity.PaymentStatusPaid,
 			TransactionID: "TXN-002",
 			InvoiceNumber: "INV-20240102-002",
 			PaidAt:        &time.Time{},
@@ -309,8 +313,8 @@ func seedPayments(db *gorm.DB) {
 			OrderID:       orders[2].ID,
 			UserID:        orders[2].CustomerID,
 			Amount:        orders[2].ServiceCost,
-			PaymentMethod: model.PaymentMethodCash,
-			Status:        model.PaymentStatusPaid,
+			PaymentMethod: paymentEntity.PaymentMethodCash,
+			Status:        paymentEntity.PaymentStatusPaid,
 			TransactionID: "TXN-003",
 			InvoiceNumber: "INV-20240103-003",
 			PaidAt:        &time.Time{},
@@ -330,8 +334,8 @@ func seedPayments(db *gorm.DB) {
 
 func seedNotifications(db *gorm.DB) {
 	// Get user and order IDs
-	var users []model.User
-	var orders []model.ServiceOrder
+	var users []userEntity.User
+	var orders []orderEntity.ServiceOrder
 	db.Find(&users)
 	db.Find(&orders)
 
@@ -340,12 +344,12 @@ func seedNotifications(db *gorm.DB) {
 		return
 	}
 
-	notifications := []*model.Notification{
+	notifications := []*notificationEntity.Notification{
 		{
 			ID:        uuid.New(),
 			UserID:    users[5].ID, // John Doe
 			OrderID:   &orders[0].ID,
-			Type:      model.NotificationTypeOrderUpdate,
+			Type:      notificationEntity.NotificationTypeOrderUpdate,
 			Message:   "Your order ORD-20240101-001 is now in service",
 			IsRead:    false,
 			CreatedAt: time.Now().AddDate(0, 0, -2),
@@ -355,7 +359,7 @@ func seedNotifications(db *gorm.DB) {
 			ID:        uuid.New(),
 			UserID:    users[6].ID, // Jane Smith
 			OrderID:   &orders[1].ID,
-			Type:      model.NotificationTypeOrderReady,
+			Type:      notificationEntity.NotificationTypeOrderReady,
 			Message:   "Your order ORD-20240102-002 is ready for pickup",
 			IsRead:    true,
 			CreatedAt: time.Now().AddDate(0, 0, -1),
@@ -365,7 +369,7 @@ func seedNotifications(db *gorm.DB) {
 			ID:        uuid.New(),
 			UserID:    users[5].ID, // John Doe
 			OrderID:   &orders[2].ID,
-			Type:      model.NotificationTypeOrderCompleted,
+			Type:      notificationEntity.NotificationTypeOrderCompleted,
 			Message:   "Your order ORD-20240103-003 has been completed",
 			IsRead:    true,
 			CreatedAt: time.Now().AddDate(0, 0, -1),
