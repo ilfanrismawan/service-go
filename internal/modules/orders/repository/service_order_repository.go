@@ -98,6 +98,14 @@ func (r *ServiceOrderRepository) GetByID(ctx context.Context, id uuid.UUID) (*mo
 		Preload("Branch").
 		Preload("Technician").
 		Preload("Courier").
+		Preload("ServiceCatalog").
+		Preload("ServiceCatalog.Category").
+		Preload("ServiceProvider").
+		Preload("ServiceProvider.User").
+		Preload("ServiceCatalog").
+		Preload("ServiceCatalog.Category").
+		Preload("ServiceProvider").
+		Preload("ServiceProvider.User").
 		First(&order, "id = ?", id).Error
 	if err != nil {
 		return nil, err
@@ -123,6 +131,14 @@ func (r *ServiceOrderRepository) GetByOrderNumber(ctx context.Context, orderNumb
 		Preload("Branch").
 		Preload("Technician").
 		Preload("Courier").
+		Preload("ServiceCatalog").
+		Preload("ServiceCatalog.Category").
+		Preload("ServiceProvider").
+		Preload("ServiceProvider.User").
+		Preload("ServiceCatalog").
+		Preload("ServiceCatalog.Category").
+		Preload("ServiceProvider").
+		Preload("ServiceProvider.User").
 		First(&order, "order_number = ?", orderNumber).Error
 	if err != nil {
 		return nil, err
@@ -247,6 +263,10 @@ func (r *ServiceOrderRepository) List(ctx context.Context, offset, limit int, fi
 		Preload("Branch").
 		Preload("Technician").
 		Preload("Courier").
+		Preload("ServiceCatalog").
+		Preload("ServiceCatalog.Category").
+		Preload("ServiceProvider").
+		Preload("ServiceProvider.User").
 		Offset(offset).
 		Limit(limit).
 		Order("created_at DESC").
@@ -274,6 +294,10 @@ func (r *ServiceOrderRepository) GetByCustomerID(ctx context.Context, customerID
 		Preload("Branch").
 		Preload("Technician").
 		Preload("Courier").
+		Preload("ServiceCatalog").
+		Preload("ServiceCatalog.Category").
+		Preload("ServiceProvider").
+		Preload("ServiceProvider.User").
 		Where("customer_id = ?", customerID).
 		Order("created_at DESC").
 		Find(&orders).Error
@@ -300,6 +324,10 @@ func (r *ServiceOrderRepository) GetByBranchID(ctx context.Context, branchID uui
 		Preload("Branch").
 		Preload("Technician").
 		Preload("Courier").
+		Preload("ServiceCatalog").
+		Preload("ServiceCatalog.Category").
+		Preload("ServiceProvider").
+		Preload("ServiceProvider.User").
 		Where("branch_id = ?", branchID).
 		Order("created_at DESC").
 		Find(&orders).Error
@@ -326,6 +354,10 @@ func (r *ServiceOrderRepository) GetByStatus(ctx context.Context, status model.O
 		Preload("Branch").
 		Preload("Technician").
 		Preload("Courier").
+		Preload("ServiceCatalog").
+		Preload("ServiceCatalog.Category").
+		Preload("ServiceProvider").
+		Preload("ServiceProvider.User").
 		Where("status = ?", status).
 		Order("created_at DESC").
 		Find(&orders).Error
@@ -352,6 +384,10 @@ func (r *ServiceOrderRepository) GetByTechnicianID(ctx context.Context, technici
 		Preload("Branch").
 		Preload("Technician").
 		Preload("Courier").
+		Preload("ServiceCatalog").
+		Preload("ServiceCatalog.Category").
+		Preload("ServiceProvider").
+		Preload("ServiceProvider.User").
 		Where("technician_id = ?", technicianID).
 		Order("created_at DESC").
 		Find(&orders).Error
@@ -378,6 +414,10 @@ func (r *ServiceOrderRepository) GetByCourierID(ctx context.Context, courierID u
 		Preload("Branch").
 		Preload("Technician").
 		Preload("Courier").
+		Preload("ServiceCatalog").
+		Preload("ServiceCatalog.Category").
+		Preload("ServiceProvider").
+		Preload("ServiceProvider.User").
 		Where("courier_id = ?", courierID).
 		Order("created_at DESC").
 		Find(&orders).Error

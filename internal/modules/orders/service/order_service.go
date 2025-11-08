@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 	branchRepo "service/internal/modules/branches/repository"
 	"service/internal/modules/orders/repository"
+	serviceRepo "service/internal/modules/services/repository"
 	userRepo "service/internal/modules/users/repository"
 	"service/internal/shared/model"
 	"service/internal/shared/utils"
@@ -13,17 +15,21 @@ import (
 )
 
 type OrderService struct {
-	orderRepo  *repository.ServiceOrderRepository
-	userRepo   *userRepo.UserRepository
-	branchRepo *branchRepo.BranchRepository
+	orderRepo        *repository.ServiceOrderRepository
+	userRepo         *userRepo.UserRepository
+	branchRepo       *branchRepo.BranchRepository
+	catalogRepo      *serviceRepo.ServiceCatalogRepository
+	providerRepo     *serviceRepo.ServiceProviderRepository
 }
 
 // NewOrderService creates a new order service
 func NewOrderService() *OrderService {
 	return &OrderService{
-		orderRepo:  repository.NewServiceOrderRepository(),
-		userRepo:   userRepo.NewUserRepository(),
-		branchRepo: branchRepo.NewBranchRepository(),
+		orderRepo:    repository.NewServiceOrderRepository(),
+		userRepo:     userRepo.NewUserRepository(),
+		branchRepo:   branchRepo.NewBranchRepository(),
+		catalogRepo:  serviceRepo.NewServiceCatalogRepository(),
+		providerRepo: serviceRepo.NewServiceProviderRepository(),
 	}
 }
 
@@ -35,15 +41,73 @@ func (s *OrderService) CreateOrder(ctx context.Context, customerID uuid.UUID, re
 		return nil, model.ErrUserNotFound
 	}
 
-	// Validate branch exists
-	branchID, err := uuid.Parse(req.BranchID)
-	if err != nil {
-		return nil, errors.New("invalid branch ID")
-	}
+	var serviceCatalog *model.ServiceCatalog
+	var serviceProvider *model.ServiceProvider
+	var branchID *uuid.UUID
 
-	_, err = s.branchRepo.GetByID(ctx, branchID)
-	if err != nil {
-		return nil, model.ErrBranchNotFound
+	// New multi-service flow: validate ServiceCatalog
+	if req.ServiceCatalogID != "" {
+		catalogID, err := uuid.Parse(req.ServiceCatalogID)
+		if err != nil {
+			return nil, errors.New("invalid service catalog ID")
+		}
+
+		serviceCatalog, err = s.catalogRepo.GetByID(ctx, catalogID)
+		if err != nil {
+			return nil, model.ErrCatalogNotFound
+		}
+
+		if !serviceCatalog.IsActive {
+			return nil, errors.New("service catalog is not active")
+		}
+
+		// Validate ServiceProvider if provided
+		if req.ServiceProviderID != "" {
+			providerID, err := uuid.Parse(req.ServiceProviderID)
+			if err != nil {
+				return nil, errors.New("invalid service provider ID")
+			}
+
+			serviceProvider, err = s.providerRepo.GetByID(ctx, providerID)
+			if err != nil {
+				return nil, model.ErrProviderNotFound
+			}
+
+			if !serviceProvider.IsActive {
+				return nil, errors.New("service provider is not active")
+			}
+
+			// Use provider's location as service location
+			branchID = nil // Provider-based service doesn't need branch
+		} else if req.BranchID != "" {
+			// Legacy: use branch if provided
+			parsedBranchID, err := uuid.Parse(req.BranchID)
+			if err != nil {
+				return nil, errors.New("invalid branch ID")
+			}
+
+			_, err = s.branchRepo.GetByID(ctx, parsedBranchID)
+			if err != nil {
+				return nil, model.ErrBranchNotFound
+			}
+			branchID = &parsedBranchID
+		}
+	} else {
+		// Legacy flow: validate branch (backward compatibility)
+		if req.BranchID == "" {
+			return nil, errors.New("either service_catalog_id or branch_id is required")
+		}
+
+		parsedBranchID, err := uuid.Parse(req.BranchID)
+		if err != nil {
+			return nil, errors.New("invalid branch ID")
+		}
+
+		_, err = s.branchRepo.GetByID(ctx, parsedBranchID)
+		if err != nil {
+			return nil, model.ErrBranchNotFound
+		}
+		branchID = &parsedBranchID
 	}
 
 	// Generate unique order number
@@ -59,28 +123,199 @@ func (s *OrderService) CreateOrder(ctx context.Context, customerID uuid.UUID, re
 		orderNumber = utils.GenerateOrderNumber()
 	}
 
+	// Parse appointment date/time if provided
+	var appointmentDate *time.Time
+	var appointmentTime *time.Time
+	if req.AppointmentDate != "" {
+		parsedDate, err := time.Parse("2006-01-02", req.AppointmentDate)
+		if err == nil {
+			appointmentDate = &parsedDate
+		}
+	}
+	if req.AppointmentTime != "" {
+		parsedTime, err := time.Parse("15:04", req.AppointmentTime)
+		if err == nil {
+			appointmentTime = &parsedTime
+		}
+	}
+
+	// Map item fields (prioritize generic fields, fallback to iPhone fields for backward compatibility)
+	var itemModel, itemColor, itemSerial, itemType *string
+	if req.ItemModel != "" {
+		itemModel = &req.ItemModel
+	} else if req.IPhoneModel != "" {
+		itemModel = &req.IPhoneModel
+	}
+	if req.ItemColor != "" {
+		itemColor = &req.ItemColor
+	} else if req.IPhoneColor != "" {
+		itemColor = &req.IPhoneColor
+	}
+	if req.ItemSerial != "" {
+		itemSerial = &req.ItemSerial
+	} else if req.IPhoneIMEI != "" {
+		itemSerial = &req.IPhoneIMEI
+	}
+	if req.ItemType != "" {
+		itemType = &req.ItemType
+	} else if req.IPhoneType != "" {
+		itemType = &req.IPhoneType
+	} else if req.IPhoneModel != "" {
+		itemType = &req.IPhoneModel
+	}
+
+	// Map iPhone fields for backward compatibility
+	var iphoneModel, iphoneColor, iphoneIMEI, iphoneType *string
+	if req.IPhoneModel != "" {
+		iphoneModel = &req.IPhoneModel
+	}
+	if req.IPhoneColor != "" {
+		iphoneColor = &req.IPhoneColor
+	}
+	if req.IPhoneIMEI != "" {
+		iphoneIMEI = &req.IPhoneIMEI
+	}
+	if req.IPhoneType != "" {
+		iphoneType = &req.IPhoneType
+	}
+
+	// Map location fields
+	var pickupAddress, pickupLocation *string
+	var pickupLatitude, pickupLongitude *float64
+	if req.PickupAddress != "" {
+		pickupAddress = &req.PickupAddress
+	}
+	if req.PickupLocation != "" {
+		pickupLocation = &req.PickupLocation
+	}
+	if req.PickupLatitude != nil {
+		pickupLatitude = req.PickupLatitude
+	}
+	if req.PickupLongitude != nil {
+		pickupLongitude = req.PickupLongitude
+	}
+
+	// Determine service location and on-demand status
+	serviceLocation := req.ServiceLocation
+	isOnDemand := false
+	
+	if serviceCatalog != nil {
+		// If RequiresLocation is false, service datang ke customer (on-demand)
+		isOnDemand = !serviceCatalog.RequiresLocation
+		
+		if isOnDemand {
+			// Service datang ke customer, use customer location
+			if req.PickupAddress != "" {
+				serviceLocation = req.PickupAddress
+			} else if req.PickupLocation != "" {
+				serviceLocation = req.PickupLocation
+			}
+		} else {
+			// Service di lokasi provider/branch
+			if serviceLocation == "" && serviceProvider != nil {
+				serviceLocation = serviceProvider.Address
+			} else if serviceLocation == "" && branchID != nil {
+				branch, _ := s.branchRepo.GetByID(ctx, *branchID)
+				if branch != nil {
+					serviceLocation = branch.Address
+				}
+			}
+		}
+	} else {
+		// Legacy: use provider/branch location
+		if serviceLocation == "" && serviceProvider != nil {
+			serviceLocation = serviceProvider.Address
+		} else if serviceLocation == "" && branchID != nil {
+			branch, _ := s.branchRepo.GetByID(ctx, *branchID)
+			if branch != nil {
+				serviceLocation = branch.Address
+			}
+		}
+	}
+
+	// Determine service type and name
+	serviceType := req.ServiceType
+	serviceName := ""
+	if serviceCatalog != nil {
+		serviceName = serviceCatalog.Name
+		if serviceType == "" {
+			serviceType = model.ServiceTypeOther // Default if not provided
+		}
+	}
+
+	// Determine initial status based on service requirements
+	initialStatus := model.StatusPendingPickup
+	if serviceCatalog != nil && serviceCatalog.RequiresAppointment {
+		initialStatus = model.StatusPendingPickup // Will be updated when appointment is confirmed
+	}
+
+	// Determine estimated cost and duration
+	estimatedCost := req.EstimatedCost
+	estimatedDuration := req.EstimatedDuration
+	if serviceCatalog != nil {
+		if estimatedCost == 0 {
+			estimatedCost = serviceCatalog.BasePrice
+		}
+		if estimatedDuration == 0 {
+			estimatedDuration = serviceCatalog.EstimatedDuration
+		}
+	}
+
+	// Set ServiceCatalogID and ServiceProviderID
+	var catalogID, providerID *uuid.UUID
+	if serviceCatalog != nil {
+		catalogID = &serviceCatalog.ID
+	}
+	if serviceProvider != nil {
+		providerID = &serviceProvider.ID
+	}
+
 	// Create order entity
 	order := &model.ServiceOrder{
 		OrderNumber:       orderNumber,
 		CustomerID:        customerID,
+		ServiceCatalogID:  catalogID,
+		ServiceProviderID:  providerID,
 		BranchID:          branchID,
-		IPhoneModel:       req.IPhoneModel,
-		IPhoneColor:       req.IPhoneColor,
-		IPhoneIMEI:        req.IPhoneIMEI,
-		ServiceType:       req.ServiceType,
+		IPhoneModel:       iphoneModel,
+		IPhoneColor:       iphoneColor,
+		IPhoneIMEI:        iphoneIMEI,
+		IPhoneType:        iphoneType,
+		ItemModel:         itemModel,
+		ItemColor:         itemColor,
+		ItemSerial:        itemSerial,
+		ItemType:          itemType,
+		ServiceType:       serviceType,
+		ServiceName:       serviceName,
 		Description:       req.Description,
-		PickupAddress:     req.PickupAddress,
-		PickupLatitude:    req.PickupLatitude,
-		PickupLongitude:   req.PickupLongitude,
-		Status:            model.StatusPendingPickup,
-		EstimatedCost:     0,
+		Complaint:         req.Complaint,
+		AppointmentDate:   appointmentDate,
+		AppointmentTime:   appointmentTime,
+		PickupAddress:     pickupAddress,
+		PickupLocation:    pickupLocation,
+		PickupLatitude:    pickupLatitude,
+		PickupLongitude:   pickupLongitude,
+		ServiceLocation:   serviceLocation,
+		IsOnDemand:        isOnDemand,
+		Status:            initialStatus,
+		EstimatedCost:     estimatedCost,
 		ActualCost:        0,
-		EstimatedDuration: 0,
+		EstimatedDuration: estimatedDuration,
 		ActualDuration:    0,
+		Metadata:          req.Metadata,
 	}
+
+	// Set alias fields for backward compatibility
+	order.SetAliasFields()
 
 	// Save to database
 	if err := s.orderRepo.Create(ctx, order); err != nil {
+		return nil, err
+	}
+
+	// Reload with relations
+	order, err = s.orderRepo.GetByID(ctx, order.ID)
+	if err != nil {
 		return nil, err
 	}
 

@@ -10,6 +10,8 @@ import (
 	notificationHandler "service/internal/modules/notification/handler"
 	orderHandler "service/internal/modules/orders/handler"
 	paymentHandler "service/internal/modules/payments/handler"
+	serviceHandler "service/internal/modules/services/handler"
+	trackingHandler "service/internal/modules/tracking/handler"
 	userHandler "service/internal/modules/users/handler"
 	sharedHandlers "service/internal/shared/handlers"
 	"service/internal/shared/middleware"
@@ -25,6 +27,8 @@ func SetupRoutes(r *gin.Engine) {
 	branchHdlr := branchHandler.NewBranchHandler()
 	orderHdlr := orderHandler.NewOrderHandler()
 	paymentHdlr := paymentHandler.NewPaymentHandler()
+	serviceCatalogHdlr := serviceHandler.NewServiceCatalogHandler()
+	trackingHdlr := trackingHandler.NewLocationTrackingHandler()
 
 	// Initialize shared handlers
 	notificationHandler := notificationHandler.NewNotificationHandler()
@@ -71,6 +75,17 @@ func SetupRoutes(r *gin.Engine) {
 			public.GET("/branches", branchHdlr.GetBranches)
 			public.GET("/branches/nearest", branchHdlr.GetNearestBranches)
 			public.GET("/branches/:id", branchHdlr.GetBranch)
+
+			// Service catalog routes (public)
+			serviceCatalogHdlr.RegisterRoutes(public)
+		}
+
+		// Service catalog protected routes
+		serviceCatalogProtected := v1.Group("/")
+		serviceCatalogProtected.Use(middleware.AuthMiddleware())
+		serviceCatalogProtected.Use(middleware.RoleMiddleware(model.RoleAdminPusat, model.RoleAdminCabang))
+		{
+			serviceCatalogHdlr.RegisterProtectedRoutes(serviceCatalogProtected)
 		}
 
 		// Protected routes (authentication required)
@@ -90,6 +105,9 @@ func SetupRoutes(r *gin.Engine) {
 			protected.PUT("/orders/:id/status", orderHdlr.UpdateOrderStatus)
 			protected.PUT("/orders/:id/assign-courier", orderHdlr.AssignCourier)
 			protected.PUT("/orders/:id/assign-technician", orderHdlr.AssignTechnician)
+
+			// Location tracking routes
+			trackingHdlr.RegisterRoutes(protected)
 
 			// Payment routes
 			protected.POST("/payments/create-invoice", paymentHdlr.CreateInvoice)

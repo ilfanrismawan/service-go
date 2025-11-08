@@ -109,6 +109,9 @@ var (
 	ErrPhoneExists       = errors.New("phone number already exists")
 	ErrOrderNumberExists = errors.New("order number already exists")
 	ErrInvoiceExists     = errors.New("invoice number already exists")
+	ErrCategoryNotFound  = errors.New("category not found")
+	ErrCatalogNotFound   = errors.New("catalog not found")
+	ErrProviderNotFound  = errors.New("provider not found")
 )
 
 // SuccessResponse creates a success response

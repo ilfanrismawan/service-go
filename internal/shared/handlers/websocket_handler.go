@@ -17,11 +17,12 @@ import (
 
 // WebSocketHandler handles WebSocket connections
 type WebSocketHandler struct {
-	chatService *chatService.ChatService
-	upgrader    websocket.Upgrader
-	clients     map[*websocket.Conn]*Client
-	rooms       map[string][]*websocket.Conn
-	mutex       sync.RWMutex
+	chatService    *chatService.ChatService
+	trackingService *trackingService.LocationTrackingService
+	upgrader       websocket.Upgrader
+	clients        map[*websocket.Conn]*Client
+	rooms          map[string][]*websocket.Conn
+	mutex          sync.RWMutex
 }
 
 // Client represents a WebSocket client
@@ -35,7 +36,7 @@ type Client struct {
 
 // Message represents a WebSocket message
 type Message struct {
-	Type      string      `json:"type"`
+	Type      string      `json:"type"` // "chat", "typing", "ping", "location", "eta", "status"
 	OrderID   string      `json:"order_id"`
 	UserID    string      `json:"user_id"`
 	Content   string      `json:"content"`
@@ -43,10 +44,22 @@ type Message struct {
 	Data      interface{} `json:"data,omitempty"`
 }
 
+// LocationUpdateData represents location update data in WebSocket message
+type LocationUpdateData struct {
+	Latitude    float64 `json:"latitude"`
+	Longitude   float64 `json:"longitude"`
+	Accuracy    float64 `json:"accuracy,omitempty"`
+	Speed       float64 `json:"speed,omitempty"`
+	Heading     float64 `json:"heading,omitempty"`
+	ETA         int     `json:"eta,omitempty"` // in minutes
+	Distance    float64 `json:"distance,omitempty"` // in km
+}
+
 // NewWebSocketHandler creates a new WebSocket handler
 func NewWebSocketHandler() *WebSocketHandler {
 	return &WebSocketHandler{
-		chatService: chatService.NewChatService(),
+		chatService:     chatService.NewChatService(),
+		trackingService: trackingService.NewLocationTrackingService(),
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
 				return true // Allow all origins in development
@@ -215,6 +228,8 @@ func (h *WebSocketHandler) handleMessage(client *Client, message *Message) {
 		h.handleTypingMessage(client, message)
 	case "ping":
 		h.handlePingMessage(client, message)
+	case "location":
+		h.handleLocationMessage(client, message)
 	default:
 		log.Printf("Unknown message type: %s", message.Type)
 	}
@@ -263,6 +278,58 @@ func (h *WebSocketHandler) handleTypingMessage(client *Client, message *Message)
 func (h *WebSocketHandler) handlePingMessage(client *Client, message *Message) {
 	// Send pong response
 	client.Send <- []byte(`{"type":"pong","timestamp":"` + time.Now().Format(time.RFC3339) + `"}`)
+}
+
+// handleLocationMessage handles location update messages
+func (h *WebSocketHandler) handleLocationMessage(client *Client, message *Message) {
+	// Parse location data
+	locationData, ok := message.Data.(map[string]interface{})
+	if !ok {
+		log.Printf("Invalid location data format")
+		return
+	}
+
+	// Extract location fields
+	orderID, err := uuid.Parse(message.OrderID)
+	if err != nil {
+		log.Printf("Invalid order ID: %v", err)
+		return
+	}
+
+	// Convert location data to LocationUpdateRequest
+	req := &model.LocationUpdateRequest{}
+	if lat, ok := locationData["latitude"].(float64); ok {
+		req.Latitude = lat
+	}
+	if lon, ok := locationData["longitude"].(float64); ok {
+		req.Longitude = lon
+	}
+	if acc, ok := locationData["accuracy"].(float64); ok {
+		req.Accuracy = acc
+	}
+	if speed, ok := locationData["speed"].(float64); ok {
+		req.Speed = speed
+	}
+	if heading, ok := locationData["heading"].(float64); ok {
+		req.Heading = heading
+	}
+
+	// Update location in database
+	_, err = h.trackingService.UpdateLocation(context.Background(), orderID, client.UserID, req)
+	if err != nil {
+		log.Printf("Failed to update location: %v", err)
+		// Continue anyway to broadcast to clients
+	}
+
+	// Broadcast location update to all clients in room (excluding sender)
+	// This allows customer to see courier/provider location in real-time
+	h.broadcastToRoomExcluding(message.OrderID, client.Conn, Message{
+		Type:      "location",
+		OrderID:   message.OrderID,
+		UserID:    client.UserID.String(),
+		Timestamp: time.Now(),
+		Data:      locationData,
+	})
 }
 
 // broadcastToRoom broadcasts a message to all clients in a room

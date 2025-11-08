@@ -38,10 +38,15 @@ func runMigrations() {
 	log.Println("✓ User table migrated")
 
 	// Step 3: Create ServiceOrder table which depends on User and Branch
+	// Note: AutoMigrate will handle adding new columns and making existing columns nullable
+	// for backward compatibility with multi-service refactoring
 	if err := db.AutoMigrate(&model.ServiceOrder{}); err != nil {
 		log.Fatalf("Failed to migrate ServiceOrder table: %v", err)
 	}
 	log.Println("✓ ServiceOrder table migrated")
+	
+	// Step 3.1: Migrate existing ServiceOrder data for backward compatibility
+	migrateServiceOrderData(db)
 
 	// Step 4: Create Payment which depends on ServiceOrder
 	if err := db.AutoMigrate(&model.Payment{}); err != nil {
@@ -97,6 +102,42 @@ func runMigrations() {
 	}
 	log.Println("✓ AuditTrail table migrated")
 
+	// Step 13: Create ServiceCategory table
+	if err := db.AutoMigrate(&model.ServiceCategory{}); err != nil {
+		log.Fatalf("Failed to migrate ServiceCategory table: %v", err)
+	}
+	log.Println("✓ ServiceCategory table migrated")
+
+	// Step 14: Create ServiceCatalog table which depends on ServiceCategory
+	if err := db.AutoMigrate(&model.ServiceCatalog{}); err != nil {
+		log.Fatalf("Failed to migrate ServiceCatalog table: %v", err)
+	}
+	log.Println("✓ ServiceCatalog table migrated")
+
+	// Step 15: Create ServiceProvider table which depends on User
+	if err := db.AutoMigrate(&model.ServiceProvider{}); err != nil {
+		log.Fatalf("Failed to migrate ServiceProvider table: %v", err)
+	}
+	log.Println("✓ ServiceProvider table migrated")
+
+	// Step 16: Create ProviderService join table
+	if err := db.AutoMigrate(&model.ProviderService{}); err != nil {
+		log.Fatalf("Failed to migrate ProviderService table: %v", err)
+	}
+	log.Println("✓ ProviderService table migrated")
+
+	// Step 17: Create LocationTracking table
+	if err := db.AutoMigrate(&model.LocationTracking{}); err != nil {
+		log.Fatalf("Failed to migrate LocationTracking table: %v", err)
+	}
+	log.Println("✓ LocationTracking table migrated")
+
+	// Step 18: Create CurrentLocation table
+	if err := db.AutoMigrate(&model.CurrentLocation{}); err != nil {
+		log.Fatalf("Failed to migrate CurrentLocation table: %v", err)
+	}
+	log.Println("✓ CurrentLocation table migrated")
+
 	// Create indexes
 	createIndexes(db)
 
@@ -119,11 +160,16 @@ func createIndexes(db *gorm.DB) {
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_branches_is_active ON branches(is_active)")
 
 	// Service order indexes
-	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_orders_user_id ON service_orders(user_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_orders_user_id ON service_orders(customer_id)")
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_orders_branch_id ON service_orders(branch_id)")
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_orders_courier_id ON service_orders(courier_id)")
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_orders_status ON service_orders(status)")
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_orders_created_at ON service_orders(created_at)")
+	
+	// New multi-service indexes for ServiceOrder
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_orders_service_catalog_id ON service_orders(service_catalog_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_orders_service_provider_id ON service_orders(service_provider_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_orders_appointment_date ON service_orders(appointment_date)")
 
 	// Payment indexes
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id)")
@@ -175,6 +221,44 @@ func createIndexes(db *gorm.DB) {
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_audit_trails_action ON audit_trails(action)")
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_audit_trails_created_at ON audit_trails(created_at)")
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_audit_trails_ip_address ON audit_trails(ip_address)")
+
+	// ServiceCategory indexes
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_categories_is_active ON service_categories(is_active)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_categories_sort_order ON service_categories(sort_order)")
+
+	// ServiceCatalog indexes
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_catalogs_category_id ON service_catalogs(category_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_catalogs_is_active ON service_catalogs(is_active)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_catalogs_requires_appointment ON service_catalogs(requires_appointment)")
+
+	// ServiceProvider indexes
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_providers_user_id ON service_providers(user_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_providers_city ON service_providers(city)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_providers_province ON service_providers(province)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_providers_is_active ON service_providers(is_active)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_providers_is_verified ON service_providers(is_verified)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_providers_rating ON service_providers(rating)")
+
+	// ProviderService indexes
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_provider_services_provider_id ON provider_services(provider_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_provider_services_service_catalog_id ON provider_services(service_catalog_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_provider_services_is_active ON provider_services(is_active)")
+
+	// LocationTracking indexes
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_location_tracking_order_id ON location_tracking(order_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_location_tracking_user_id ON location_tracking(user_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_location_tracking_timestamp ON location_tracking(timestamp)")
+
+	// CurrentLocation indexes
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_current_locations_order_id ON current_locations(order_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_current_locations_user_id ON current_locations(user_id)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_current_locations_updated_at ON current_locations(updated_at)")
+
+	// ServiceOrder new indexes for on-demand service
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_orders_is_on_demand ON service_orders(is_on_demand)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_orders_current_latitude ON service_orders(current_latitude)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_orders_current_longitude ON service_orders(current_longitude)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_service_orders_last_location_update ON service_orders(last_location_update)")
 
 	log.Println("Database indexes created successfully")
 }
@@ -243,4 +327,58 @@ func seedInitialData(db *gorm.DB) {
 	}
 
 	log.Println("Initial data seeded successfully")
+}
+
+// migrateServiceOrderData migrates existing ServiceOrder data for backward compatibility
+// This function ensures that existing iPhone service orders continue to work
+// by mapping iPhone fields to generic item fields
+func migrateServiceOrderData(db *gorm.DB) {
+	log.Println("Migrating existing ServiceOrder data for backward compatibility...")
+	
+	// Check if there are any existing orders
+	var orderCount int64
+	db.Model(&model.ServiceOrder{}).Count(&orderCount)
+	if orderCount == 0 {
+		log.Println("No existing orders to migrate")
+		return
+	}
+	
+	// Migrate iPhone fields to generic item fields for existing orders
+	// This ensures backward compatibility while supporting new multi-service features
+	result := db.Exec(`
+		UPDATE service_orders 
+		SET 
+			item_model = COALESCE(item_model, iphone_model),
+			item_color = COALESCE(item_color, iphone_color),
+			item_serial = COALESCE(item_serial, iphone_imei),
+			item_type = COALESCE(item_type, iphone_type, iphone_model),
+			service_name = COALESCE(service_name, 'iPhone Service'),
+			service_location = COALESCE(service_location, 
+				(SELECT address FROM branches WHERE branches.id = service_orders.branch_id)
+			)
+		WHERE 
+			(item_model IS NULL OR item_model = '') 
+			AND (iphone_model IS NOT NULL AND iphone_model != '')
+	`)
+	
+	if result.Error != nil {
+		log.Printf("Warning: Error migrating ServiceOrder data: %v", result.Error)
+	} else {
+		log.Printf("✓ Migrated %d existing ServiceOrder records", result.RowsAffected)
+	}
+	
+	// Set default service type for orders without service_catalog_id
+	result = db.Exec(`
+		UPDATE service_orders 
+		SET service_type = COALESCE(service_type, 'other')
+		WHERE service_type IS NULL OR service_type = ''
+	`)
+	
+	if result.Error != nil {
+		log.Printf("Warning: Error setting default service type: %v", result.Error)
+	} else {
+		log.Printf("✓ Set default service type for %d orders", result.RowsAffected)
+	}
+	
+	log.Println("✓ ServiceOrder data migration completed")
 }
