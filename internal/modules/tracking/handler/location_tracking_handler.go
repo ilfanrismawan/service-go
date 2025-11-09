@@ -5,7 +5,6 @@ import (
 	"service/internal/modules/tracking/service"
 	"service/internal/shared/middleware"
 	"service/internal/shared/model"
-	"service/internal/shared/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -60,32 +59,56 @@ func (h *LocationTrackingHandler) RegisterRoutes(r *gin.RouterGroup) {
 func (h *LocationTrackingHandler) UpdateLocation(c *gin.Context) {
 	orderID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
 	// Get user ID from context
 	userID, exists := c.Get("user_id")
 	if !exists {
-		utils.HandleError(c, model.ErrUnauthorized)
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
+			"unauthorized",
+			"User ID not found in context",
+			nil,
+		))
 		return
 	}
 
 	userUUID, ok := userID.(uuid.UUID)
 	if !ok {
-		utils.HandleError(c, model.ErrUnauthorized)
+		c.JSON(http.StatusUnauthorized, model.CreateErrorResponse(
+			"unauthorized",
+			"Invalid user ID type",
+			nil,
+		))
 		return
 	}
 
 	var req model.LocationUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.HandleValidationError(c, err)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"validation_error",
+			"Invalid request data",
+			err.Error(),
+		))
 		return
 	}
 
 	location, err := h.trackingService.UpdateLocation(c.Request.Context(), orderID, userUUID, &req)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrOrderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -104,13 +127,25 @@ func (h *LocationTrackingHandler) UpdateLocation(c *gin.Context) {
 func (h *LocationTrackingHandler) GetCurrentLocation(c *gin.Context) {
 	orderID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
 	location, err := h.trackingService.GetCurrentLocation(c.Request.Context(), orderID)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrOrderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -130,7 +165,11 @@ func (h *LocationTrackingHandler) GetCurrentLocation(c *gin.Context) {
 func (h *LocationTrackingHandler) GetLocationHistory(c *gin.Context) {
 	orderID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
@@ -143,7 +182,15 @@ func (h *LocationTrackingHandler) GetLocationHistory(c *gin.Context) {
 
 	history, err := h.trackingService.GetLocationHistory(c.Request.Context(), orderID, limit)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrOrderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -164,19 +211,35 @@ func (h *LocationTrackingHandler) GetLocationHistory(c *gin.Context) {
 func (h *LocationTrackingHandler) CalculateETA(c *gin.Context) {
 	orderID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
 	var req model.ETACalculationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.HandleValidationError(c, err)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"validation_error",
+			"Invalid request data",
+			err.Error(),
+		))
 		return
 	}
 
 	eta, err := h.trackingService.CalculateETA(c.Request.Context(), orderID, &req)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrOrderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -195,13 +258,25 @@ func (h *LocationTrackingHandler) CalculateETA(c *gin.Context) {
 func (h *LocationTrackingHandler) GetETA(c *gin.Context) {
 	orderID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
 	location, err := h.trackingService.GetCurrentLocation(c.Request.Context(), orderID)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrOrderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 

@@ -35,19 +35,24 @@ func NewServiceOrderRepository() *ServiceOrderRepository {
 			now := time.Now()
 			// create a lightweight order using the test branch id
 			branchID, _ := uuid.Parse("550e8400-e29b-41d4-a716-446655440000")
+			testModel := "TestModel"
+			testColor := "Black"
+			testIMEI := "0000"
+			testAddress := "Test Address"
+			var zeroFloat float64 = 0
 			m[id] = &model.ServiceOrder{
 				ID:              id,
 				OrderNumber:     "ORD-TEST-000001",
 				CustomerID:      customerID,
-				BranchID:        branchID,
-				IPhoneModel:     "TestModel",
-				IPhoneColor:     "Black",
-				IPhoneIMEI:      "0000",
+				BranchID:        &branchID,
+				IPhoneModel:     &testModel,
+				IPhoneColor:     &testColor,
+				IPhoneIMEI:      &testIMEI,
 				ServiceType:     model.ServiceTypeOther,
 				Description:     "Test order",
-				PickupAddress:   "Test Address",
-				PickupLatitude:  0,
-				PickupLongitude: 0,
+				PickupAddress:   &testAddress,
+				PickupLatitude:  &zeroFloat,
+				PickupLongitude: &zeroFloat,
 				Status:          model.StatusPendingPickup,
 				CreatedAt:       now,
 				UpdatedAt:       now,
@@ -186,7 +191,7 @@ func (r *ServiceOrderRepository) List(ctx context.Context, offset, limit int, fi
 				if filters.CustomerID != nil && o.CustomerID != *filters.CustomerID {
 					continue
 				}
-				if filters.BranchID != nil && o.BranchID != *filters.BranchID {
+				if filters.BranchID != nil && (o.BranchID == nil || *o.BranchID != *filters.BranchID) {
 					continue
 				}
 				if filters.TechnicianID != nil {
@@ -311,7 +316,7 @@ func (r *ServiceOrderRepository) GetByBranchID(ctx context.Context, branchID uui
 		defer r.mu.RUnlock()
 		var list []*model.ServiceOrder
 		for _, o := range r.orders {
-			if o.BranchID == branchID {
+			if o.BranchID != nil && *o.BranchID == branchID {
 				list = append(list, o)
 			}
 		}

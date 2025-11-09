@@ -64,7 +64,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	docs "service/docs" // Swagger docs
-	svc "service/internal/domain/payments/service"
+	svc "service/internal/modules/payments/service"
 	"service/internal/router"
 	"service/internal/shared/config"
 	"service/internal/shared/database"

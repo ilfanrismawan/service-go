@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	chatService "service/internal/modules/chat/service"
+	trackingService "service/internal/modules/tracking/service"
 	"service/internal/shared/model"
 	"sync"
 	"time"

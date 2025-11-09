@@ -4,9 +4,7 @@ import (
 	"net/http"
 	"service/internal/modules/services/repository"
 	"service/internal/modules/services/service"
-	"service/internal/shared/middleware"
 	"service/internal/shared/model"
-	"service/internal/shared/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -82,13 +80,25 @@ func (h *ServiceCatalogHandler) RegisterProtectedRoutes(r *gin.RouterGroup) {
 func (h *ServiceCatalogHandler) CreateCategory(c *gin.Context) {
 	var req model.ServiceCategoryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.HandleValidationError(c, err)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"validation_error",
+			"Invalid request data",
+			err.Error(),
+		))
 		return
 	}
 
 	category, err := h.categoryService.CreateCategory(c.Request.Context(), &req)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"category_creation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -107,13 +117,25 @@ func (h *ServiceCatalogHandler) CreateCategory(c *gin.Context) {
 func (h *ServiceCatalogHandler) GetCategory(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid category ID format",
+			nil,
+		))
 		return
 	}
 
 	category, err := h.categoryService.GetCategory(c.Request.Context(), id)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"category_not_found",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -133,7 +155,11 @@ func (h *ServiceCatalogHandler) GetAllCategories(c *gin.Context) {
 
 	categories, err := h.categoryService.GetAllCategories(c.Request.Context(), includeInactive)
 	if err != nil {
-		utils.HandleError(c, err)
+		c.JSON(http.StatusInternalServerError, model.CreateErrorResponse(
+			"categories_retrieval_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -155,19 +181,35 @@ func (h *ServiceCatalogHandler) GetAllCategories(c *gin.Context) {
 func (h *ServiceCatalogHandler) UpdateCategory(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid category ID format",
+			nil,
+		))
 		return
 	}
 
 	var req model.ServiceCategoryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.HandleValidationError(c, err)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"validation_error",
+			"Invalid request data",
+			err.Error(),
+		))
 		return
 	}
 
 	category, err := h.categoryService.UpdateCategory(c.Request.Context(), id, &req)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"category_update_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -186,12 +228,24 @@ func (h *ServiceCatalogHandler) UpdateCategory(c *gin.Context) {
 func (h *ServiceCatalogHandler) DeleteCategory(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
 	if err := h.categoryService.DeleteCategory(c.Request.Context(), id); err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound || err == model.ErrCatalogNotFound || err == model.ErrProviderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -211,13 +265,25 @@ func (h *ServiceCatalogHandler) DeleteCategory(c *gin.Context) {
 func (h *ServiceCatalogHandler) CreateCatalog(c *gin.Context) {
 	var req model.ServiceCatalogRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.HandleValidationError(c, err)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"validation_error",
+			"Invalid request data",
+			err.Error(),
+		))
 		return
 	}
 
 	catalog, err := h.catalogService.CreateCatalog(c.Request.Context(), &req)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound || err == model.ErrCatalogNotFound || err == model.ErrProviderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -236,13 +302,25 @@ func (h *ServiceCatalogHandler) CreateCatalog(c *gin.Context) {
 func (h *ServiceCatalogHandler) GetCatalog(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
 	catalog, err := h.catalogService.GetCatalog(c.Request.Context(), id)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound || err == model.ErrCatalogNotFound || err == model.ErrProviderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -285,7 +363,15 @@ func (h *ServiceCatalogHandler) GetAllCatalogs(c *gin.Context) {
 
 	catalogs, err := h.catalogService.GetAllCatalogs(c.Request.Context(), filters)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound || err == model.ErrCatalogNotFound || err == model.ErrProviderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -304,7 +390,11 @@ func (h *ServiceCatalogHandler) GetAllCatalogs(c *gin.Context) {
 func (h *ServiceCatalogHandler) GetCatalogsByCategory(c *gin.Context) {
 	categoryID, err := uuid.Parse(c.Param("categoryId"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
@@ -312,7 +402,15 @@ func (h *ServiceCatalogHandler) GetCatalogsByCategory(c *gin.Context) {
 
 	catalogs, err := h.catalogService.GetCatalogsByCategory(c.Request.Context(), categoryID, includeInactive)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound || err == model.ErrCatalogNotFound || err == model.ErrProviderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -333,19 +431,35 @@ func (h *ServiceCatalogHandler) GetCatalogsByCategory(c *gin.Context) {
 func (h *ServiceCatalogHandler) UpdateCatalog(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
 	var req model.ServiceCatalogRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.HandleValidationError(c, err)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"validation_error",
+			"Invalid request data",
+			err.Error(),
+		))
 		return
 	}
 
 	catalog, err := h.catalogService.UpdateCatalog(c.Request.Context(), id, &req)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound || err == model.ErrCatalogNotFound || err == model.ErrProviderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -363,12 +477,24 @@ func (h *ServiceCatalogHandler) UpdateCatalog(c *gin.Context) {
 func (h *ServiceCatalogHandler) DeleteCatalog(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
 	if err := h.catalogService.DeleteCatalog(c.Request.Context(), id); err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound || err == model.ErrCatalogNotFound || err == model.ErrProviderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -388,13 +514,25 @@ func (h *ServiceCatalogHandler) DeleteCatalog(c *gin.Context) {
 func (h *ServiceCatalogHandler) CreateProvider(c *gin.Context) {
 	var req model.ServiceProviderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.HandleValidationError(c, err)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"validation_error",
+			"Invalid request data",
+			err.Error(),
+		))
 		return
 	}
 
 	provider, err := h.providerService.CreateProvider(c.Request.Context(), &req)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound || err == model.ErrCatalogNotFound || err == model.ErrProviderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -412,13 +550,25 @@ func (h *ServiceCatalogHandler) CreateProvider(c *gin.Context) {
 func (h *ServiceCatalogHandler) GetProvider(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
 	provider, err := h.providerService.GetProvider(c.Request.Context(), id)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound || err == model.ErrCatalogNotFound || err == model.ErrProviderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -471,7 +621,15 @@ func (h *ServiceCatalogHandler) GetAllProviders(c *gin.Context) {
 
 	providers, err := h.providerService.GetAllProviders(c.Request.Context(), filters)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound || err == model.ErrCatalogNotFound || err == model.ErrProviderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -491,19 +649,35 @@ func (h *ServiceCatalogHandler) GetAllProviders(c *gin.Context) {
 func (h *ServiceCatalogHandler) UpdateProvider(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
 	var req model.ServiceProviderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.HandleValidationError(c, err)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"validation_error",
+			"Invalid request data",
+			err.Error(),
+		))
 		return
 	}
 
 	provider, err := h.providerService.UpdateProvider(c.Request.Context(), id, &req)
 	if err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound || err == model.ErrCatalogNotFound || err == model.ErrProviderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -521,12 +695,24 @@ func (h *ServiceCatalogHandler) UpdateProvider(c *gin.Context) {
 func (h *ServiceCatalogHandler) DeleteProvider(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
 	if err := h.providerService.DeleteProvider(c.Request.Context(), id); err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound || err == model.ErrCatalogNotFound || err == model.ErrProviderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -547,13 +733,21 @@ func (h *ServiceCatalogHandler) DeleteProvider(c *gin.Context) {
 func (h *ServiceCatalogHandler) AddServiceToProvider(c *gin.Context) {
 	providerID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
 	serviceID, err := uuid.Parse(c.Param("serviceId"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
@@ -561,12 +755,24 @@ func (h *ServiceCatalogHandler) AddServiceToProvider(c *gin.Context) {
 		Price float64 `json:"price" validate:"required,min=0"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.HandleValidationError(c, err)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"validation_error",
+			"Invalid request data",
+			err.Error(),
+		))
 		return
 	}
 
 	if err := h.providerService.AddServiceToProvider(c.Request.Context(), providerID, serviceID, req.Price); err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound || err == model.ErrCatalogNotFound || err == model.ErrProviderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 
@@ -585,18 +791,34 @@ func (h *ServiceCatalogHandler) AddServiceToProvider(c *gin.Context) {
 func (h *ServiceCatalogHandler) RemoveServiceFromProvider(c *gin.Context) {
 	providerID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
 	serviceID, err := uuid.Parse(c.Param("serviceId"))
 	if err != nil {
-		utils.HandleError(c, model.ErrInvalidInput)
+		c.JSON(http.StatusBadRequest, model.CreateErrorResponse(
+			"invalid_id",
+			"Invalid ID format",
+			nil,
+		))
 		return
 	}
 
 	if err := h.providerService.RemoveServiceFromProvider(c.Request.Context(), providerID, serviceID); err != nil {
-		utils.HandleError(c, err)
+		statusCode := http.StatusInternalServerError
+		if err == model.ErrCategoryNotFound || err == model.ErrCatalogNotFound || err == model.ErrProviderNotFound {
+			statusCode = http.StatusNotFound
+		}
+		c.JSON(statusCode, model.CreateErrorResponse(
+			"operation_failed",
+			err.Error(),
+			nil,
+		))
 		return
 	}
 

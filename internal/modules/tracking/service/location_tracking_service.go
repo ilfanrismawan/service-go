@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	"errors"
-	"service/internal/modules/orders/repository"
+	orderRepo "service/internal/modules/orders/repository"
 	serviceRepo "service/internal/modules/services/repository"
-	"service/internal/modules/tracking/repository"
+	trackingRepo "service/internal/modules/tracking/repository"
 	"service/internal/shared/model"
 	"time"
 
@@ -14,18 +14,18 @@ import (
 
 // LocationTrackingService handles location tracking business logic
 type LocationTrackingService struct {
-	trackingRepo     *repository.LocationTrackingRepository
-	currentLocRepo   *repository.CurrentLocationRepository
-	orderRepo        *repository.ServiceOrderRepository
+	trackingRepo     *trackingRepo.LocationTrackingRepository
+	currentLocRepo   *trackingRepo.CurrentLocationRepository
+	orderRepo        *orderRepo.ServiceOrderRepository
 	providerRepo     *serviceRepo.ServiceProviderRepository
 }
 
 // NewLocationTrackingService creates a new location tracking service
 func NewLocationTrackingService() *LocationTrackingService {
 	return &LocationTrackingService{
-		trackingRepo:   repository.NewLocationTrackingRepository(),
-		currentLocRepo: repository.NewCurrentLocationRepository(),
-		orderRepo:      repository.NewServiceOrderRepository(),
+		trackingRepo:   trackingRepo.NewLocationTrackingRepository(),
+		currentLocRepo: trackingRepo.NewCurrentLocationRepository(),
+		orderRepo:      orderRepo.NewServiceOrderRepository(),
 		providerRepo:   serviceRepo.NewServiceProviderRepository(),
 	}
 }

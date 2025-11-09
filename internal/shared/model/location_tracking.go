@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 // LocationTracking represents real-time location tracking history for orders

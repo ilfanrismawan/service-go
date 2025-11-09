@@ -7,7 +7,6 @@ import (
 	"service/internal/modules/orders/repository"
 	pay "service/internal/modules/payments/legacy_payment"
 	repo "service/internal/modules/payments/repository"
-	"service/internal/shared/config"
 	"service/internal/shared/model"
 	"service/internal/shared/utils"
 	"time"

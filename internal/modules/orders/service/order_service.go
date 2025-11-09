@@ -1,8 +1,7 @@
-gpackage service
+package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"time"
 	branchRepo "service/internal/modules/branches/repository"
@@ -605,17 +604,17 @@ func (s *OrderService) UpdateOrder(ctx context.Context, id uuid.UUID, req *model
 
 	if req.BranchID != "" {
 		if bid, err := uuid.Parse(req.BranchID); err == nil {
-			order.BranchID = bid
+			order.BranchID = &bid
 		}
 	}
 	if req.IPhoneModel != "" {
-		order.IPhoneModel = req.IPhoneModel
+		order.IPhoneModel = &req.IPhoneModel
 	}
 	if req.IPhoneColor != "" {
-		order.IPhoneColor = req.IPhoneColor
+		order.IPhoneColor = &req.IPhoneColor
 	}
 	if req.IPhoneIMEI != "" {
-		order.IPhoneIMEI = req.IPhoneIMEI
+		order.IPhoneIMEI = &req.IPhoneIMEI
 	}
 	if req.ServiceType != "" {
 		order.ServiceType = req.ServiceType

@@ -213,15 +213,21 @@ func seedServiceOrders(db *gorm.DB) {
 		return
 	}
 
+	iphoneType1 := "iPhone 14 Pro"
+	iphoneType2 := "iPhone 13"
+	iphoneType3 := "iPhone 12"
+	pickupLoc1 := "Jakarta Selatan"
+	pickupLoc2 := "Surabaya"
+	pickupLoc3 := "Jakarta Pusat"
 	orders := []*model.ServiceOrder{
 		{
 			ID:                uuid.New(),
 			CustomerID:        users[5].ID,    // John Doe
-			BranchID:          branches[0].ID, // Jakarta Central
+			BranchID:          &branches[0].ID, // Jakarta Central
 			OrderNumber:       "ORD-20240101-001",
-			IPhoneType:        "iPhone 14 Pro",
+			IPhoneType:        &iphoneType1,
 			Complaint:         "Screen cracked, needs replacement",
-			PickupLocation:    "Jakarta Selatan",
+			PickupLocation:    &pickupLoc1,
 			Status:            model.StatusInService,
 			ServiceCost:       500000,
 			EstimatedDuration: 3,
@@ -231,11 +237,11 @@ func seedServiceOrders(db *gorm.DB) {
 		{
 			ID:                uuid.New(),
 			CustomerID:        users[6].ID,    // Jane Smith
-			BranchID:          branches[1].ID, // Surabaya Branch
+			BranchID:          &branches[1].ID, // Surabaya Branch
 			OrderNumber:       "ORD-20240102-002",
-			IPhoneType:        "iPhone 13",
+			IPhoneType:        &iphoneType2,
 			Complaint:         "Battery draining fast, needs replacement",
-			PickupLocation:    "Surabaya",
+			PickupLocation:    &pickupLoc2,
 			Status:            model.StatusReady,
 			ServiceCost:       300000,
 			EstimatedDuration: 2,
@@ -245,11 +251,11 @@ func seedServiceOrders(db *gorm.DB) {
 		{
 			ID:                uuid.New(),
 			CustomerID:        users[5].ID,    // John Doe
-			BranchID:          branches[0].ID, // Jakarta Central
+			BranchID:          &branches[0].ID, // Jakarta Central
 			OrderNumber:       "ORD-20240103-003",
-			IPhoneType:        "iPhone 12",
+			IPhoneType:        &iphoneType3,
 			Complaint:         "Camera not working, needs repair",
-			PickupLocation:    "Jakarta Pusat",
+			PickupLocation:    &pickupLoc3,
 			Status:            model.StatusCompleted,
 			ServiceCost:       400000,
 			EstimatedDuration: 4,
