@@ -1,6 +1,41 @@
 // @title iPhone Service POS API
-// @version 1.0
-// @description Backend API for iPhone Service Point of Sales system supporting 50 branches across Indonesia
+// @version 1.0.0
+// @description Backend API untuk sistem Point of Sales jasa service iPhone dengan dukungan 50 cabang di seluruh Indonesia. Sistem ini mendukung multi-service, real-time tracking, pembayaran online/tunai, membership system, dan berbagai fitur lainnya.
+//
+// ## Fitur Utama
+// - Authentication & Authorization dengan JWT
+// - Multi-service support (Service Catalog)
+// - Order Management dengan real-time tracking
+// - Payment Processing (Midtrans, Cash, Bank Transfer, GoPay, QRIS)
+// - Membership System (4-tier: Bronze, Silver, Gold, Platinum)
+// - Location Tracking dengan WebSocket
+// - Real-time Chat dengan WebSocket
+// - Notification System (Email, WhatsApp, FCM)
+// - File Management (S3-compatible storage)
+// - Reporting & Analytics
+// - Rating System
+// - Dashboard untuk Admin
+//
+// ## Role-based Access Control
+// - **admin_pusat**: Admin pusat dengan akses penuh
+// - **admin_cabang**: Admin cabang dengan akses terbatas pada cabangnya
+// - **kasir**: Kasir untuk proses pembayaran dan order
+// - **teknisi**: Teknisi untuk service order management
+// - **kurir**: Kurir untuk pickup dan delivery
+// - **pelanggan**: Pelanggan untuk order dan tracking
+//
+// ## Authentication
+// API menggunakan JWT (JSON Web Token) untuk authentication. Setiap request ke protected endpoint harus menyertakan header:
+// ```
+// Authorization: Bearer <access_token>
+// ```
+//
+// Access token memiliki expiry 24 jam, dan refresh token memiliki expiry 7 hari.
+//
+// ## Base URL
+// - Development: http://localhost:8080
+// - Production: https://api.iphoneservice.com
+//
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name iPhone Service API Support
@@ -17,7 +52,7 @@
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
-// @description Type "Bearer" followed by a space and JWT token.
+// @description Type "Bearer" followed by a space and JWT token. Example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 package main
 

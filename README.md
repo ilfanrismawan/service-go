@@ -24,34 +24,57 @@ Aplikasi ini digunakan oleh perusahaan jasa service iPhone dengan 50 cabang di s
 ## 🧱 Struktur Folder (Clean Architecture)
 
 ```
-/cmd/app/main.go                 # Entry point aplikasi
+/cmd/
+├── app/main.go                  # Entry point aplikasi
+├── migrate/main.go              # Database migration tool
+├── seed/main.go                 # Database seeding tool
+└── test-connections/main.go    # Connection testing tool
+
 /internal/
-├── config/                      # Konfigurasi aplikasi
-├── core/                        # Domain entities dan business logic
-├── service/                     # Business logic layer
-├── repository/                   # Data access layer
-├── delivery/                    # API handlers (HTTP)
-├── middleware/                  # Middleware (auth, CORS, etc.)
-├── auth/                        # Authentication service
-├── notification/                 # Notification service
-├── payment/                     # Payment service
-└── utils/                       # Utility functions
-/docs/                           # Swagger documentation
+├── modules/                     # Business modules (domain-driven)
+│   ├── admin/                   # Admin dashboard
+│   ├── branches/                # Branch management
+│   ├── chat/                    # Chat system
+│   ├── inventory/               # Inventory management
+│   ├── media/                   # File upload & management
+│   ├── membership/              # Membership system
+│   ├── notification/           # Notification service
+│   ├── orders/                  # Order management
+│   ├── payments/                # Payment processing
+│   ├── services/                # Service catalog
+│   ├── tracking/                # Location tracking
+│   └── users/                   # User & authentication
+├── router/                      # API routing
+└── shared/                      # Shared components
+    ├── config/                  # Configuration
+    ├── database/                # Database connection
+    ├── handlers/                # Shared handlers (health, swagger, websocket)
+    ├── middleware/              # Middleware (auth, CORS, logging, etc.)
+    ├── model/                   # Shared models
+    ├── monitoring/              # Metrics & monitoring
+    └── utils/                   # Utility functions
+
+/docs/                           # Swagger documentation (generated)
+/migrations/                     # SQL migration files
+/seed/                           # Database seed files
+/scripts/                        # Utility scripts
+/k8s/                            # Kubernetes deployment files
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Go 1.21+
+- Go 1.23+
 - Docker & Docker Compose
 - Make (optional, untuk menggunakan Makefile)
+- swag (untuk generate Swagger docs) - akan diinstall otomatis oleh Makefile
 
 ### 1. Clone Repository
 
 ```bash
 git clone <repository-url>
-cd service
+cd service-go
 ```
 
 ### 2. Setup Environment
@@ -74,7 +97,37 @@ make start
 docker-compose up -d
 ```
 
-### 4. Run Application
+### 4. Run Database Migrations
+
+```bash
+# Menggunakan Makefile
+make migrate
+
+# Atau manual
+go run cmd/migrate/main.go
+```
+
+### 5. Seed Database (Optional)
+
+```bash
+# Menggunakan Makefile
+make seed
+
+# Atau manual
+go run cmd/seed/main.go
+```
+
+### 6. Generate Swagger Documentation
+
+```bash
+# Menggunakan Makefile
+make generate-swagger
+
+# Atau manual
+swag init -g cmd/app/main.go -o docs --parseDependency --parseInternal
+```
+
+### 7. Run Application
 
 ```bash
 # Menggunakan Makefile
@@ -84,7 +137,7 @@ make run
 go run cmd/app/main.go
 ```
 
-### 5. Test API
+### 8. Test API
 
 ```bash
 # Health check
@@ -92,6 +145,9 @@ curl http://localhost:8080/health
 
 # Test API endpoints
 make test-api
+
+# View API documentation
+# Buka browser: http://localhost:8080/swagger/index.html
 ```
 
 ## 📋 Available Commands
@@ -119,6 +175,23 @@ make clean         # Clean build artifacts
 | `JWT_SECRET` | JWT secret key | `your-secret-key-change-this-in-production` |
 | `JWT_EXPIRY` | JWT token expiry | `24h` |
 | `REFRESH_EXPIRY` | Refresh token expiry | `168h` |
+| `MIDTRANS_SERVER_KEY` | Midtrans server key | - |
+| `MIDTRANS_CLIENT_KEY` | Midtrans client key | - |
+| `MIDTRANS_IS_PRODUCTION` | Midtrans production mode | `false` |
+| `S3_ENDPOINT` | S3-compatible storage endpoint | `http://localhost:9000` |
+| `S3_ACCESS_KEY` | S3 access key | `minioadmin` |
+| `S3_SECRET_KEY` | S3 secret key | `minioadmin` |
+| `S3_BUCKET_NAME` | S3 bucket name | `iphone-service` |
+| `S3_REGION` | S3 region | `us-east-1` |
+| `FIREBASE_SERVER_KEY` | Firebase server key untuk FCM | - |
+| `WHATSAPP_API_KEY` | WhatsApp API key | - |
+| `SENTRY_DSN` | Sentry DSN untuk error tracking | - |
+| `RECONCILE_INTERVAL` | Payment reconciliation interval | `5m` |
+| `RATE_LIMIT_REQUESTS` | Rate limit requests per window | `100` |
+| `RATE_LIMIT_WINDOW` | Rate limit time window | `1m` |
+| `TIMEZONE` | Application timezone | `Asia/Jakarta` |
+| `DEFAULT_LANGUAGE` | Default language | `id-ID` |
+| `CURRENCY` | Default currency | `IDR` |
 
 ### Database Configuration
 
@@ -244,27 +317,85 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
   - PostgreSQL, Redis, MinIO
   - Development environment
 
-### 🚧 In Progress
-
-- [ ] **Branch Management**
+- [x] **Branch Management**
   - CRUD operations untuk cabang
-  - Pencarian cabang terdekat
-  - Geolocation support
+  - Pencarian cabang terdekat berdasarkan geolocation
+  - Branch statistics dan management
 
-- [ ] **Order Service System**
+- [x] **Order Service System**
   - Order creation dan management
-  - Status tracking
+  - Status tracking dengan real-time updates
   - Photo upload untuk service
+  - Order assignment (courier & technician)
+  - Order reports dan analytics
 
-- [ ] **Payment System**
-  - Midtrans integration
-  - Multiple payment methods
+- [x] **Payment System**
+  - Midtrans integration (mock untuk development)
+  - Multiple payment methods (Bank Transfer, GoPay, QRIS, Cash)
   - Invoice generation
+  - Payment reconciliation
+  - Payment status tracking
 
-- [ ] **Notification System**
+- [x] **Notification System**
   - Email notifications
-  - WhatsApp integration
-  - Push notifications
+  - WhatsApp integration (template-based)
+  - Push notifications (FCM)
+  - Order status notifications
+  - Payment notifications
+
+- [x] **Service Catalog System**
+  - Dynamic service catalog management
+  - Service categories dan pricing
+  - Service availability management
+  - Service metadata support
+
+- [x] **Location Tracking**
+  - Real-time location tracking
+  - Courier location updates
+  - WebSocket support untuk real-time updates
+  - Location history
+
+- [x] **Chat System**
+  - Real-time chat dengan WebSocket
+  - Chat per order
+  - Message history
+
+- [x] **Membership System**
+  - 4-tier membership (Bronze, Silver, Gold, Platinum)
+  - Points system
+  - Auto-upgrade berdasarkan spending
+  - Membership benefits
+
+- [x] **Reporting System**
+  - Monthly reports
+  - Yearly reports
+  - Revenue analytics
+  - Branch performance reports
+
+- [x] **Rating System**
+  - Order ratings
+  - Service ratings
+  - Average rating calculation
+
+- [x] **File Management**
+  - File upload ke S3-compatible storage (MinIO)
+  - Image compression
+  - Order photos
+  - User avatars
+
+- [x] **Dashboard**
+  - Admin dashboard
+  - Overview statistics
+  - Order statistics
+  - Revenue statistics
+  - Branch statistics
+
+- [x] **Monitoring & Metrics**
+  - Prometheus metrics
+  - Health checks (liveness & readiness)
+  - Request logging
+  - Performance monitoring
+  - Sentry integration untuk error tracking
 
 ## 🐳 Docker Services
 
@@ -368,13 +499,44 @@ make prod-build
 
 ## 📚 API Documentation
 
+### Response Format
+
 API menggunakan format JSON dengan struktur response standar:
 
+**Success Response:**
 ```json
 {
   "status": "success",
   "data": {...},
-  "message": "Operation completed successfully"
+  "message": "Operation completed successfully",
+  "timestamp": "2024-01-01T00:00:00Z"
+}
+```
+
+**Error Response:**
+```json
+{
+  "status": "error",
+  "error": "error_code",
+  "message": "Error message",
+  "details": {...},
+  "timestamp": "2024-01-01T00:00:00Z"
+}
+```
+
+**Paginated Response:**
+```json
+{
+  "status": "success",
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 100,
+    "total_pages": 10
+  },
+  "message": "Data retrieved successfully",
+  "timestamp": "2024-01-01T00:00:00Z"
 }
 ```
 
@@ -383,12 +545,12 @@ API menggunakan format JSON dengan struktur response standar:
 API documentation tersedia melalui Swagger UI:
 
 - **Swagger UI:** http://localhost:8080/swagger/index.html
-- **API Docs:** http://localhost:8080/docs
+- **API Docs (Redirect):** http://localhost:8080/docs
 - **API Info:** http://localhost:8080/api-docs
 
 Untuk generate dokumentasi Swagger:
 
-   ```bash
+```bash
 # Menggunakan Makefile
 make generate-swagger
 
@@ -396,21 +558,57 @@ make generate-swagger
 swag init -g cmd/app/main.go -o docs --parseDependency --parseInternal
 ```
 
+**Catatan:** Swagger documentation di-generate dari annotations di code. Pastikan untuk mengupdate annotations setelah menambah atau mengubah endpoint.
+
 ### Endpoint Utama
 
-- **Authentication:** `/api/v1/auth/*`
-- Tambahan: `POST /api/v1/auth/logout` (revoke refresh token)
-- **Branches:** `/api/v1/branches/*`
-- **Orders:** `/api/v1/orders/*`
-- **Payments:** `/api/v1/payments/*`
-- Tambahan: `POST /api/v1/payments/midtrans/callback` (webhook Midtrans, signature verified)
-- **Notifications:** `/api/v1/notifications/*`
-- **Files:** `/api/v1/files/*`
-- **Chat:** `/api/v1/chat/*`
-- **Dashboard:** `/api/v1/dashboard/*`
-- **Membership:** `/api/v1/membership/*` (NEW)
-- **Reports:** `/api/v1/reports/*` (NEW)
- - **Metrics:** `GET /metrics` (Prometheus)
+#### Public Endpoints (No Authentication)
+- **Authentication:** `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/refresh`, `/api/v1/auth/logout`, `/api/v1/auth/forgot-password`, `/api/v1/auth/reset-password`
+- **Branches:** `GET /api/v1/branches`, `GET /api/v1/branches/nearest`, `GET /api/v1/branches/:id`
+- **Service Catalog:** `GET /api/v1/services/catalog`, `GET /api/v1/services/catalog/:id`
+- **Payment Callback:** `POST /api/v1/payments/midtrans/callback` (webhook Midtrans, signature verified)
+
+#### Protected Endpoints (Authentication Required)
+- **User Profile:** `GET /api/v1/auth/profile`, `PUT /api/v1/auth/profile`, `POST /api/v1/auth/change-password`, `PUT /api/v1/auth/fcm-token`
+- **Orders:** `POST /api/v1/orders`, `GET /api/v1/orders`, `GET /api/v1/orders/:id`, `PUT /api/v1/orders/:id/status`, `PUT /api/v1/orders/:id/assign-courier`, `PUT /api/v1/orders/:id/assign-technician`
+- **Location Tracking:** `POST /api/v1/tracking/update`, `GET /api/v1/tracking/order/:orderId`, `GET /api/v1/tracking/history/:orderId`
+- **Payments:** `POST /api/v1/payments/create-invoice`, `POST /api/v1/payments/process`, `GET /api/v1/payments/:id`, `GET /api/v1/payments/order/:orderId`
+- **Notifications:** `GET /api/v1/notifications`, `PUT /api/v1/notifications/:id/read`, `POST /api/v1/notifications`
+- **Files:** `POST /api/v1/files/upload`, `POST /api/v1/files/orders/photo`, `POST /api/v1/files/users/avatar`, `GET /api/v1/files/url`, `GET /api/v1/files/list`, `DELETE /api/v1/files/delete`
+- **Chat:** `GET /api/v1/chat/orders/:orderId`, `POST /api/v1/chat/orders/:orderId`
+- **Dashboard:** `GET /api/v1/dashboard/overview`, `GET /api/v1/dashboard/orders`, `GET /api/v1/dashboard/revenue`, `GET /api/v1/dashboard/branches`
+- **Membership:** `GET /api/v1/membership`, `POST /api/v1/membership`, `PUT /api/v1/membership`, `POST /api/v1/membership/redeem-points`, `POST /api/v1/membership/subscribe`, `POST /api/v1/membership/cancel`, `POST /api/v1/membership/trial`, `GET /api/v1/membership/tiers`, `POST /api/v1/membership/upgrade`, `GET /api/v1/membership/usage`
+- **Reports:** `GET /api/v1/reports/current-month`, `GET /api/v1/reports/monthly`, `GET /api/v1/reports/yearly`, `GET /api/v1/reports/summary`
+- **Ratings:** `POST /api/v1/ratings`, `GET /api/v1/ratings`, `GET /api/v1/ratings/average`, `GET /api/v1/ratings/:id`, `PUT /api/v1/ratings/:id`, `DELETE /api/v1/ratings/:id`
+
+#### Admin Endpoints (Admin Role Required)
+- **Branch Management:** `POST /api/v1/admin/branches`, `PUT /api/v1/admin/branches/:id`, `DELETE /api/v1/admin/branches/:id`, `GET /api/v1/admin/branches`
+- **User Management:** `GET /api/v1/admin/users`, `GET /api/v1/admin/users/:id`, `PUT /api/v1/admin/users/:id`, `DELETE /api/v1/admin/users/:id`
+- **Order Management:** `GET /api/v1/admin/orders`, `PUT /api/v1/admin/orders/:id`, `DELETE /api/v1/admin/orders/:id`
+- **Payment Management:** `GET /api/v1/admin/payments`, `PUT /api/v1/admin/payments/:id`
+- **Dashboard:** `GET /api/v1/admin/dashboard`
+- **Membership Management:** `GET /api/v1/admin/membership/list`, `GET /api/v1/admin/membership/stats`, `GET /api/v1/admin/membership/top-spenders`
+- **Service Catalog:** Protected routes untuk manage service catalog
+
+#### Cashier Endpoints (Cashier Role Required)
+- **Orders:** `GET /api/v1/cashier/orders`, `PUT /api/v1/cashier/orders/:id/status`, `POST /api/v1/cashier/orders/:id/payment`
+- **Branch Orders:** `GET /api/v1/cashier/branches/:id/orders`
+
+#### Technician Endpoints (Technician Role Required)
+- **Orders:** `GET /api/v1/technician/orders`, `PUT /api/v1/technician/orders/:id/status`, `POST /api/v1/technician/orders/:id/photo`
+- **Chat:** `GET /api/v1/technician/chat/orders/:orderId`, `POST /api/v1/technician/chat/orders/:orderId`
+
+#### Courier Endpoints (Courier Role Required)
+- **Orders:** `GET /api/v1/courier/orders`, `PUT /api/v1/courier/orders/:id/status`, `POST /api/v1/courier/orders/:id/photo`
+- **Jobs:** `GET /api/v1/courier/jobs`, `POST /api/v1/courier/jobs/:id/accept`
+
+#### WebSocket
+- **Chat WebSocket:** `GET /ws/chat`
+
+#### System Endpoints
+- **Health Check:** `GET /health`, `GET /health/live`, `GET /health/ready`
+- **Metrics:** `GET /metrics` (Prometheus)
+- **API Documentation:** `GET /swagger/index.html`, `GET /docs`, `GET /api-docs`
 
 ### Fitur Baru
 
@@ -437,9 +635,32 @@ swag init -g cmd/app/main.go -o docs --parseDependency --parseInternal
 
 #### 🔐 Keamanan Token
 - **Refresh Rotation & Revoke:** Refresh token di-rotasi saat refresh; token lama di-blacklist (Redis). Endpoint `POST /api/v1/auth/logout` untuk revoke manual.
+- **Token Blacklist:** Menggunakan Redis untuk menyimpan blacklisted tokens
+- **JWT Validation:** Middleware untuk validasi JWT token di setiap protected endpoint
 
 #### 🧪 CI Coverage Gate
 - **Coverage Minimal:** Build CI gagal bila coverage < 75% (workflow CI/CD dan API Testing)
+
+#### 🔄 WebSocket Support
+- **Real-time Chat:** WebSocket endpoint untuk chat real-time
+- **Real-time Tracking:** WebSocket untuk update lokasi kurir secara real-time
+- **Connection Management:** Automatic reconnection dan connection pooling
+
+#### 📊 Monitoring & Observability
+- **Prometheus Metrics:** Expose metrics di `/metrics` endpoint
+- **Health Checks:** Liveness dan readiness probes untuk Kubernetes
+- **Structured Logging:** Logging dengan logrus untuk observability
+- **Sentry Integration:** Error tracking dengan Sentry (optional)
+- **Request ID:** Unique request ID untuk tracing
+- **Performance Logging:** Logging untuk performance monitoring
+
+#### 🛡️ Security Features
+- **CORS:** Configurable CORS middleware
+- **Rate Limiting:** Rate limiting untuk mencegah abuse
+- **Security Headers:** Security headers middleware
+- **HTTPS Enforcement:** HTTPS redirect di production
+- **Input Validation:** Request validation dengan validator
+- **SQL Injection Protection:** Menggunakan GORM untuk prepared statements
 
 ## 🤝 Contributing
 

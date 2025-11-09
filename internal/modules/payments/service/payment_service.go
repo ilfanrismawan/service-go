@@ -3,35 +3,44 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"service/internal/modules/orders/repository"
 	pay "service/internal/modules/payments/legacy_payment"
 	repo "service/internal/modules/payments/repository"
+	"service/internal/shared/config"
 	"service/internal/shared/model"
 	"service/internal/shared/utils"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 // PaymentService handles payment business logic
 type PaymentService struct {
-	paymentRepo *repo.PaymentRepository
-	orderRepo   *repository.ServiceOrderRepository
+	paymentRepo    *repo.PaymentRepository
+	orderRepo      *repository.ServiceOrderRepository
+	midtransService *pay.MidtransService
 }
 
 // NewPaymentService creates a new payment service
 func NewPaymentService() *PaymentService {
 	return &PaymentService{
-		paymentRepo: repo.NewPaymentRepository(),
-		orderRepo:   repository.NewServiceOrderRepository(),
+		paymentRepo:     repo.NewPaymentRepository(),
+		orderRepo:       repository.NewServiceOrderRepository(),
+		midtransService: pay.NewMidtransService(),
 	}
 }
 
 // HandleMidtransCallback verifies payload and updates payment/order state
 func (s *PaymentService) HandleMidtransCallback(ctx context.Context, cb *model.MidtransCallbackPayload, serverKey string) error {
 	// Verify signature: sha512(order_id+status_code+gross_amount+server_key)
+	// Note: Midtrans signature format may vary, adjust if needed
+	if serverKey == "" {
+		return errors.New("server key is required for signature verification")
+	}
 	expected := utils.SHA512Hex(cb.OrderID + cb.StatusCode + cb.GrossAmount + serverKey)
 	if expected != cb.SignatureKey {
-		return errors.New("invalid signature")
+		return errors.New("invalid signature - callback may be from unauthorized source")
 	}
 
 	// Find payment by transaction ID first, fallback to invoice/order_id equals payment.ID if used as order_id
@@ -101,9 +110,14 @@ func (s *PaymentService) CreatePayment(ctx context.Context, req *model.PaymentRe
 		return nil, errors.New("invalid order ID")
 	}
 
-	_, err = s.orderRepo.GetByID(ctx, orderID)
+	order, err := s.orderRepo.GetByID(ctx, orderID)
 	if err != nil {
 		return nil, model.ErrOrderNotFound
+	}
+
+	// Validate amount
+	if req.Amount <= 0 {
+		return nil, errors.New("amount must be greater than 0")
 	}
 
 	// Generate unique invoice number
@@ -122,6 +136,7 @@ func (s *PaymentService) CreatePayment(ctx context.Context, req *model.PaymentRe
 	// Create payment entity
 	payment := &model.Payment{
 		OrderID:       orderID,
+		UserID:        order.CustomerID,
 		Amount:        req.Amount,
 		PaymentMethod: req.PaymentMethod,
 		Status:        model.PaymentStatusPending,
@@ -198,17 +213,33 @@ func (s *PaymentService) ProcessMidtransPayment(ctx context.Context, req *model.
 		return nil, errors.New("invalid order ID")
 	}
 
-	_, err = s.orderRepo.GetByID(ctx, orderID)
+	order, err := s.orderRepo.GetByID(ctx, orderID)
 	if err != nil {
 		return nil, model.ErrOrderNotFound
+	}
+
+	// Validate amount
+	if req.Amount <= 0 {
+		return nil, errors.New("amount must be greater than 0")
 	}
 
 	// Generate invoice number
 	invoiceNumber := utils.GenerateInvoiceNumber()
 
+	// Check if invoice number already exists
+	exists, err := s.paymentRepo.CheckInvoiceExists(ctx, invoiceNumber, nil)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		// Regenerate if exists
+		invoiceNumber = utils.GenerateInvoiceNumber()
+	}
+
 	// Create payment record
 	payment := &model.Payment{
 		OrderID:       orderID,
+		UserID:        order.CustomerID,
 		Amount:        req.Amount,
 		PaymentMethod: model.PaymentMethodMidtrans,
 		Status:        model.PaymentStatusPending,
@@ -220,13 +251,46 @@ func (s *PaymentService) ProcessMidtransPayment(ctx context.Context, req *model.
 		return nil, err
 	}
 
-	// TODO: Integrate with actual Midtrans API
-	// For now, return mock response
+	// Create Midtrans payment request
+	midtransReq := &pay.MidtransPaymentRequest{
+		TransactionDetails: pay.TransactionDetails{
+			OrderID:     payment.ID.String(), // Use payment ID as order_id for Midtrans
+			GrossAmount: int64(req.Amount * 100), // Convert to cents
+		},
+		PaymentType: "credit_card", // Default to credit_card, can be extended
+		CustomExpiry: &pay.CustomExpiry{
+			OrderTime:      time.Now().Format("2006-01-02 15:04:05"),
+			ExpiryDuration: 24,
+			Unit:           "hour",
+		},
+	}
+
+	// Call Midtrans API
+	midtransResp, err := s.midtransService.CreatePayment(ctx, midtransReq)
+	if err != nil {
+		// Update payment status to failed
+		payment.Status = model.PaymentStatusFailed
+		s.paymentRepo.Update(ctx, payment)
+		return nil, fmt.Errorf("failed to create Midtrans payment: %w", err)
+	}
+
+	// Update payment with transaction ID
+	payment.TransactionID = midtransResp.TransactionID
+	if midtransResp.RedirectURL != "" {
+		payment.InvoiceURL = midtransResp.RedirectURL
+	}
+
+	// Update payment
+	if err := s.paymentRepo.Update(ctx, payment); err != nil {
+		return nil, err
+	}
+
+	// Map Midtrans response to model response
 	response := &model.MidtransPaymentResponse{
-		Token:         "mock-token-" + payment.ID.String(),
-		RedirectURL:   "https://app.midtrans.com/snap/v2/vtweb/" + payment.ID.String(),
-		StatusCode:    "201",
-		StatusMessage: "Success, transaction is created",
+		Token:         midtransResp.TransactionID, // Use transaction ID as token
+		RedirectURL:   midtransResp.RedirectURL,
+		StatusCode:    midtransResp.StatusCode,
+		StatusMessage: midtransResp.StatusMessage,
 	}
 
 	return response, nil
