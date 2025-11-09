@@ -26,16 +26,17 @@ import (
 	"log"
 	"time"
 
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	docs "service/docs" // Swagger docs
-	svc "service/internal/domain/payments/service"
+	svc "service/internal/modules/payments/service"
 	"service/internal/router"
 	"service/internal/shared/config"
 	"service/internal/shared/database"
 	"service/internal/shared/middleware"
 	"service/internal/shared/monitoring"
 	"service/internal/shared/utils"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/gin-gonic/gin"
 )
