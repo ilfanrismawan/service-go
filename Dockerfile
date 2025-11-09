@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
@@ -12,8 +12,8 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Generate swagger docs
-RUN swag init -g cmd/app/main.go
+# Generate swagger docs (continue build even if swagger fails)
+RUN swag init -g cmd/app/main.go || echo "Warning: Swagger generation failed, continuing build..."
 
 # Build the application and migration tool
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/app && \

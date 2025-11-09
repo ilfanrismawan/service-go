@@ -31,10 +31,10 @@ func NewChatHandler() *ChatHandler {
 // @Produce json
 // @Security BearerAuth
 // @Param request body core.ChatMessageRequest true "Chat message data"
-// @Success 201 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 201 {object} docs.APIResponse
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /chat/messages [post]
 func (h *ChatHandler) SendMessage(c *gin.Context) {
 	// Get sender ID from context
@@ -105,8 +105,8 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(20)
 // @Success 200 {object} core.PaginatedResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /chat/orders/{orderId}/messages [get]
 func (h *ChatHandler) GetChatMessages(c *gin.Context) {
 	orderIDStr := c.Param("orderId")
@@ -154,9 +154,9 @@ func (h *ChatHandler) GetChatMessages(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /chat/conversations [get]
 func (h *ChatHandler) GetUserChats(c *gin.Context) {
 	// Get user ID from context
@@ -201,11 +201,11 @@ func (h *ChatHandler) GetUserChats(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Message ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 404 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 404 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /chat/messages/{id}/read [put]
 func (h *ChatHandler) MarkAsRead(c *gin.Context) {
 	idStr := c.Param("id")
@@ -240,10 +240,10 @@ func (h *ChatHandler) MarkAsRead(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param orderId path string true "Order ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /chat/orders/{orderId}/read [put]
 func (h *ChatHandler) MarkOrderMessagesAsRead(c *gin.Context) {
 	orderIDStr := c.Param("orderId")
@@ -298,9 +298,9 @@ func (h *ChatHandler) MarkOrderMessagesAsRead(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /chat/unread-count [get]
 func (h *ChatHandler) GetUnreadCount(c *gin.Context) {
 	// Get user ID from context

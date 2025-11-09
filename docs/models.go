@@ -67,6 +67,9 @@ type APIResponse struct {
 	Timestamp string      `json:"timestamp" example:"2024-01-01T00:00:00Z"`
 }
 
+// Alias for swagger compatibility (core.APIResponse -> docs.APIResponse)
+type CoreAPIResponse = APIResponse
+
 type ErrorResponse struct {
 	Status    string      `json:"status" example:"error"`
 	Error     string      `json:"error" example:"validation_error"`
@@ -74,6 +77,9 @@ type ErrorResponse struct {
 	Details   interface{} `json:"details,omitempty"`
 	Timestamp string      `json:"timestamp" example:"2024-01-01T00:00:00Z"`
 }
+
+// Alias for swagger compatibility (core.ErrorResponse -> docs.ErrorResponse)
+type CoreErrorResponse = ErrorResponse
 
 type PaginatedResponse struct {
 	Status     string      `json:"status" example:"success"`

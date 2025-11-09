@@ -30,9 +30,9 @@ func NewDashboardHandler() *DashboardHandler {
 // @Produce json
 // @Security BearerAuth
 // @Param branch_id query string false "Branch ID (for admin users)"
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /dashboard/stats [get]
 func (h *DashboardHandler) GetDashboardStats(c *gin.Context) {
 	// Get user ID from context
@@ -85,9 +85,9 @@ func (h *DashboardHandler) GetDashboardStats(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param branch_id query string false "Branch ID (for admin users)"
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /dashboard/service-stats [get]
 func (h *DashboardHandler) GetServiceStats(c *gin.Context) {
 	// Get user ID from context
@@ -142,10 +142,10 @@ func (h *DashboardHandler) GetServiceStats(c *gin.Context) {
 // @Param branch_id query string false "Branch ID (for admin users)"
 // @Param date_from query string true "Start date (YYYY-MM-DD)"
 // @Param date_to query string true "End date (YYYY-MM-DD)"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /dashboard/revenue-report [get]
 func (h *DashboardHandler) GetRevenueReport(c *gin.Context) {
 	// Get user ID from context
@@ -211,10 +211,10 @@ func (h *DashboardHandler) GetRevenueReport(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param branchId path string true "Branch ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /dashboard/branches/{branchId}/stats [get]
 func (h *DashboardHandler) GetBranchStats(c *gin.Context) {
 	branchIDStr := c.Param("branchId")
@@ -249,10 +249,10 @@ func (h *DashboardHandler) GetBranchStats(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param userId path string true "User ID"
-// @Success 200 {object} core.APIResponse
-// @Failure 400 {object} core.ErrorResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /dashboard/users/{userId}/stats [get]
 func (h *DashboardHandler) GetUserStats(c *gin.Context) {
 	userIDStr := c.Param("userId")
@@ -288,9 +288,9 @@ func (h *DashboardHandler) GetUserStats(c *gin.Context) {
 // @Security BearerAuth
 // @Param limit query int false "Number of services to return" default(5)
 // @Param branch_id query string false "Branch ID (for admin users)"
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /dashboard/popular-services [get]
 func (h *DashboardHandler) GetPopularServices(c *gin.Context) {
 	// Get user ID from context
@@ -354,9 +354,9 @@ func (h *DashboardHandler) GetPopularServices(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /dashboard/overview [get]
 func (h *DashboardHandler) GetOverview(c *gin.Context) {
 	h.GetDashboardStats(c)
@@ -369,9 +369,9 @@ func (h *DashboardHandler) GetOverview(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /dashboard/orders [get]
 func (h *DashboardHandler) GetOrderStats(c *gin.Context) {
 	// Reuse service stats for now
@@ -385,9 +385,9 @@ func (h *DashboardHandler) GetOrderStats(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
-// @Failure 500 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
 // @Router /dashboard/revenue [get]
 func (h *DashboardHandler) GetRevenueStats(c *gin.Context) {
 	// If date range provided, use revenue report; otherwise return overview

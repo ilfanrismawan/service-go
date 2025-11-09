@@ -24,8 +24,8 @@ func NewHealthHandler() *HealthHandler {
 // @Tags health
 // @Accept json
 // @Produce json
-// @Success 200 {object} core.APIResponse
-// @Failure 503 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 503 {object} docs.ErrorResponse
 // @Router /health [get]
 func (h *HealthHandler) HealthCheck(c *gin.Context) {
 	// Check database connection
@@ -66,7 +66,7 @@ func (h *HealthHandler) HealthCheck(c *gin.Context) {
 // @Tags health
 // @Accept json
 // @Produce json
-// @Success 200 {object} core.APIResponse
+// @Success 200 {object} docs.APIResponse
 // @Router /health/live [get]
 func (h *HealthHandler) LivenessCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, model.SuccessResponse(gin.H{
@@ -81,8 +81,8 @@ func (h *HealthHandler) LivenessCheck(c *gin.Context) {
 // @Tags health
 // @Accept json
 // @Produce json
-// @Success 200 {object} core.APIResponse
-// @Failure 503 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 503 {object} docs.ErrorResponse
 // @Router /health/ready [get]
 func (h *HealthHandler) ReadinessCheck(c *gin.Context) {
 	// Check database connection
@@ -205,8 +205,8 @@ func (h *HealthHandler) checkRedis() gin.H {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} core.APIResponse
-// @Failure 401 {object} core.ErrorResponse
+// @Success 200 {object} docs.APIResponse
+// @Failure 401 {object} docs.ErrorResponse
 // @Router /health/metrics [get]
 func (h *HealthHandler) Metrics(c *gin.Context) {
 	// Get database stats
