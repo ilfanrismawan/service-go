@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	"service/internal/shared/config/config"
+	"service/internal/shared/config"
 	"service/internal/shared/database"
 	"service/internal/shared/model"
 	"time"

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"log"
 	orderRepo "service/internal/modules/orders/repository"
 	serviceRepo "service/internal/modules/services/repository"
 	trackingRepo "service/internal/modules/tracking/repository"
@@ -18,6 +19,7 @@ type LocationTrackingService struct {
 	currentLocRepo   *trackingRepo.CurrentLocationRepository
 	orderRepo        *orderRepo.ServiceOrderRepository
 	providerRepo     *serviceRepo.ServiceProviderRepository
+	mapsService      *GoogleMapsService
 }
 
 // NewLocationTrackingService creates a new location tracking service
@@ -27,6 +29,7 @@ func NewLocationTrackingService() *LocationTrackingService {
 		currentLocRepo: trackingRepo.NewCurrentLocationRepository(),
 		orderRepo:      orderRepo.NewServiceOrderRepository(),
 		providerRepo:   serviceRepo.NewServiceProviderRepository(),
+		mapsService:    NewGoogleMapsService(),
 	}
 }
 
@@ -62,19 +65,43 @@ func (s *LocationTrackingService) UpdateLocation(ctx context.Context, orderID uu
 	eta := 0
 	distance := 0.0
 	if order.PickupLatitude != nil && order.PickupLongitude != nil {
-		distance = model.CalculateDistance(
+		// Try to use Google Maps API first, fallback to Haversine if not available
+		routeInfo, err := s.mapsService.GetDistanceAndDuration(
 			req.Latitude,
 			req.Longitude,
 			*order.PickupLatitude,
 			*order.PickupLongitude,
 		)
 		
-		// Calculate ETA based on distance and speed
-		if req.Speed > 0 {
-			eta = int((distance / req.Speed) * 60) // Convert to minutes
+		if err == nil && routeInfo != nil {
+			// Use Google Maps API result
+			distance = routeInfo.Distance
+			// Use duration in traffic if available, otherwise use regular duration
+			if routeInfo.DurationInTraffic > 0 {
+				eta = routeInfo.DurationInTraffic
+				log.Printf("[INFO] Using Google Maps API for location update: distance=%.2f km, eta=%d min (with traffic)", distance, eta)
+			} else {
+				eta = routeInfo.Duration
+				log.Printf("[INFO] Using Google Maps API for location update: distance=%.2f km, eta=%d min", distance, eta)
+			}
 		} else {
-			// Default speed: 30 km/h for city driving
-			eta = int((distance / 30) * 60)
+			// Fallback to Haversine formula calculation
+			log.Printf("[WARN] Google Maps API unavailable, using Haversine fallback: %v", err)
+			distance = model.CalculateDistance(
+				req.Latitude,
+				req.Longitude,
+				*order.PickupLatitude,
+				*order.PickupLongitude,
+			)
+			
+			// Calculate ETA based on distance and speed
+			if req.Speed > 0 {
+				eta = int((distance / req.Speed) * 60) // Convert to minutes
+			} else {
+				// Default speed: 30 km/h for city driving
+				eta = int((distance / 30) * 60)
+			}
+			log.Printf("[INFO] Haversine calculation: distance=%.2f km, eta=%d min", distance, eta)
 		}
 	}
 
@@ -194,21 +221,48 @@ func (s *LocationTrackingService) CalculateETA(ctx context.Context, orderID uuid
 		return nil, errors.New("destination location not found")
 	}
 
-	// Calculate distance
-	distance := model.CalculateDistance(
+	// Try to use Google Maps API first, fallback to Haversine if not available
+	var distance float64
+	var etaMinutes int
+	
+	routeInfo, err := s.mapsService.GetDistanceAndDuration(
 		req.CurrentLatitude,
 		req.CurrentLongitude,
 		destLat,
 		destLon,
 	)
+	
+	if err == nil && routeInfo != nil {
+		// Use Google Maps API result
+		distance = routeInfo.Distance
+		// Use duration in traffic if available, otherwise use regular duration
+		if routeInfo.DurationInTraffic > 0 {
+			etaMinutes = routeInfo.DurationInTraffic
+			log.Printf("[INFO] Using Google Maps API for ETA calculation: distance=%.2f km, eta=%d min (with traffic)", distance, etaMinutes)
+		} else {
+			etaMinutes = routeInfo.Duration
+			log.Printf("[INFO] Using Google Maps API for ETA calculation: distance=%.2f km, eta=%d min", distance, etaMinutes)
+		}
+	} else {
+		// Fallback to Haversine formula calculation
+		log.Printf("[WARN] Google Maps API unavailable for ETA calculation, using Haversine fallback: %v", err)
+		distance = model.CalculateDistance(
+			req.CurrentLatitude,
+			req.CurrentLongitude,
+			destLat,
+			destLon,
+		)
 
-	// Calculate ETA
-	speed := req.Speed
-	if speed == 0 {
-		speed = 30 // Default: 30 km/h for city driving
+		// Calculate ETA
+		speed := req.Speed
+		if speed == 0 {
+			speed = 30 // Default: 30 km/h for city driving
+		}
+
+		etaMinutes = int((distance / speed) * 60)
+		log.Printf("[INFO] Haversine ETA calculation: distance=%.2f km, eta=%d min", distance, etaMinutes)
 	}
-
-	etaMinutes := int((distance / speed) * 60)
+	
 	estimatedArrival := time.Now().Add(time.Duration(etaMinutes) * time.Minute)
 
 	return &model.ETAResponse{

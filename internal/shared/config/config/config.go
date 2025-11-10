@@ -47,6 +47,9 @@ type AppConfig struct {
 	WhatsAppAPIKey    string
 	WhatsAppAPIURL    string
 
+	// Google Maps configuration
+	GoogleMapsAPIKey string
+
 	// Email configuration
 	SMTPHost     string
 	SMTPPort     int
@@ -116,6 +119,9 @@ func LoadConfig() {
 		FirebaseServerKey: getEnv("FIREBASE_SERVER_KEY", ""),
 		WhatsAppAPIKey:    getEnv("WHATSAPP_API_KEY", ""),
 		WhatsAppAPIURL:    getEnv("WHATSAPP_API_URL", "https://api.fonnte.com/send"),
+
+		// Google Maps configuration
+		GoogleMapsAPIKey: getEnv("GOOGLE_MAPS_API_KEY", ""),
 
 		// Email configuration
 		SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),

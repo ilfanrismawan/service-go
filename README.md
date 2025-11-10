@@ -185,6 +185,7 @@ make clean         # Clean build artifacts
 | `S3_REGION` | S3 region | `us-east-1` |
 | `FIREBASE_SERVER_KEY` | Firebase server key untuk FCM | - |
 | `WHATSAPP_API_KEY` | WhatsApp API key | - |
+| `GOOGLE_MAPS_API_KEY` | Google Maps API key untuk real-time tracking | - |
 | `SENTRY_DSN` | Sentry DSN untuk error tracking | - |
 | `RECONCILE_INTERVAL` | Payment reconciliation interval | `5m` |
 | `RATE_LIMIT_REQUESTS` | Rate limit requests per window | `100` |
@@ -204,6 +205,36 @@ Redis digunakan untuk caching dan session management.
 ### File Storage
 
 MinIO digunakan sebagai S3-compatible storage untuk menyimpan foto-foto service.
+
+### Google Maps API Configuration
+
+Sistem real-time tracking terintegrasi dengan Google Maps API untuk mendapatkan jarak dan waktu tempuh yang akurat berdasarkan rute jalan dan kondisi lalu lintas.
+
+#### Setup Google Maps API
+
+1. **Dapatkan API Key:**
+   - Buka [Google Cloud Console](https://console.cloud.google.com/)
+   - Buat project baru atau pilih project yang ada
+   - Aktifkan **Distance Matrix API**
+   - Buat API key di "Credentials"
+   - Batasi API key untuk keamanan (opsional tapi direkomendasikan)
+
+2. **Set Environment Variable:**
+   ```bash
+   export GOOGLE_MAPS_API_KEY=your-actual-api-key-here
+   ```
+   Atau tambahkan ke file `.env`:
+   ```
+   GOOGLE_MAPS_API_KEY=your-actual-api-key-here
+   ```
+
+3. **Fitur:**
+   - ✅ Jarak berdasarkan rute jalan (bukan garis lurus)
+   - ✅ Waktu tempuh aktual dengan mempertimbangkan lalu lintas
+   - ✅ Fallback otomatis ke perhitungan Haversine jika API tidak tersedia
+   - ✅ Real-time traffic data untuk ETA yang lebih akurat
+
+**Catatan:** Jika `GOOGLE_MAPS_API_KEY` tidak di-set, sistem akan otomatis menggunakan perhitungan Haversine (jarak garis lurus) sebagai fallback.
 
 ## 🔒 Authentication & Authorization
 
@@ -571,7 +602,7 @@ swag init -g cmd/app/main.go -o docs --parseDependency --parseInternal
 #### Protected Endpoints (Authentication Required)
 - **User Profile:** `GET /api/v1/auth/profile`, `PUT /api/v1/auth/profile`, `POST /api/v1/auth/change-password`, `PUT /api/v1/auth/fcm-token`
 - **Orders:** `POST /api/v1/orders`, `GET /api/v1/orders`, `GET /api/v1/orders/:id`, `PUT /api/v1/orders/:id/status`, `PUT /api/v1/orders/:id/assign-courier`, `PUT /api/v1/orders/:id/assign-technician`
-- **Location Tracking:** `POST /api/v1/tracking/update`, `GET /api/v1/tracking/order/:orderId`, `GET /api/v1/tracking/history/:orderId`
+- **Location Tracking:** `POST /api/v1/orders/:id/location`, `GET /api/v1/orders/:id/location`, `GET /api/v1/orders/:id/location/history`, `POST /api/v1/orders/:id/eta`, `GET /api/v1/orders/:id/eta` (dengan integrasi Google Maps API)
 - **Payments:** `POST /api/v1/payments/create-invoice`, `POST /api/v1/payments/process`, `GET /api/v1/payments/:id`, `GET /api/v1/payments/order/:orderId`
 - **Notifications:** `GET /api/v1/notifications`, `PUT /api/v1/notifications/:id/read`, `POST /api/v1/notifications`
 - **Files:** `POST /api/v1/files/upload`, `POST /api/v1/files/orders/photo`, `POST /api/v1/files/users/avatar`, `GET /api/v1/files/url`, `GET /api/v1/files/list`, `DELETE /api/v1/files/delete`

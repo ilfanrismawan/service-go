@@ -21,6 +21,11 @@ var (
 func InitPostgres() {
 	var err error
 
+	// Check if config is initialized
+	if config.Config == nil {
+		log.Fatal("❌ Config is nil. Please call config.LoadConfig() first")
+	}
+
 	log.Printf("Attempting to connect to PostgreSQL with URL: %s\n", config.Config.DatabaseURL)
 
 	// Configure GORM logger based on environment

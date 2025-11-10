@@ -43,3 +43,10 @@ dist/
 build/
 
 /frontend/
+
+# Python virtual environment
+venv/
+env/
+.venv/
+*.pyc
+__pycache__/

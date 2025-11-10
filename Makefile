@@ -51,7 +51,7 @@ YELLOW=\033[1;33m
 BLUE=\033[0;34m
 NC=\033[0m # No Color
 
-.PHONY: help build run test clean docker-build docker-up docker-down migrate seed check-go docker-setup docker-help
+.PHONY: help build run test clean docker-build docker-up docker-down migrate seed check-go docker-setup docker-help test-simulasi test-simulasi-simple test-simulasi-full test-simulasi-setup
 
 # Default target
 help: ## Show this help message
@@ -213,6 +213,10 @@ docker-exec: ## Execute command in app container (usage: make docker-exec CMD="s
 	fi
 	$(DOCKER_COMPOSE) exec app $(CMD)
 
+docker-diagnose: ## Diagnose Docker container issues
+	@echo "$(BLUE)Diagnosing Docker container issues...$(NC)"
+	@./scripts/diagnose-docker.sh
+
 # Development setup
 setup: ## Setup development environment
 	@echo "$(BLUE)Setting up development environment...$(NC)"
@@ -250,6 +254,92 @@ test-api: ## Test API endpoints
 	curl -s http://localhost:8080/health | jq .
 	@echo ""
 	@echo "$(YELLOW)API Documentation: http://localhost:8080/swagger/index.html$(NC)"
+
+# Simulation and Testing
+test-simulasi-setup: ## Setup Python dependencies for simulation
+	@echo "$(BLUE)Setting up simulation dependencies...$(NC)"
+	@if ! command -v python3 >/dev/null 2>&1; then \
+		echo "$(RED)Error: Python3 not found. Please install Python3.$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(YELLOW)Checking Python dependencies...$(NC)"
+	@if python3 -c "import requests, websocket" 2>/dev/null; then \
+		echo "$(GREEN)✓ Dependencies already installed!$(NC)"; \
+	else \
+		echo "$(YELLOW)Installing dependencies...$(NC)"; \
+		if python3 -m pip install --user requests websocket-client 2>/dev/null; then \
+			echo "$(GREEN)✓ Dependencies installed with --user flag!$(NC)"; \
+		elif [ -f "venv/bin/pip" ]; then \
+			venv/bin/pip install -q requests websocket-client 2>/dev/null && \
+			echo "$(GREEN)✓ Dependencies installed in existing virtual environment!$(NC)"; \
+		else \
+			echo "$(YELLOW)Attempting to create virtual environment...$(NC)"; \
+			if python3 -m venv venv 2>/dev/null && [ -f "venv/bin/pip" ]; then \
+				venv/bin/pip install -q requests websocket-client && \
+				echo "$(GREEN)✓ Dependencies installed in new virtual environment!$(NC)"; \
+			else \
+				echo "$(YELLOW)Trying with --break-system-packages flag...$(NC)"; \
+				if python3 -m pip install --break-system-packages requests websocket-client 2>/dev/null; then \
+					echo "$(GREEN)✓ Dependencies installed (with --break-system-packages)!$(NC)"; \
+					echo "$(YELLOW)Note: Using --break-system-packages is not recommended for production$(NC)"; \
+				else \
+					echo "$(RED)Error: Could not install dependencies automatically.$(NC)"; \
+					echo ""; \
+					echo "$(YELLOW)Please install manually dengan salah satu cara berikut:$(NC)"; \
+					echo ""; \
+					echo "$(YELLOW)1. Install python3-venv lalu buat virtual environment (RECOMMENDED):$(NC)"; \
+					echo "   sudo apt install python3-venv"; \
+					echo "   python3 -m venv venv"; \
+					echo "   venv/bin/pip install requests websocket-client"; \
+					echo ""; \
+					echo "$(YELLOW)2. Gunakan --break-system-packages:$(NC)"; \
+					echo "   python3 -m pip install --break-system-packages requests websocket-client"; \
+					echo ""; \
+					echo "$(YELLOW)3. Install dengan --user:$(NC)"; \
+					echo "   python3 -m pip install --user requests websocket-client"; \
+					exit 1; \
+				fi; \
+			fi; \
+		fi; \
+	fi
+
+test-simulasi-simple: test-simulasi-setup ## Run simple real-time tracking simulation (REST API only)
+	@echo "$(BLUE)Running simple real-time tracking simulation...$(NC)"
+	@echo "$(YELLOW)Checking if server is running...$(NC)"
+	@if ! curl -s http://localhost:8080/health >/dev/null 2>&1; then \
+		echo "$(RED)Error: Server tidak berjalan di http://localhost:8080$(NC)"; \
+		echo "$(YELLOW)Jalankan server terlebih dahulu:$(NC)"; \
+		echo "$(YELLOW)  - make run (untuk local)$(NC)"; \
+		echo "$(YELLOW)  - make docker-up-build (untuk docker)$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)Server is running!$(NC)"
+	@echo ""
+	@if [ -f "venv/bin/python" ]; then \
+		venv/bin/python scripts/test_realtime_tracking_simple.py; \
+	else \
+		python3 scripts/test_realtime_tracking_simple.py || python scripts/test_realtime_tracking_simple.py; \
+	fi
+
+test-simulasi-full: test-simulasi-setup ## Run full real-time tracking simulation (REST API + WebSocket)
+	@echo "$(BLUE)Running full real-time tracking simulation...$(NC)"
+	@echo "$(YELLOW)Checking if server is running...$(NC)"
+	@if ! curl -s http://localhost:8080/health >/dev/null 2>&1; then \
+		echo "$(RED)Error: Server tidak berjalan di http://localhost:8080$(NC)"; \
+		echo "$(YELLOW)Jalankan server terlebih dahulu:$(NC)"; \
+		echo "$(YELLOW)  - make run (untuk local)$(NC)"; \
+		echo "$(YELLOW)  - make docker-up-build (untuk docker)$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)Server is running!$(NC)"
+	@echo ""
+	@if [ -f "venv/bin/python" ]; then \
+		venv/bin/python scripts/simulasi_realtime_tracking.py; \
+	else \
+		python3 scripts/simulasi_realtime_tracking.py || python scripts/simulasi_realtime_tracking.py; \
+	fi
+
+test-simulasi: test-simulasi-simple ## Alias for test-simulasi-simple
 
 # Production commands
 prod-build: ## Build for production

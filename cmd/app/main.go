@@ -61,8 +61,6 @@ import (
 	"log"
 	"time"
 
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	docs "service/docs" // Swagger docs
 	svc "service/internal/modules/payments/service"
 	"service/internal/router"
@@ -99,8 +97,8 @@ func main() {
 	// Setup Gin router
 	r := setupRouter()
 
-	// Register Swagger endpoint
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Note: Swagger endpoint is already registered in router.SetupRoutes()
+	// via swaggerHandler.SetupSwaggerRoutes(r)
 
 	// Start background reconciliation job
 	go func() {

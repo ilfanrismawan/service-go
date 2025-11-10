@@ -12,6 +12,9 @@ RUN go mod download
 # Copy source code
 COPY . .
 
+# Update go.mod and go.sum to ensure consistency
+RUN go mod tidy
+
 # Generate swagger docs (continue build even if swagger fails)
 RUN swag init -g cmd/app/main.go || echo "Warning: Swagger generation failed, continuing build..."
 
@@ -22,7 +25,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/app &&
 # Final stage
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates
+# Install ca-certificates and tzdata for timezone support
+RUN apk --no-cache add ca-certificates tzdata
 
 WORKDIR /root/
 
